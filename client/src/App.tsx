@@ -1,4 +1,5 @@
 import Chat from "./components/Chat";
+import ClientPanel from "./components/ClientPanel";
 
 export default function App() {
   return (
@@ -9,6 +10,7 @@ export default function App() {
       </header>
       <main>
         <Chat />
+        <ClientPanel />
       </main>
     </div>
   );

@@ -1,3 +1,29 @@
 {
-  "clients": []
+  "clients": [
+    {
+      "id": "72798473-6add-438f-9a69-171f10156299",
+      "name": "yehuda",
+      "phone": "0503928154",
+      "email": "yk@gmail.com",
+      "notes": "",
+      "documents": [],
+      "createdAt": "2026-05-30T20:55:36.635Z"
+    },
+    {
+      "id": "5fb37b4e-fa3d-40b1-a1a8-75550e0f40e3",
+      "name": "huxh",
+      "phone": "78676",
+      "email": "hgh",
+      "notes": "",
+      "documents": [
+        {
+          "id": "71d0f160-021d-46f7-a658-c28be81538f4",
+          "type": "bank_statement",
+          "filename": "3f5bf500-dc55-4fc0-a469-9a807c1c4942.pdf",
+          "uploadedAt": "2026-05-30T20:56:53.999Z"
+        }
+      ],
+      "createdAt": "2026-05-30T20:56:35.488Z"
+    }
+  ]
 }

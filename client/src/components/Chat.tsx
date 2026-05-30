@@ -8,7 +8,7 @@ interface Message {
 
 export default function Chat() {
   const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "Hi! I'm Sara, your mortgage advisor assistant. How can I help you today?" },
+    { role: "assistant", content: "שלום! אני שרה, עוזרת יועץ המשכנתאות שלך. במה אוכל לעזור?" },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -28,7 +28,7 @@ export default function Chat() {
       const reply = await sendChatMessage(text);
       setMessages((prev) => [...prev, { role: "assistant", content: reply.content }]);
     } catch {
-      setMessages((prev) => [...prev, { role: "assistant", content: "Something went wrong. Please try again." }]);
+      setMessages((prev) => [...prev, { role: "assistant", content: "משהו השתבש. אנא נסה שוב." }]);
     } finally {
       setLoading(false);
     }
@@ -46,13 +46,13 @@ export default function Chat() {
       <div className="messages">
         {messages.map((msg, i) => (
           <div key={i} className={`bubble ${msg.role}`}>
-            <span className="label">{msg.role === "assistant" ? "Sara" : "You"}</span>
+            <span className="label">{msg.role === "assistant" ? "שרה" : "אתה"}</span>
             <p>{msg.content}</p>
           </div>
         ))}
         {loading && (
           <div className="bubble assistant">
-            <span className="label">Sara</span>
+            <span className="label">שרה</span>
             <p className="typing">...</p>
           </div>
         )}
@@ -64,11 +64,11 @@ export default function Chat() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type a message..."
+          placeholder="הקלד הודעה..."
           disabled={loading}
         />
         <button onClick={handleSend} disabled={loading || !input.trim()}>
-          Send
+          שלח
         </button>
       </div>
     </div>

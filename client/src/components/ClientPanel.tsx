@@ -49,7 +49,7 @@ export default function ClientPanel() {
     e.preventDefault();
     setFormError("");
     if (!name.trim() || !phone.trim()) {
-      setFormError("Name and phone are required.");
+      setFormError("שם וטלפון הם שדות חובה.");
       return;
     }
     setSaving(true);
@@ -60,7 +60,7 @@ export default function ClientPanel() {
       setShowForm(false);
       setName(""); setPhone(""); setEmail("");
     } catch {
-      setFormError("Failed to create client.");
+      setFormError("יצירת לקוח נכשלה.");
     } finally {
       setSaving(false);
     }
@@ -81,7 +81,7 @@ export default function ClientPanel() {
       setClients((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
       if (fileRef.current) fileRef.current.value = "";
     } catch {
-      setUploadError("Upload failed. PDF only, max 10 MB.");
+      setUploadError("העלאה נכשלה. PDF בלבד, מקסימום 10 מגה.");
     } finally {
       setUploading(false);
     }
@@ -90,24 +90,24 @@ export default function ClientPanel() {
   return (
     <aside className="client-panel">
       <div className="panel-header">
-        <span>Clients</span>
+        <span>לקוחות</span>
         <button className="btn-add" onClick={() => { setShowForm((v) => !v); setFormError(""); }}>
-          {showForm ? "Cancel" : "+ New"}
+          {showForm ? "ביטול" : "+ חדש"}
         </button>
       </div>
 
       {showForm && (
         <form className="client-form" onSubmit={handleCreate}>
-          <input placeholder="Full name *" value={name} onChange={(e) => setName(e.target.value)} />
-          <input placeholder="Phone *" value={phone} onChange={(e) => setPhone(e.target.value)} />
-          <input placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <input placeholder="שם מלא *" value={name} onChange={(e) => setName(e.target.value)} />
+          <input placeholder="טלפון *" value={phone} onChange={(e) => setPhone(e.target.value)} />
+          <input placeholder="אימייל" value={email} onChange={(e) => setEmail(e.target.value)} />
           {formError && <p className="error">{formError}</p>}
-          <button type="submit" disabled={saving}>{saving ? "Saving..." : "Add Client"}</button>
+          <button type="submit" disabled={saving}>{saving ? "שומר..." : "הוסף לקוח"}</button>
         </form>
       )}
 
       <ul className="client-list">
-        {clients.length === 0 && <li className="empty">No clients yet.</li>}
+        {clients.length === 0 && <li className="empty">אין לקוחות עדיין.</li>}
         {clients.map((c) => (
           <li
             key={c.id}
@@ -122,10 +122,10 @@ export default function ClientPanel() {
 
       {selected && (
         <div className="upload-section">
-          <p className="section-title">Files — {selected.name}</p>
+          <p className="section-title">קבצים — {selected.name}</p>
 
           <ul className="doc-list">
-            {selected.documents.length === 0 && <li className="empty">No files uploaded.</li>}
+            {selected.documents.length === 0 && <li className="empty">לא הועלו קבצים.</li>}
             {selected.documents.map((d) => (
               <li key={d.id}>
                 <span className="doc-type">{d.type}</span>
@@ -136,14 +136,14 @@ export default function ClientPanel() {
 
           <div className="upload-controls">
             <select value={uploadType} onChange={(e) => setUploadType(e.target.value)}>
-              <option value="paystub">Paystub</option>
-              <option value="bank_statement">Bank Statement</option>
-              <option value="id_card">ID Card</option>
-              <option value="other">Other</option>
+              <option value="paystub">תלוש שכר</option>
+              <option value="bank_statement">דף חשבון</option>
+              <option value="id_card">תעודת זהות</option>
+              <option value="other">אחר</option>
             </select>
             <input type="file" accept=".pdf" ref={fileRef} />
             <button onClick={handleUpload} disabled={uploading}>
-              {uploading ? "Uploading..." : "Upload PDF"}
+              {uploading ? "מעלה..." : "העלה PDF"}
             </button>
             {uploadError && <p className="error">{uploadError}</p>}
           </div>

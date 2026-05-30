@@ -1,12 +1,13 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Arial Hebrew", sans-serif;
   background: #f4f6f8;
   color: #1a1a2e;
   height: 100vh;
   display: flex;
   flex-direction: column;
+  direction: rtl;
 }
 
 #root {
@@ -124,7 +125,7 @@ main {
 .client-panel {
   width: 300px;
   min-width: 260px;
-  border-left: 1px solid #e0e0e0;
+  border-right: 1px solid #e0e0e0;
   background: #fff;
   display: flex;
   flex-direction: column;
@@ -206,7 +207,7 @@ main {
   transition: background 0.1s;
 }
 .client-list li:hover { background: #f4f6f8; }
-.client-list li.active { background: #eef0ff; border-left: 3px solid #1a1a2e; }
+.client-list li.active { background: #eef0ff; border-right: 3px solid #1a1a2e; }
 .client-list li.empty { cursor: default; color: #aaa; font-size: 0.85rem; }
 
 .client-name { font-weight: 600; font-size: 0.9rem; }

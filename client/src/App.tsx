@@ -5,8 +5,8 @@ export default function App() {
   return (
     <div className="app">
       <header>
-        <h1>Sara</h1>
-        <p>Mortgage Advisor Assistant</p>
+        <h1>שרה</h1>
+        <p>עוזרת יועץ משכנתאות</p>
       </header>
       <main>
         <Chat />

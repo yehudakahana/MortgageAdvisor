@@ -52,3 +52,4 @@ To prevent excessive API spending during development via Claude Code, you **MUST
 
 Let's build something amazing! Whenever you are ready to write code,  Before starting any task, read ONLY the files directly relevant to that task.
 
+6. **Language Separation:** All user-facing text, messages, and UI labels must be written in Hebrew. All code naming (variables, functions, classes, file names, API routes, comments in code) must be in English only.

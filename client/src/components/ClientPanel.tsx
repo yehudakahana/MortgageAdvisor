@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 
 interface Document {
@@ -182,16 +183,17 @@ export default function ClientPanel() {
           )}
 
           <div className="space-y-2">
-            <select
-              value={uploadType}
-              onChange={(e) => setUploadType(e.target.value)}
-              className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
-            >
-              <option value="paystub">תלוש שכר</option>
-              <option value="bank_statement">דף חשבון</option>
-              <option value="id_card">תעודת זהות</option>
-              <option value="other">אחר</option>
-            </select>
+            <Select value={uploadType} onValueChange={setUploadType}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="paystub">תלוש שכר</SelectItem>
+                <SelectItem value="bank_statement">דף חשבון</SelectItem>
+                <SelectItem value="id_card">תעודת זהות</SelectItem>
+                <SelectItem value="other">אחר</SelectItem>
+              </SelectContent>
+            </Select>
             <input
               type="file"
               accept=".pdf"

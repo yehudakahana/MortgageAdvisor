@@ -1,298 +1,42 @@
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-body {
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Arial Hebrew", sans-serif;
-  background: #f4f6f8;
-  color: #1a1a2e;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-  direction: rtl;
+@layer base {
+  :root {
+    --background: 220 20% 97%;
+    --foreground: 240 10% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 10%;
+    --primary: 240 47% 14%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 5% 94%;
+    --secondary-foreground: 240 10% 10%;
+    --muted: 240 5% 94%;
+    --muted-foreground: 240 5% 50%;
+    --accent: 240 5% 90%;
+    --accent-foreground: 240 10% 10%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 6% 88%;
+    --input: 240 6% 88%;
+    --ring: 240 47% 14%;
+    --radius: 0.5rem;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 10%;
+  }
 }
 
-#root {
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-}
-
-.app {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-header {
-  background: #1a1a2e;
-  color: #fff;
-  padding: 16px 24px;
-}
-
-header h1 { font-size: 1.4rem; font-weight: 700; }
-header p  { font-size: 0.85rem; opacity: 0.6; }
-
-main {
-  flex: 1;
-  display: flex;
-  overflow: hidden;
-}
-
-/* Chat */
-.chat-container {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  overflow: hidden;
-}
-
-.messages {
-  flex: 1;
-  overflow-y: auto;
-  padding: 24px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.bubble {
-  max-width: 72%;
-  padding: 10px 14px;
-  border-radius: 12px;
-  line-height: 1.5;
-}
-
-.bubble.assistant {
-  align-self: flex-start;
-  background: #fff;
-  border: 1px solid #e0e0e0;
-}
-
-.bubble.user {
-  align-self: flex-end;
-  background: #1a1a2e;
-  color: #fff;
-}
-
-.bubble .label {
-  display: block;
-  font-size: 0.7rem;
-  font-weight: 600;
-  opacity: 0.55;
-  margin-bottom: 4px;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-}
-
-.typing { opacity: 0.5; font-style: italic; }
-
-.input-bar {
-  display: flex;
-  gap: 8px;
-  padding: 12px 16px;
-  border-top: 1px solid #e0e0e0;
-  background: #fff;
-}
-
-.input-bar textarea {
-  flex: 1;
-  resize: none;
-  border: 1px solid #d0d0d0;
-  border-radius: 8px;
-  padding: 10px 12px;
-  font-size: 0.95rem;
-  font-family: inherit;
-  outline: none;
-  transition: border-color 0.15s;
-}
-
-.input-bar textarea:focus { border-color: #1a1a2e; }
-
-.input-bar button {
-  padding: 10px 20px;
-  background: #1a1a2e;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-
-.input-bar button:disabled { opacity: 0.4; cursor: not-allowed; }
-.input-bar button:not(:disabled):hover { opacity: 0.85; }
-
-/* Client Panel */
-.client-panel {
-  width: 300px;
-  min-width: 260px;
-  border-right: 1px solid #e0e0e0;
-  background: #fff;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-.panel-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 14px 16px;
-  border-bottom: 1px solid #e0e0e0;
-  font-weight: 600;
-  font-size: 0.9rem;
-  background: #f9f9fb;
-}
-
-.btn-add {
-  background: #1a1a2e;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 5px 12px;
-  font-size: 0.82rem;
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-.btn-add:hover { opacity: 0.8; }
-
-/* New client form */
-.client-form {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 12px 16px;
-  border-bottom: 1px solid #e0e0e0;
-  background: #f4f6f8;
-}
-
-.client-form input {
-  border: 1px solid #d0d0d0;
-  border-radius: 6px;
-  padding: 8px 10px;
-  font-size: 0.88rem;
-  font-family: inherit;
-  outline: none;
-  transition: border-color 0.15s;
-}
-.client-form input:focus { border-color: #1a1a2e; }
-
-.client-form button {
-  background: #1a1a2e;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 8px;
-  font-size: 0.88rem;
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-.client-form button:disabled { opacity: 0.45; cursor: not-allowed; }
-.client-form button:not(:disabled):hover { opacity: 0.82; }
-
-/* Client list */
-.client-list {
-  list-style: none;
-  overflow-y: auto;
-  flex: 1;
-  max-height: 260px;
-}
-
-.client-list li {
-  padding: 10px 16px;
-  cursor: pointer;
-  border-bottom: 1px solid #f0f0f0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  transition: background 0.1s;
-}
-.client-list li:hover { background: #f4f6f8; }
-.client-list li.active { background: #eef0ff; border-right: 3px solid #1a1a2e; }
-.client-list li.empty { cursor: default; color: #aaa; font-size: 0.85rem; }
-
-.client-name { font-weight: 600; font-size: 0.9rem; }
-.client-phone { font-size: 0.78rem; color: #777; }
-
-/* Upload section */
-.upload-section {
-  border-top: 1px solid #e0e0e0;
-  padding: 12px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  overflow-y: auto;
-}
-
-.section-title {
-  font-size: 0.8rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: #555;
-}
-
-.doc-list {
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.doc-list li {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  font-size: 0.82rem;
-}
-.doc-list li.empty { color: #aaa; }
-
-.doc-type {
-  background: #e8eaf6;
-  color: #1a1a2e;
-  padding: 2px 7px;
-  border-radius: 4px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
-.doc-name {
-  color: #555;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.upload-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.upload-controls select,
-.upload-controls input[type="file"] {
-  border: 1px solid #d0d0d0;
-  border-radius: 6px;
-  padding: 7px 10px;
-  font-size: 0.85rem;
-  font-family: inherit;
-  background: #fff;
-  outline: none;
-}
-
-.upload-controls button {
-  background: #1a1a2e;
-  color: #fff;
-  border: none;
-  border-radius: 6px;
-  padding: 8px;
-  font-size: 0.85rem;
-  cursor: pointer;
-  transition: opacity 0.15s;
-}
-.upload-controls button:disabled { opacity: 0.45; cursor: not-allowed; }
-.upload-controls button:not(:disabled):hover { opacity: 0.82; }
-
-.error {
-  color: #c0392b;
-  font-size: 0.8rem;
+@layer base {
+  * {
+    @apply border-border box-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    direction: rtl;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Arial Hebrew", sans-serif;
+  }
+  #root {
+    @apply h-screen flex flex-col;
+  }
 }

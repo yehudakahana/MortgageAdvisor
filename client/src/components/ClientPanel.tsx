@@ -204,6 +204,7 @@ export default function ClientPanel() {
                 onClick={() => {
                   setSelectedId(c.id === selectedId ? null : c.id);
                   setSelectedFile("");
+                  setUploadError("");
                   if (fileRef.current) fileRef.current.value = "";
                 }}
                 className={cn(

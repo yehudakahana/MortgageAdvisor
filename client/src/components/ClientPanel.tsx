@@ -96,6 +96,7 @@ export default function ClientPanel() {
       const client = await createClient({ name: name.trim(), phone: phone.trim(), email: email.trim() });
       setClients((prev) => [...prev, client]);
       setSelectedId(client.id);
+      setSearchQuery("");
       setIsCreatingClient(false);
       setName(""); setPhone(""); setEmail("");
     } catch {
@@ -125,6 +126,11 @@ export default function ClientPanel() {
       setIsUploading(false);
     }
   }
+
+  const q = searchQuery.trim().toLowerCase();
+  const filteredClients = q
+    ? clients.filter((c) => c.name.toLowerCase().includes(q) || c.phone.includes(q))
+    : clients;
 
   return (
     <aside className="w-96 flex-shrink-0 border-s border-border/70 bg-card flex flex-col overflow-hidden shadow-[-4px_0_20px_-4px_rgba(0,0,0,0.06)]">
@@ -214,19 +220,14 @@ export default function ClientPanel() {
             <p className="text-sm text-muted-foreground">אין לקוחות עדיין.</p>
             <p className="text-xs text-muted-foreground/60">לחץ "לקוח חדש" להוספת הלקוח הראשון.</p>
           </div>
-        ) : (() => {
-          const q = searchQuery.trim().toLowerCase();
-          const filtered = q
-            ? clients.filter((c) => c.name.toLowerCase().includes(q) || c.phone.includes(q))
-            : clients;
-          return filtered.length === 0 ? (
+        ) : filteredClients.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 gap-2 text-center px-6">
               <Search className="w-6 h-6 text-muted-foreground/30" />
               <p className="text-sm text-muted-foreground">לא נמצאו לקוחות.</p>
             </div>
           ) : (
           <div>
-            {filtered.map((c) => (
+            {filteredClients.map((c) => (
               <Fragment key={c.id}>
                 {/* Client row */}
                 <div
@@ -330,8 +331,7 @@ export default function ClientPanel() {
               </Fragment>
             ))}
           </div>
-          );
-        })()}
+        )}
       </div>
     </aside>
   );

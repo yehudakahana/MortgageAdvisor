@@ -51,7 +51,7 @@ export const claudeAdapter: LLMAdapter = {
       return { content: (textBlock as { text: string } | undefined)?.text ?? "" };
     }
 
-    const prompt = (request as { prompt: string }).prompt;
+    const prompt = "prompt" in request ? request.prompt : "";
     const response = await anthropic.messages.create({
       model,
       max_tokens: 2048,

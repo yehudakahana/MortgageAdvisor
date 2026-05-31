@@ -1,8 +1,14 @@
+export interface ExtractedData {
+  rawText: string;
+  [key: string]: unknown;
+}
+
 export interface Document {
   id: string;
   type: "paystub" | "bank_statement" | "id_card" | "other";
   filename: string;
   uploadedAt: string;
+  extractedData?: ExtractedData | { error: string };
 }
 
 export interface Client {

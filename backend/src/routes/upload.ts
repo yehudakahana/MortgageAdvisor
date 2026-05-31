@@ -5,6 +5,7 @@ import fs from "fs";
 import { v4 as uuidv4 } from "uuid";
 import * as db from "../services/dbService";
 import { Document } from "../types";
+import { extractFromFile } from "../services/extractionService";
 
 const router = Router();
 
@@ -48,6 +49,22 @@ router.post("/:clientId", upload.single("file"), (req: Request, res: Response) =
 
   const updated = db.addDocumentToClient(req.params.clientId, doc);
   res.status(201).json(updated);
+
+  // Non-blocking background extraction — never delays the upload response
+  const filePath = req.file.path;
+  const mimeType = req.file.mimetype;
+  const { clientId } = req.params;
+  void (async () => {
+    try {
+      const data = await extractFromFile(filePath, mimeType);
+      db.updateDocumentExtraction(clientId, doc.id, data);
+      console.log(`[extraction] completed for doc ${doc.id}`);
+    } catch (err) {
+      const reason = err instanceof Error ? err.message : String(err);
+      console.error(`[extraction] failed for doc ${doc.id}:`, reason);
+      db.updateDocumentExtraction(clientId, doc.id, { error: reason });
+    }
+  })();
 });
 
 export default router;

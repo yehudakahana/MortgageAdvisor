@@ -4,27 +4,32 @@
 
 @layer base {
   :root {
-    --background: 220 20% 97%;
-    --foreground: 240 10% 10%;
+    --background: 220 30% 96%;
+    --foreground: 224 71% 4%;
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 10%;
-    --primary: 240 47% 14%;
+    --card-foreground: 224 71% 4%;
+    --primary: 244 76% 26%;
     --primary-foreground: 0 0% 98%;
-    --secondary: 240 5% 94%;
-    --secondary-foreground: 240 10% 10%;
-    --muted: 240 5% 94%;
-    --muted-foreground: 240 5% 50%;
-    --accent: 240 5% 90%;
-    --accent-foreground: 240 10% 10%;
+    --secondary: 220 20% 92%;
+    --secondary-foreground: 224 71% 4%;
+    --muted: 220 20% 92%;
+    --muted-foreground: 220 9% 46%;
+    --accent: 220 20% 88%;
+    --accent-foreground: 224 71% 4%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 6% 88%;
-    --input: 240 6% 88%;
-    --ring: 240 47% 14%;
-    --radius: 0.5rem;
+    --border: 220 13% 87%;
+    --input: 220 13% 87%;
+    --ring: 244 76% 26%;
+    --radius: 0.75rem;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 10%;
+    --popover-foreground: 224 71% 4%;
   }
+}
+
+@keyframes typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.45; }
+  30% { transform: translateY(-5px); opacity: 1; }
 }
 
 @layer base {

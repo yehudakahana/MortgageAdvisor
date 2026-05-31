@@ -1,5 +1,11 @@
 import { useState, useEffect, useRef } from "react";
 import { getClients, createClient } from "../api";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface Document {
   id: string;
@@ -15,6 +21,13 @@ interface Client {
   email: string;
   documents: Document[];
 }
+
+const DOC_TYPE_LABELS: Record<string, string> = {
+  paystub: "תלוש שכר",
+  bank_statement: "דף חשבון",
+  id_card: "תעודת זהות",
+  other: "אחר",
+};
 
 export default function ClientPanel() {
   const [clients, setClients] = useState<Client[]>([]);
@@ -88,64 +101,107 @@ export default function ClientPanel() {
   }
 
   return (
-    <aside className="client-panel">
-      <div className="panel-header">
-        <span>לקוחות</span>
-        <button className="btn-add" onClick={() => { setShowForm((v) => !v); setFormError(""); }}>
+    <aside className="w-72 flex-shrink-0 border-s border-border bg-background flex flex-col overflow-hidden">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/40">
+        <h2 className="font-semibold text-sm">לקוחות</h2>
+        <Button
+          size="sm"
+          variant={showForm ? "outline" : "default"}
+          onClick={() => { setShowForm((v) => !v); setFormError(""); }}
+        >
           {showForm ? "ביטול" : "+ חדש"}
-        </button>
+        </Button>
       </div>
 
       {showForm && (
-        <form className="client-form" onSubmit={handleCreate}>
-          <input placeholder="שם מלא *" value={name} onChange={(e) => setName(e.target.value)} />
-          <input placeholder="טלפון *" value={phone} onChange={(e) => setPhone(e.target.value)} />
-          <input placeholder="אימייל" value={email} onChange={(e) => setEmail(e.target.value)} />
-          {formError && <p className="error">{formError}</p>}
-          <button type="submit" disabled={saving}>{saving ? "שומר..." : "הוסף לקוח"}</button>
-        </form>
+        <Card className="m-3 shadow-sm border-border">
+          <CardContent className="pt-4 pb-4">
+            <form onSubmit={handleCreate} className="space-y-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="client-name">שם מלא *</Label>
+                <Input id="client-name" placeholder="ישראל ישראלי" value={name} onChange={(e) => setName(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="client-phone">טלפון *</Label>
+                <Input id="client-phone" placeholder="050-0000000" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="client-email">אימייל</Label>
+                <Input id="client-email" placeholder="mail@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+              </div>
+              {formError && <p className="text-destructive text-xs">{formError}</p>}
+              <Button type="submit" disabled={saving} className="w-full" size="sm">
+                {saving ? "שומר..." : "הוסף לקוח"}
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
       )}
 
-      <ul className="client-list">
-        {clients.length === 0 && <li className="empty">אין לקוחות עדיין.</li>}
-        {clients.map((c) => (
-          <li
-            key={c.id}
-            className={c.id === selectedId ? "active" : ""}
-            onClick={() => setSelectedId(c.id === selectedId ? null : c.id)}
-          >
-            <span className="client-name">{c.name}</span>
-            <span className="client-phone">{c.phone}</span>
-          </li>
-        ))}
-      </ul>
-
-      {selected && (
-        <div className="upload-section">
-          <p className="section-title">קבצים — {selected.name}</p>
-
-          <ul className="doc-list">
-            {selected.documents.length === 0 && <li className="empty">לא הועלו קבצים.</li>}
-            {selected.documents.map((d) => (
-              <li key={d.id}>
-                <span className="doc-type">{d.type}</span>
-                <span className="doc-name">{d.filename}</span>
+      <div className="flex-1 overflow-y-auto">
+        {clients.length === 0 ? (
+          <p className="text-center text-sm text-muted-foreground py-10">אין לקוחות עדיין.</p>
+        ) : (
+          <ul className="divide-y divide-border">
+            {clients.map((c) => (
+              <li
+                key={c.id}
+                onClick={() => setSelectedId(c.id === selectedId ? null : c.id)}
+                className={cn(
+                  "px-4 py-3 cursor-pointer transition-colors hover:bg-accent",
+                  c.id === selectedId && "bg-primary/10 border-s-2 border-s-primary"
+                )}
+              >
+                <p className="font-medium text-sm">{c.name}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">{c.phone}</p>
               </li>
             ))}
           </ul>
+        )}
+      </div>
 
-          <div className="upload-controls">
-            <select value={uploadType} onChange={(e) => setUploadType(e.target.value)}>
+      {selected && (
+        <div className="border-t border-border p-3 space-y-3 bg-muted/20 flex-shrink-0">
+          <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">
+            קבצים — {selected.name}
+          </p>
+
+          {selected.documents.length === 0 ? (
+            <p className="text-xs text-muted-foreground">לא הועלו קבצים.</p>
+          ) : (
+            <ul className="space-y-1.5">
+              {selected.documents.map((d) => (
+                <li key={d.id} className="flex items-center gap-2">
+                  <Badge variant="secondary" className="shrink-0">
+                    {DOC_TYPE_LABELS[d.type] ?? d.type}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground truncate">{d.filename}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <div className="space-y-2">
+            <select
+              value={uploadType}
+              onChange={(e) => setUploadType(e.target.value)}
+              className="w-full h-9 rounded-md border border-input bg-background px-3 text-sm focus:outline-none focus:ring-1 focus:ring-ring"
+            >
               <option value="paystub">תלוש שכר</option>
               <option value="bank_statement">דף חשבון</option>
               <option value="id_card">תעודת זהות</option>
               <option value="other">אחר</option>
             </select>
-            <input type="file" accept=".pdf" ref={fileRef} />
-            <button onClick={handleUpload} disabled={uploading}>
+            <input
+              type="file"
+              accept=".pdf"
+              ref={fileRef}
+              className="w-full text-xs text-muted-foreground cursor-pointer"
+            />
+            <Button onClick={handleUpload} disabled={uploading} className="w-full" size="sm">
               {uploading ? "מעלה..." : "העלה PDF"}
-            </button>
-            {uploadError && <p className="error">{uploadError}</p>}
+            </Button>
+            {uploadError && <p className="text-destructive text-xs">{uploadError}</p>}
           </div>
         </div>
       )}

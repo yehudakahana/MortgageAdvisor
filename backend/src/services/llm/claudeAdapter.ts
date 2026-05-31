@@ -9,22 +9,17 @@ const EXTRACTION_SYSTEM =
   "Return ONLY valid JSON — no markdown fences, no explanation, no wrapper text. " +
   "The response must be parseable directly by JSON.parse().";
 
-const EXTRACTION_PROMPT = `Analyze the document above and extract all key information.
+const EXTRACTION_PROMPT = `Analyze the document above and extract EVERY piece of information present in it.
 
-Return a JSON object with these fields:
-- "rawText": Clean, readable summary of the full document content preserving all important details
-- "documentType": Inferred type ("paystub", "bank_statement", "id_card", "contract", "other")
-- "fullName": Full name of the primary subject if present, otherwise null
-- "idNumber": ID or passport number if present, otherwise null
-- "dates": Array of all significant dates found (ISO format preferred)
-- "amounts": Array of monetary amounts as strings with currency (e.g. "12,500 ₪")
-- "employer": Employer or company name if present, otherwise null
-- "bankName": Bank or financial institution name if present, otherwise null
-- "accountNumber": Account number if present — mask all but last 4 digits, otherwise null
-- "netSalary": Monthly net salary amount as string if present, otherwise null
-- "address": Physical address if present, otherwise null
+Return a JSON object where:
+- Every label, field, value, clause, line item, and data point found in the document becomes a key-value pair
+- Keys must be camelCase English, values preserve the original content exactly as written
+- Group related fields under nested objects when they naturally belong together (e.g. "employee": { "name": "...", "id": "..." })
+- Always include these two top-level fields regardless of document type:
+  - "rawText": The full document content as clean readable text, preserving all structure and details
+  - "documentType": Inferred type ("paystub", "bank_statement", "id_card", "contract", "invoice", "other")
 
-Also include any additional domain-specific fields that are significant.`;
+Do not summarize, skip, or omit anything — if it appears in the document, it must appear in the JSON.`;
 
 export const claudeAdapter: LLMAdapter = {
   async run(request: LLMRequest, model: string): Promise<LLMResponse> {
@@ -35,7 +30,7 @@ export const claudeAdapter: LLMAdapter = {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const response = await (anthropic.beta.messages as any).create({
         model,
-        max_tokens: 2048,
+        max_tokens: 4096,
         system: EXTRACTION_SYSTEM,
         messages: [
           {

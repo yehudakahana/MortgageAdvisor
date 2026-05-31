@@ -24,9 +24,9 @@ function TypingDots() {
   );
 }
 
-function SaraAvatar() {
+function AssistantAvatar() {
   return (
-    <div className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-800 flex items-center justify-center text-white text-[10px] font-bold shrink-0 shadow-sm">
+    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-800 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">
       ש
     </div>
   );
@@ -79,19 +79,19 @@ export default function Chat() {
             )}
           >
             <div className="flex items-center gap-1.5">
-              {msg.role === "assistant" && <SaraAvatar />}
-              <span className="text-[11px] text-muted-foreground font-medium tracking-wide">
+              {msg.role === "assistant" && <AssistantAvatar />}
+              <span className="text-xs text-muted-foreground font-medium tracking-wide">
                 {msg.role === "assistant" ? "שרה" : "אתה"}
               </span>
               {msg.role === "user" && (
-                <div className="w-6 h-6 rounded-full bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center text-white text-[10px] font-bold shrink-0 shadow-sm">
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">
                   א
                 </div>
               )}
             </div>
             <div
               className={cn(
-                "rounded-2xl px-4 py-2.5 text-sm leading-relaxed",
+                "rounded-2xl px-5 py-3 text-base leading-relaxed break-words whitespace-pre-wrap",
                 msg.role === "user"
                   ? "bg-gradient-to-br from-indigo-600 to-indigo-900 text-white shadow-md shadow-indigo-900/20"
                   : "bg-card border border-border/70 text-foreground shadow-sm"
@@ -105,8 +105,8 @@ export default function Chat() {
         {loading && (
           <div className="flex flex-col gap-1.5 self-start items-start max-w-[76%]">
             <div className="flex items-center gap-1.5">
-              <SaraAvatar />
-              <span className="text-[11px] text-muted-foreground font-medium tracking-wide">שרה</span>
+              <AssistantAvatar />
+              <span className="text-xs text-muted-foreground font-medium tracking-wide">שרה</span>
             </div>
             <div className="bg-card border border-border/70 rounded-2xl px-4 py-3 shadow-sm">
               <TypingDots />
@@ -122,15 +122,15 @@ export default function Chat() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="שאל את שרה..."
+          placeholder="שאל את שרה משהו..."
           disabled={loading}
-          className="resize-none min-h-[40px] max-h-[120px] flex-1 bg-secondary/50 border-border/60 focus-visible:ring-1 rounded-xl text-sm"
+          className="resize-none min-h-[48px] max-h-[120px] flex-1 bg-secondary/50 border-border/60 focus-visible:ring-1 rounded-xl text-base"
         />
         <Button
           onClick={handleSend}
           disabled={loading || !input.trim()}
           size="icon"
-          className="h-10 w-10 rounded-xl flex-shrink-0 bg-gradient-to-br from-indigo-600 to-indigo-900 hover:from-indigo-700 hover:to-indigo-950 shadow-md disabled:opacity-40"
+          className="h-11 w-11 rounded-xl flex-shrink-0 bg-gradient-to-br from-indigo-600 to-indigo-900 hover:from-indigo-700 hover:to-indigo-950 shadow-md disabled:opacity-40"
         >
           <SendHorizontal className="w-4 h-4" />
         </Button>

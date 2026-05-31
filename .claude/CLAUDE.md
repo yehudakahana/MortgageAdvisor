@@ -19,7 +19,8 @@ Welcome, Claude! You are an autonomous senior developer and AI engineer working 
 ##  Coding Standards & Rules
 
 1. **Keep it Simple (YAGNI):** Do not over-engineer. Focus on clean, minimal code that achieves the MVP goals.
-2. **Data Isolation (Service Layer):** All reads and writes to `db.json` must pass through `dbService.ts`. Never use `fs` methods directly inside the API routes.
+- **File Size Limit:** If a component or file exceeds 150 lines, extract logic into separate files (e.g., custom hooks, helper functions, sub-components).2. 
+**Data Isolation (Service Layer):** All reads and writes to `db.json` must pass through `dbService.ts`. Never use `fs` methods directly inside the API routes.
 3. **TypeScript Strictly Typed:** Ensure all JSON structures match strictly defined types/interfaces. Use `Zod` for runtime validation if available.
 4. **Structured LLM Outputs:** When writing endpoints that call Claude/OpenAI APIs for data extraction, always enforce strict JSON outputs.
 5. **Separation of Concerns:** Keep Client logic and Backend logic strictly separated. The client is a dumb interface; all "brains", data parsing, and tool execution happen on the Backend.

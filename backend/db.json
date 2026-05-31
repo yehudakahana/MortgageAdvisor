@@ -24,22 +24,6 @@
         }
       ],
       "createdAt": "2026-05-30T20:56:35.488Z"
-    },
-    {
-      "id": "6f5794ba-24c4-4326-a052-932244b268b3",
-      "name": "מנחם מורגן",
-      "phone": "050000000",
-      "email": "@gmail",
-      "notes": "",
-      "documents": [
-        {
-          "id": "f00361a4-25a6-429c-b6c9-748bf9e83d41",
-          "type": "other",
-          "filename": "7200f134-7587-4ca0-a315-bf29efc6d8fb.pdf",
-          "uploadedAt": "2026-05-31T10:15:47.092Z"
-        }
-      ],
-      "createdAt": "2026-05-31T10:15:27.654Z"
     }
   ]
 }

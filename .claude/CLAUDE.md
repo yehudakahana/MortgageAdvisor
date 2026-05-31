@@ -1,3 +1,5 @@
+# Sara — Claude Code Local Config
+
 # Claude Code Project Instructions - Mortgage AI Agent ("Sara")
 
 Welcome, Claude! You are an autonomous senior developer and AI engineer working on "Sara" - an AI-driven assistant for a mortgage consultant. Your goal is to help build, debug, and maintain this system efficiently while adhering to strict architectural patterns and cost-saving guidelines.
@@ -7,7 +9,8 @@ Welcome, Claude! You are an autonomous senior developer and AI engineer working 
 ##  System Architecture & Stack
 
 - **Backend:** Node.js / TypeScript (Express)
-- **Frontend / Client UI:** React/Vite (Simple Chat-as-an-Interface)
+- **Frontend / Client UI:** React/Vite with **Tailwind CSS v3** + **shadcn/ui** component library. All new UI must use shadcn components from `src/components/ui/` and Tailwind utility classes. No custom CSS outside of `index.css` (which holds only Tailwind directives and CSS variable tokens).
+- **UI Path Alias:** The client uses `@/` as an alias for `src/` (e.g. `import { Button } from "@/components/ui/button"`).
 - **Database (MVP):** Single Local `db.json` file managed via a clean Service Layer (`dbService.ts`). **NO external databases or migrations are used yet.**
 - **File Storage:** Local persistent directory (`/uploads/[client_id]/`) for physical PDFs (Paystubs, Bank Statements).
 
@@ -53,3 +56,17 @@ To prevent excessive API spending during development via Claude Code, you **MUST
 Let's build something amazing! Whenever you are ready to write code,  Before starting any task, read ONLY the files directly relevant to that task.
 
 6. **Language Separation:** All user-facing text, messages, and UI labels must be written in Hebrew. All code naming (variables, functions, classes, file names, API routes, comments in code) must be in English only.
+
+## Commands
+See [`.claude/commands/`](./commands/) for all slash commands.
+
+| File | Command | Description |
+|------|---------|-------------|
+| [`commit.md`](./commands/commit.md) | `/commit` | Stage and create a conventional commit |
+
+## Skills
+See [`.claude/skills/`](./skills/) for all skills.
+
+| Folder | Trigger | Description |
+|--------|---------|-------------|
+| [`cr/`](./skills/cr/SKILL.md) | `cr`, `code review`, `review PR/commit` | Code review on commits or PRs |

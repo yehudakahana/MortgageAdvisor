@@ -91,7 +91,7 @@ export default function Chat() {
             </div>
             <div
               className={cn(
-                "rounded-2xl px-5 py-3 text-sm leading-relaxed break-words whitespace-pre-wrap",
+                "rounded-2xl px-5 py-3 text-base leading-relaxed break-words whitespace-pre-wrap",
                 msg.role === "user"
                   ? "bg-gradient-to-br from-indigo-600 to-indigo-900 text-white shadow-md shadow-indigo-900/20"
                   : "bg-card border border-border/70 text-foreground shadow-sm"
@@ -124,7 +124,7 @@ export default function Chat() {
           onKeyDown={handleKeyDown}
           placeholder="שאל את שרה משהו..."
           disabled={loading}
-          className="resize-none min-h-[48px] max-h-[120px] flex-1 bg-secondary/50 border-border/60 focus-visible:ring-1 rounded-xl text-sm"
+          className="resize-none min-h-[48px] max-h-[120px] flex-1 bg-secondary/50 border-border/60 focus-visible:ring-1 rounded-xl text-base"
         />
         <Button
           onClick={handleSend}

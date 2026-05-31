@@ -47,13 +47,15 @@ router.post("/:clientId", upload.single("file"), (req: Request, res: Response) =
     uploadedAt: new Date().toISOString(),
   };
 
-  const updated = db.addDocumentToClient(req.params.clientId, doc);
-  res.status(201).json(updated);
-
-  // Non-blocking background extraction — never delays the upload response
+  // Capture before sending response
   const filePath = req.file.path;
   const mimeType = req.file.mimetype;
   const { clientId } = req.params;
+
+  const updated = db.addDocumentToClient(clientId, doc);
+  res.status(201).json(updated);
+
+  // Non-blocking background extraction — never delays the upload response
   void (async () => {
     try {
       const data = await extractFromFile(filePath, mimeType);

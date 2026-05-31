@@ -200,7 +200,11 @@ export default function ClientPanel() {
             {clients.map((c) => (
               <li
                 key={c.id}
-                onClick={() => setSelectedId(c.id === selectedId ? null : c.id)}
+                onClick={() => {
+                  setSelectedId(c.id === selectedId ? null : c.id);
+                  setSelectedFile("");
+                  if (fileRef.current) fileRef.current.value = "";
+                }}
                 className={cn(
                   "px-4 py-3 cursor-pointer transition-all hover:bg-accent/40 flex items-center gap-3",
                   c.id === selectedId && "bg-indigo-50/70 border-s-2 border-s-indigo-600"

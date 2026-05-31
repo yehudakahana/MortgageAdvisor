@@ -42,10 +42,7 @@
           "id": "052a2ea9-b216-4014-b488-e0fbf4670502",
           "type": "paystub",
           "filename": "abc911fb-5bd8-4549-bf7e-54b5f4592ba4.pdf",
-          "uploadedAt": "2026-05-31T13:13:33.121Z",
-          "extractedData": {
-            "error": "Could not resolve authentication method. Expected one of apiKey, authToken, credentials, config, or profile to be set. Or for one of the \"X-Api-Key\" or \"Authorization\" headers to be explicitly omitted"
-          }
+          "uploadedAt": "2026-05-31T13:13:33.121Z"
         }
       ],
       "createdAt": "2026-05-31T12:56:27.581Z"

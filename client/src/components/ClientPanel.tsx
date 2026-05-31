@@ -3,6 +3,7 @@ import { getClients, createClient } from "../api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { FileUp, UserPlus, Users } from "lucide-react";
@@ -123,9 +124,9 @@ export default function ClientPanel() {
   }
 
   return (
-    <aside className="w-80 flex-shrink-0 border-s border-border/70 bg-white flex flex-col overflow-hidden shadow-[-4px_0_20px_-4px_rgba(0,0,0,0.06)]">
+    <aside className="w-80 flex-shrink-0 border-s border-border/70 bg-card flex flex-col overflow-hidden shadow-[-4px_0_20px_-4px_rgba(0,0,0,0.06)]">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-border/70 bg-gradient-to-b from-slate-50 to-white">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border/70 bg-gradient-to-b from-slate-50 to-card">
         <div className="flex items-center gap-2">
           <Users className="w-4 h-4 text-muted-foreground/70" />
           <h2 className="font-semibold text-sm">לקוחות</h2>
@@ -239,14 +240,14 @@ export default function ClientPanel() {
             <ul className="space-y-1.5">
               {selected.documents.map((d) => (
                 <li key={d.id} className="flex items-center gap-2">
-                  <span
+                  <Badge
                     className={cn(
-                      "text-[10px] font-medium px-2 py-0.5 rounded-full border shrink-0",
+                      "shrink-0 rounded-full text-[10px] font-medium",
                       DOC_TYPE_STYLES[d.type] ?? "bg-gray-50 text-gray-600 border-gray-200"
                     )}
                   >
                     {DOC_TYPE_LABELS[d.type] ?? d.type}
-                  </span>
+                  </Badge>
                   <span className="text-xs text-muted-foreground truncate">{d.filename}</span>
                 </li>
               ))}
@@ -266,7 +267,7 @@ export default function ClientPanel() {
               </SelectContent>
             </Select>
 
-            <label className="flex items-center gap-2 w-full border border-dashed border-border rounded-lg px-3 py-2 cursor-pointer hover:bg-white transition-colors group">
+            <label className="flex items-center gap-2 w-full border border-dashed border-border rounded-lg px-3 py-2 cursor-pointer hover:bg-card transition-colors group">
               <FileUp className="w-3.5 h-3.5 text-muted-foreground/60 group-hover:text-indigo-600 transition-colors shrink-0" />
               <span className="text-xs text-muted-foreground truncate flex-1">
                 {selectedFile || "בחר קובץ PDF..."}

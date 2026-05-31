@@ -7,7 +7,8 @@ Welcome, Claude! You are an autonomous senior developer and AI engineer working 
 ##  System Architecture & Stack
 
 - **Backend:** Node.js / TypeScript (Express)
-- **Frontend / Client UI:** React/Vite (Simple Chat-as-an-Interface)
+- **Frontend / Client UI:** React/Vite with **Tailwind CSS v3** + **shadcn/ui** component library. All new UI must use shadcn components from `src/components/ui/` and Tailwind utility classes. No custom CSS outside of `index.css` (which holds only Tailwind directives and CSS variable tokens).
+- **UI Path Alias:** The client uses `@/` as an alias for `src/` (e.g. `import { Button } from "@/components/ui/button"`).
 - **Database (MVP):** Single Local `db.json` file managed via a clean Service Layer (`dbService.ts`). **NO external databases or migrations are used yet.**
 - **File Storage:** Local persistent directory (`/uploads/[client_id]/`) for physical PDFs (Paystubs, Bank Statements).
 

@@ -22,6 +22,8 @@
     --input: 240 6% 88%;
     --ring: 240 47% 14%;
     --radius: 0.5rem;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 10%;
   }
 }
 

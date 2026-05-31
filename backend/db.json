@@ -24,6 +24,31 @@
         }
       ],
       "createdAt": "2026-05-30T20:56:35.488Z"
+    },
+    {
+      "id": "4c3bff3f-d9aa-4508-9bff-559745e0b065",
+      "name": "מנחם מורגנשטרן",
+      "phone": "0503444563",
+      "email": "m3222@gmail.com",
+      "notes": "",
+      "documents": [
+        {
+          "id": "a49843b5-6a49-46a4-8712-ae8343790f8c",
+          "type": "paystub",
+          "filename": "15a51c92-157e-4672-b1cd-1fd0ef5b18a8.pdf",
+          "uploadedAt": "2026-05-31T12:56:55.169Z"
+        },
+        {
+          "id": "052a2ea9-b216-4014-b488-e0fbf4670502",
+          "type": "paystub",
+          "filename": "abc911fb-5bd8-4549-bf7e-54b5f4592ba4.pdf",
+          "uploadedAt": "2026-05-31T13:13:33.121Z",
+          "extractedData": {
+            "error": "Could not resolve authentication method. Expected one of apiKey, authToken, credentials, config, or profile to be set. Or for one of the \"X-Api-Key\" or \"Authorization\" headers to be explicitly omitted"
+          }
+        }
+      ],
+      "createdAt": "2026-05-31T12:56:27.581Z"
     }
   ]
 }

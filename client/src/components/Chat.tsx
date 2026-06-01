@@ -51,7 +51,11 @@ export default function Chat() {
     setMessages((prev) => [...prev, { role: "user", content: text }]);
     setLoading(true);
     try {
-      const reply = await sendChatMessage(text);
+      // History must start with a user turn — drop the seeded assistant greeting.
+      let start = 0;
+      while (start < messages.length && messages[start].role === "assistant") start++;
+      const history = messages.slice(start);
+      const reply = await sendChatMessage(text, history);
       setMessages((prev) => [...prev, { role: "assistant", content: reply.content }]);
     } catch {
       setMessages((prev) => [...prev, { role: "assistant", content: "משהו השתבש. אנא נסה שוב." }]);

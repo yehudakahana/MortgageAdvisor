@@ -1,3 +1,9 @@
+import { ChatMessage, ExtractedData } from "../../types";
+
+// Static, per-client context shared across an entire conversation / generation.
+// This is the document extraction output (structured JSON + raw text).
+export type ClientData = ExtractedData;
+
 export interface ExtractionRequest {
   taskType: "EXTRACTION";
   filePath: string;
@@ -6,12 +12,18 @@ export interface ExtractionRequest {
 
 export interface ChatRequest {
   taskType: "CHAT";
-  prompt: string;
+  clientData: ClientData;
+  chatHistory: ChatMessage[];
+  userMessage: string;
 }
 
 export interface DocumentGenerationRequest {
   taskType: "DOCUMENT_GENERATION";
-  prompt: string;
+  clientData: ClientData;
+  // Defaults to a contract when omitted.
+  documentType?: string;
+  // Optional extra instructions for the generated document.
+  instructions?: string;
 }
 
 export type LLMRequest = ExtractionRequest | ChatRequest | DocumentGenerationRequest;

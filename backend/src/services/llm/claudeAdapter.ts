@@ -1,25 +1,100 @@
 import Anthropic from "@anthropic-ai/sdk";
 import fs from "fs";
-import { LLMAdapter, LLMRequest, LLMResponse } from "./types";
+import { ClientData, LLMAdapter, LLMRequest, LLMResponse } from "./types";
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
+// ---------------------------------------------------------------------------
+// EXTRACTION
+// ---------------------------------------------------------------------------
+
 const EXTRACTION_SYSTEM =
-  "You are a document analysis assistant. Extract all key information from the provided document. " +
-  "Return ONLY valid JSON — no markdown fences, no explanation, no wrapper text. " +
-  "The response must be parseable directly by JSON.parse().";
+  "You are a precise document data-extraction engine. " +
+  "Return ONLY a single valid JSON object — no markdown fences, no commentary, no wrapper text. " +
+  "The output must be directly parseable by JSON.parse().";
 
-const EXTRACTION_PROMPT = `Analyze the document above and extract EVERY piece of information present in it.
+const EXTRACTION_PROMPT = `Analyze the document above and return a JSON object with EXACTLY two top-level fields:
 
-Return a JSON object where:
-- Every label, field, value, clause, line item, and data point found in the document becomes a key-value pair
-- Keys must be camelCase English, values preserve the original content exactly as written
-- Group related fields under nested objects when they naturally belong together (e.g. "employee": { "name": "...", "id": "..." })
-- Always include these two top-level fields regardless of document type:
-  - "rawText": The full document content as clean readable text, preserving all structure and details
-  - "documentType": Inferred type ("paystub", "bank_statement", "id_card", "contract", "invoice", "other")
+1. "structuredFields": an object of key-value pairs capturing every critical data point — names, dates, amounts, account/ID numbers, and critical clauses. Use clear camelCase English keys; preserve values exactly as written in the document.
+2. "rawText": the full document content as clean, structured, readable text that preserves the original order and details.
 
-Do not summarize, skip, or omit anything — if it appears in the document, it must appear in the JSON.`;
+HARD RULE — missing data:
+- If any field is missing, unreadable, or unclear, set its value to null.
+- Do NOT guess, infer, approximate, or fill in gaps from context or general knowledge. No exceptions.
+
+Return only the JSON object.`;
+
+// ---------------------------------------------------------------------------
+// CHAT
+// ---------------------------------------------------------------------------
+
+const CHAT_SYSTEM_PROMPT = `את/ה "שרה", עוזרת דיגיטלית מקצועית, אדיבה ותמציתית של משרד הייעוץ למשכנתאות.
+
+## כללי יסוד
+- ענה/י תמיד ורק בעברית.
+- בסס/י את כל תשובותייך אך ורק על נתוני הלקוח הסטטיים המצורפים.
+
+## כלל מניעת הזיות (קריטי — אין לחרוג ממנו)
+- ענה/י על שאלות המשתמש אך ורק על סמך נתוני הלקוח הסטטיים שסופקו.
+- אם התשובה אינה נמצאת בתוך הנתונים שסופקו, השב/י במדויק: "אין בידיי את המידע המלא בנושא זה, אשמח להפנות אותך לנציג אנושי."
+- אם הנתונים חלקיים או דו-משמעיים ביחס לשאלה, ציין/י זאת במפורש בעברית לפני מתן התשובה.
+- לעולם אין להשלים מידע חסר מתוך ידע כללי, הקשר או הנחות חיצוניות. אין יוצאים מן הכלל.
+
+## פורמט
+- כתוב/י בעברית במבנה Markdown נקי וקריא: פסקאות קצרות ונקודות (bullets) במידת הצורך, לקריאות גבוהה.`;
+
+// ---------------------------------------------------------------------------
+// DOCUMENT_GENERATION
+// ---------------------------------------------------------------------------
+
+const DOCUMENT_GENERATION_SYSTEM_PROMPT = `את/ה עורך/ת דין מנוסה המנסח/ת מסמכים משפטיים פורמליים בעברית עבור משרד הייעוץ למשכנתאות.
+
+## משימה
+נסח/י מסמך משפטי פורמלי בעברית במבנה קבוע:
+1. פתיחה
+2. הצדדים
+3. תנאים והתחייבויות
+4. חתימות
+
+## כללים
+- מפה/י את השדות מתוך נתוני הלקוח בדייקנות — אין להשמיט מספרים, תאריכים או סעיפים כלשהם.
+- אם שדה נדרש חסר בנתונים — סמן/י אותו במפורש באמצעות [חסר נתון] במקום להשלים אותו.
+- שמור/י על טון משפטי מקצועי לכל אורך המסמך.
+- הפלט חייב להיות מוכן לעיון ולחתימה ללא צורך בעריכה נוספת.`;
+
+// Serialize the static client data into a single text block. Kept deterministic
+// (stable key order via JSON.stringify on the same object) so the cached prefix
+// stays byte-identical across turns.
+function serializeClientData(data: ClientData): string {
+  const structured =
+    data.structuredFields != null
+      ? JSON.stringify(data.structuredFields, null, 2)
+      : "(אין נתונים מובנים זמינים)";
+  const rawText = data.rawText ?? "(אין טקסט גולמי זמין)";
+  return `### נתונים מובנים (JSON)\n${structured}\n\n### טקסט גולמי\n${rawText}`;
+}
+
+// Build a cached system array: a frozen persona prompt followed by the static
+// client data. The cache breakpoint on the last block covers everything before
+// it (persona + client data), which is identical across the whole conversation.
+function buildCachedSystem(
+  personaPrompt: string,
+  clientData: ClientData
+): Anthropic.TextBlockParam[] {
+  return [
+    { type: "text", text: personaPrompt },
+    {
+      type: "text",
+      text: `נתוני הלקוח:\n${serializeClientData(clientData)}`,
+      cache_control: { type: "ephemeral" },
+    },
+  ];
+}
+
+function extractText(content: Anthropic.ContentBlock[]): string {
+  const textBlock = content.find((b) => b.type === "text");
+  return textBlock?.type === "text" ? textBlock.text : "";
+}
 
 export const claudeAdapter: LLMAdapter = {
   async run(request: LLMRequest, model: string): Promise<LLMResponse> {
@@ -51,14 +126,42 @@ export const claudeAdapter: LLMAdapter = {
       return { content: (textBlock as { text: string } | undefined)?.text ?? "" };
     }
 
-    const prompt = "prompt" in request ? request.prompt : "";
+    if (request.taskType === "CHAT") {
+      // System (persona + static client data) is cached; only the volatile
+      // conversation history + latest user message change between turns.
+      const messages: Anthropic.MessageParam[] = [
+        ...request.chatHistory.map((m) => ({ role: m.role, content: m.content })),
+        { role: "user", content: request.userMessage },
+      ];
+
+      const response = await anthropic.messages.create({
+        model,
+        max_tokens: 2048,
+        system: buildCachedSystem(CHAT_SYSTEM_PROMPT, request.clientData),
+        messages,
+      });
+
+      return { content: extractText(response.content) };
+    }
+
+    // DOCUMENT_GENERATION
+    const documentType = request.documentType ?? "חוזה";
+    const instructions = request.instructions
+      ? `\n\nהנחיות נוספות:\n${request.instructions}`
+      : "";
+
     const response = await anthropic.messages.create({
       model,
-      max_tokens: 2048,
-      messages: [{ role: "user", content: prompt }],
+      max_tokens: 4096,
+      system: buildCachedSystem(DOCUMENT_GENERATION_SYSTEM_PROMPT, request.clientData),
+      messages: [
+        {
+          role: "user",
+          content: `צור/י ${documentType} משפטי מלא ומוכן לחתימה בהתבסס על נתוני הלקוח.${instructions}`,
+        },
+      ],
     });
 
-    const textBlock = response.content.find((b) => b.type === "text");
-    return { content: textBlock?.type === "text" ? textBlock.text : "" };
+    return { content: extractText(response.content) };
   },
 };

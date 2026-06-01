@@ -1,14 +1,9 @@
-import { useState, useRef, useEffect } from "react";
-import { sendChatMessage } from "../api";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SendHorizontal } from "lucide-react";
 import { cn } from "@/lib/utils";
-
-interface Message {
-  role: "user" | "assistant";
-  content: string;
-}
+import { useChat } from "../hooks/useChat";
+import ChatScopeSelect from "./ChatScopeSelect";
 
 function TypingDots() {
   return (
@@ -33,46 +28,22 @@ function AssistantAvatar() {
 }
 
 export default function Chat() {
-  const [messages, setMessages] = useState<Message[]>([
-    { role: "assistant", content: "שלום! אני שרה, עוזרת יועץ המשכנתאות שלך. במה אוכל לעזור?" },
-  ]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  async function handleSend() {
-    const text = input.trim();
-    if (!text || loading) return;
-    setInput("");
-    setMessages((prev) => [...prev, { role: "user", content: text }]);
-    setLoading(true);
-    try {
-      // History must start with a user turn — drop the seeded assistant greeting.
-      let start = 0;
-      while (start < messages.length && messages[start].role === "assistant") start++;
-      const history = messages.slice(start);
-      const reply = await sendChatMessage(text, history);
-      setMessages((prev) => [...prev, { role: "assistant", content: reply.content }]);
-    } catch {
-      setMessages((prev) => [...prev, { role: "assistant", content: "משהו השתבש. אנא נסה שוב." }]);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const {
+    clients, scopeId, changeScope,
+    messages, input, setInput, loading, send, bottomRef,
+  } = useChat();
 
   function handleKeyDown(e: React.KeyboardEvent) {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      handleSend();
+      send();
     }
   }
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden bg-gradient-to-b from-background via-secondary/30 to-background">
+      <ChatScopeSelect clients={clients} value={scopeId} onChange={changeScope} disabled={loading} />
+
       <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-4">
         {messages.map((msg, i) => (
           <div
@@ -131,7 +102,7 @@ export default function Chat() {
           className="resize-none min-h-[48px] max-h-[120px] flex-1 bg-secondary/50 border-border/60 focus-visible:ring-1 rounded-xl text-base"
         />
         <Button
-          onClick={handleSend}
+          onClick={send}
           disabled={loading || !input.trim()}
           size="icon"
           className="h-11 w-11 rounded-xl flex-shrink-0 bg-gradient-to-br from-indigo-600 to-indigo-900 hover:from-indigo-700 hover:to-indigo-950 shadow-md disabled:opacity-40"

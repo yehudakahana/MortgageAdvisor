@@ -19,8 +19,8 @@ Welcome, Claude! You are an autonomous senior developer and AI engineer working 
 ##  Coding Standards & Rules
 
 1. **Keep it Simple (YAGNI):** Do not over-engineer. Focus on clean, minimal code that achieves the MVP goals.
-- **File Size Limit:** If a component or file exceeds 150 lines, extract logic into separate files (e.g., custom hooks, helper functions, sub-components).2. 
-**Data Isolation (Service Layer):** All reads and writes to `db.json` must pass through `dbService.ts`. Never use `fs` methods directly inside the API routes.
+   - **File Size Limit:** If a component or file exceeds 150 lines, extract logic into separate files (e.g., custom hooks, helper functions, sub-components).
+2. **Data Isolation (Service Layer):** All reads and writes to `db.json` must pass through `dbService.ts`. Never use `fs` methods directly inside the API routes.
 3. **TypeScript Strictly Typed:** Ensure all JSON structures match strictly defined types/interfaces. Use `Zod` for runtime validation if available.
 4. **Structured LLM Outputs:** When writing endpoints that call Claude/OpenAI APIs for data extraction, always enforce strict JSON outputs.
 5. **Separation of Concerns:** Keep Client logic and Backend logic strictly separated. The client is a dumb interface; all "brains", data parsing, and tool execution happen on the Backend.
@@ -41,7 +41,7 @@ To prevent excessive API spending during development via Claude Code, you **MUST
 
 1. **Respect `.gitignore`:** Never scan, index, or read files inside `node_modules`, `.venv`, `dist`, or `build` folders.
 2. **Context Economy:** When asked to fix a bug or add a feature, only read the specific files involved. Do not read the entire codebase unless explicitly instructed.
-3. **No Halucinated Package Installs:** Do not install random npm/python packages without verifying they are absolutely necessary and lightweight.
+3. **No Hallucinated Package Installs:** Do not install random npm/python packages without verifying they are absolutely necessary and lightweight.
 4. **Be Concise:** Keep your explanations in the terminal short and focused. Write the code, run the test, and output the result.
 
 ---

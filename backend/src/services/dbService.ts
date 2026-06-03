@@ -1,6 +1,6 @@
 import fs from "fs";
 import path from "path";
-import { DB, Client, Document, ExtractedData } from "../types";
+import { DB, Client, Document, ExtractedData, ExtractionError } from "../types";
 
 const DB_PATH = path.resolve(__dirname, "../../db.json");
 
@@ -49,7 +49,7 @@ export function addDocumentToClient(clientId: string, doc: Document): Client | n
 export function updateDocumentExtraction(
   clientId: string,
   docId: string,
-  extractedData: ExtractedData | { error: string }
+  extractedData: ExtractedData | ExtractionError
 ): Client | null {
   const db = readDB();
   const client = db.clients.find((c) => c.id === clientId);

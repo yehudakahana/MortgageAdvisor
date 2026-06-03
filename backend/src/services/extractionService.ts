@@ -1,4 +1,4 @@
-import { ExtractedData } from "../types";
+import { ExtractedData, ExtractionError } from "../types";
 import { routeToLLM } from "./llm/router";
 
 function parseJsonResponse(raw: string): ExtractedData {
@@ -7,21 +7,21 @@ function parseJsonResponse(raw: string): ExtractedData {
     .replace(/\s*```$/i, "")
     .trim();
 
-  const parsed = JSON.parse(stripped) as ExtractedData;
-
-  if (typeof parsed.rawText !== "string") {
-    parsed.rawText = raw;
-  }
-
-  return parsed;
+  return JSON.parse(stripped) as ExtractedData;
 }
 
-export async function extractFromFile(filePath: string, mimeType: string): Promise<ExtractedData> {
+export async function extractFromFile(
+  filePath: string,
+  mimeType: string
+): Promise<ExtractedData | ExtractionError> {
   const response = await routeToLLM("EXTRACTION", { filePath, mimeType });
 
   try {
     return parseJsonResponse(response.content);
   } catch {
-    return { rawText: response.content };
+    // Never throw on malformed JSON — log the raw response and persist it so the
+    // failure is visible and debuggable rather than silently swallowed.
+    console.error("[extraction] parse_failed — raw LLM response:", response.content);
+    return { error: "parse_failed", raw: response.content };
   }
 }

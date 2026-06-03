@@ -7,9 +7,12 @@ export interface ModelConfig {
 }
 
 const CLAUDE_MODEL = process.env.CLAUDE_MODEL ?? "claude-sonnet-4-6";
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.0-flash";
 
 export const TASK_MODEL_MAP: Record<TaskType, ModelConfig> = {
-  EXTRACTION: { provider: "claude", model: CLAUDE_MODEL },
+  // Extraction runs on Gemini Flash (fast + cheap for PDF/image parsing).
+  EXTRACTION: { provider: "gemini", model: GEMINI_MODEL },
+  // Chat and document generation stay on Claude.
   DOCUMENT_GENERATION: { provider: "claude", model: CLAUDE_MODEL },
   CHAT: { provider: "claude", model: CLAUDE_MODEL },
 };

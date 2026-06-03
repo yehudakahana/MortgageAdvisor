@@ -1,13 +1,20 @@
 const BASE = "/api";
 
-export async function sendChatMessage(message: string) {
+export type ChatMessage = { role: "user" | "assistant"; content: string };
+
+// clientId is optional: omit it for global chat (queries all clients).
+export async function sendChatMessage(
+  message: string,
+  chatHistory: ChatMessage[] = [],
+  clientId?: string
+) {
   const res = await fetch(`${BASE}/chat`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ message }),
+    body: JSON.stringify({ message, chatHistory, clientId }),
   });
   if (!res.ok) throw new Error("Chat request failed");
-  return res.json() as Promise<{ role: string; content: string }>;
+  return res.json() as Promise<ChatMessage>;
 }
 
 export async function getClients() {

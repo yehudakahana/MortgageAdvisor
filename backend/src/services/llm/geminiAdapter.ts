@@ -1,21 +1,35 @@
+import { GoogleGenAI } from "@google/genai";
+import fs from "fs";
 import { LLMAdapter, LLMRequest, LLMResponse } from "./types";
+import { EXTRACTION_SYSTEM, EXTRACTION_PROMPT } from "./prompts";
 
-// TODO: Implement Gemini adapter
-// Steps to wire up:
-//   1. Install: npm install @google/generative-ai
-//   2. Add GEMINI_API_KEY to .env
-//   3. Implement run() for each TaskType using the Gemini SDK
-//   4. In config/llmModels.ts, set the desired tasks to { provider: "gemini", model: "gemini-1.5-pro" }
-class NotImplementedError extends Error {
-  constructor(feature: string) {
-    super(`Gemini adapter: "${feature}" is not yet implemented. See TODO in geminiAdapter.ts.`);
-    this.name = "NotImplementedError";
-  }
-}
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 export const geminiAdapter: LLMAdapter = {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  async run(_request: LLMRequest, _model: string): Promise<LLMResponse> {
-    throw new NotImplementedError("run()");
+  async run(request: LLMRequest, model: string): Promise<LLMResponse> {
+    // Gemini is wired only for document extraction; CHAT and DOCUMENT_GENERATION
+    // stay on Claude (see config/llmModels.ts).
+    if (request.taskType !== "EXTRACTION") {
+      throw new Error(
+        `Gemini adapter: "${request.taskType}" is not implemented. Route it to Claude in config/llmModels.ts.`
+      );
+    }
+
+    const base64 = fs.readFileSync(request.filePath).toString("base64");
+
+    const response = await ai.models.generateContent({
+      model,
+      contents: [
+        { inlineData: { mimeType: request.mimeType, data: base64 } },
+        { text: EXTRACTION_PROMPT },
+      ],
+      config: {
+        systemInstruction: EXTRACTION_SYSTEM,
+        // Force a clean JSON object — no markdown fences for the parser to strip.
+        responseMimeType: "application/json",
+      },
+    });
+
+    return { content: response.text ?? "" };
   },
 };

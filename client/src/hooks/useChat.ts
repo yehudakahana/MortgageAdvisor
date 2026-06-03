@@ -16,6 +16,10 @@ export function useChat() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
+  // Committed history sent to the LLM: only successful user→assistant pairs.
+  // Kept separate from `messages` so the greeting and failed turns (optimistic
+  // user message + error bubble) never leak into the model's context.
+  const historyRef = useRef<ChatMessage[]>([]);
 
   useEffect(() => {
     getClients()
@@ -30,6 +34,7 @@ export function useChat() {
   // Switching scope starts a fresh conversation so contexts don't mix.
   function changeScope(id: string) {
     setScopeId(id);
+    historyRef.current = [];
     setMessages([greeting(clients.find((c) => c.id === id))]);
   }
 
@@ -37,14 +42,13 @@ export function useChat() {
     const text = input.trim();
     if (!text || loading) return;
     setInput("");
-    setMessages((prev) => [...prev, { role: "user", content: text }]);
+    const userMessage: ChatMessage = { role: "user", content: text };
+    setMessages((prev) => [...prev, userMessage]);
     setLoading(true);
     try {
-      // History must start with a user turn — drop the seeded assistant greeting.
-      let start = 0;
-      while (start < messages.length && messages[start].role === "assistant") start++;
-      const history = messages.slice(start);
-      const reply = await sendChatMessage(text, history, scopeId || undefined);
+      const reply = await sendChatMessage(text, historyRef.current, scopeId || undefined);
+      // Commit the exchange only after a successful round trip.
+      historyRef.current = [...historyRef.current, userMessage, reply];
       setMessages((prev) => [...prev, reply]);
     } catch {
       setMessages((prev) => [

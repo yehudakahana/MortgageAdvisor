@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { SendHorizontal } from "lucide-react";
+import { SendHorizontal, MessageSquarePlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useChat } from "../hooks/useChat";
 import ChatScopeSelect from "./ChatScopeSelect";
@@ -30,7 +30,7 @@ function AssistantAvatar() {
 export default function Chat() {
   const {
     clients, scopeId, changeScope,
-    messages, input, setInput, loading, send, bottomRef,
+    messages, input, setInput, loading, send, clearChat, bottomRef,
   } = useChat();
 
   function handleKeyDown(e: React.KeyboardEvent) {
@@ -89,6 +89,19 @@ export default function Chat() {
           </div>
         )}
         <div ref={bottomRef} />
+      </div>
+
+      <div className="flex justify-start px-4 pt-2 pb-1.5">
+        <Button
+          onClick={clearChat}
+          disabled={loading}
+          variant="outline"
+          title="שיחה חדשה"
+          className="h-10 gap-2 rounded-full border-indigo-200 bg-indigo-50/60 px-5 text-base font-bold text-indigo-700 shadow-sm transition-all hover:border-indigo-300 hover:bg-indigo-100 hover:text-indigo-900 hover:shadow-md disabled:opacity-40"
+        >
+          <MessageSquarePlus className="h-5 w-5" />
+          שיחה חדשה
+        </Button>
       </div>
 
       <div className="border-t border-border/50 px-4 py-3 bg-card/80 backdrop-blur-sm flex gap-2.5 items-end flex-shrink-0">

@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { sendChatMessage, getClients, type ChatMessage } from "../api";
+import { sendChatMessage, resetChat, getClients, type ChatMessage } from "../api";
 import type { Client } from "../types/client";
 
 function greeting(client?: Client): ChatMessage {
@@ -38,6 +38,25 @@ export function useChat() {
     setMessages([greeting(clients.find((c) => c.id === id))]);
   }
 
+  // Clear Chat / New Topic: drop the local history and start fresh. Clears the
+  // view optimistically and holds `loading` so sends are blocked mid-reset,
+  // then refines with the backend greeting; the local greeting already shown
+  // stands if the request fails.
+  async function clearChat() {
+    if (loading) return;
+    setLoading(true);
+    historyRef.current = [];
+    setMessages([greeting(clients.find((c) => c.id === scopeId))]);
+    try {
+      const { greeting: serverGreeting } = await resetChat(scopeId || undefined);
+      setMessages([{ role: "assistant", content: serverGreeting }]);
+    } catch {
+      // Local greeting already shown; nothing more to do.
+    } finally {
+      setLoading(false);
+    }
+  }
+
   async function send() {
     const text = input.trim();
     if (!text || loading) return;
@@ -62,6 +81,6 @@ export function useChat() {
 
   return {
     clients, scopeId, changeScope,
-    messages, input, setInput, loading, send, bottomRef,
+    messages, input, setInput, loading, send, clearChat, bottomRef,
   };
 }

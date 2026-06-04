@@ -34,7 +34,11 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
   }
 
   try {
-    const payload = jwt.verify(token, secret) as AuthUser;
+    const payload = jwt.verify(token, secret);
+    if (typeof payload === "string" || typeof payload.username !== "string") {
+      res.status(401).json({ error: "Invalid token payload" });
+      return;
+    }
     req.user = { username: payload.username };
     console.log(
       `[ACTIVITY LOG] User ${payload.username} made a ${req.method} request to ${req.originalUrl} at ${new Date().toISOString()}`

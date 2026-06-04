@@ -1,8 +1,18 @@
 import { Router } from "express";
 import jwt from "jsonwebtoken";
 import rateLimit from "express-rate-limit";
+import { timingSafeEqual } from "crypto";
 
 const router = Router();
+
+// Constant-time string comparison to avoid leaking credential length/match
+// timing. Returns false (without short-circuiting on content) for any mismatch.
+function safeEqual(a: string, b: string): boolean {
+  const bufA = Buffer.from(a);
+  const bufB = Buffer.from(b);
+  if (bufA.length !== bufB.length) return false;
+  return timingSafeEqual(bufA, bufB);
+}
 
 // Throttle brute-force password attempts per IP (relies on app.set("trust proxy")).
 const loginLimiter = rateLimit({
@@ -35,7 +45,9 @@ router.post("/", loginLimiter, (req, res) => {
     return res.status(400).json({ error: "Username and password are required" });
   }
 
-  if (allowedUsers[username] !== password) {
+  // typeof guard also avoids prototype-chain lookups (e.g. "__proto__").
+  const expected = allowedUsers[username];
+  if (typeof expected !== "string" || !safeEqual(expected, password)) {
     return res.status(401).json({ error: "Invalid credentials" });
   }
 

@@ -38,18 +38,22 @@ export function useChat() {
     setMessages([greeting(clients.find((c) => c.id === id))]);
   }
 
-  // Clear Chat / New Topic: drop the local history and start fresh. Asks the
-  // backend to reset the session (and supply the greeting); falls back to the
-  // local greeting if the request fails so the UI always clears.
+  // Clear Chat / New Topic: drop the local history and start fresh. Clears the
+  // view optimistically and holds `loading` so sends are blocked mid-reset,
+  // then refines with the backend greeting; the local greeting already shown
+  // stands if the request fails.
   async function clearChat() {
     if (loading) return;
-    const fallback = greeting(clients.find((c) => c.id === scopeId));
+    setLoading(true);
     historyRef.current = [];
+    setMessages([greeting(clients.find((c) => c.id === scopeId))]);
     try {
       const { greeting: serverGreeting } = await resetChat(scopeId || undefined);
       setMessages([{ role: "assistant", content: serverGreeting }]);
     } catch {
-      setMessages([fallback]);
+      // Local greeting already shown; nothing more to do.
+    } finally {
+      setLoading(false);
     }
   }
 

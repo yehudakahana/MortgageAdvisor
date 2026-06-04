@@ -6,6 +6,11 @@ import { ChatMessage, Client } from "../types";
 
 const router = Router();
 
+// Rolling chat window: only the latest N messages are sent to the LLM to keep
+// token usage and input costs stable. This trims the in-memory payload only —
+// the full history is never persisted server-side, so nothing is lost.
+const CHAT_HISTORY_LIMIT = 15;
+
 // Aggregate one or more clients (profile + successfully-extracted documents)
 // into a single static ClientData blob. Failed extractions ({ error }) are
 // skipped. Passing all clients powers the global chat; a single client scopes
@@ -75,10 +80,14 @@ router.post("/", async (req: Request, res: Response) => {
     ? chatHistory.filter(isChatMessage)
     : [];
 
+  // Rolling window: dispatch only the latest CHAT_HISTORY_LIMIT messages.
+  // slice(-N) is safe for short/empty histories (returns the whole array).
+  const windowedHistory = history.slice(-CHAT_HISTORY_LIMIT);
+
   try {
     const { content } = await routeToLLM("CHAT", {
       clientData: buildClientData(clients),
-      chatHistory: history,
+      chatHistory: windowedHistory,
       userMessage: message,
     });
 
@@ -89,6 +98,35 @@ router.post("/", async (req: Request, res: Response) => {
     console.error("[chat] LLM request failed:", reason);
     res.status(502).json({ error: "Chat request failed" });
   }
+});
+
+// Clear Chat / New Topic: start a fresh conversation for the given scope.
+// The backend holds no per-client chat state (history lives in the request
+// payload), so "resetting" means handing the client a clean, empty history to
+// continue with. Static client data (extractedData) is never touched here, so
+// it stays intact as the baseline context — letting prompt caching kick in
+// fresh against an empty history. Older messages, if logged elsewhere, are
+// untouched: this is a non-destructive acknowledgment, not a deletion.
+router.post("/reset", (req: Request, res: Response) => {
+  const { clientId } = req.body as { clientId?: string };
+
+  let scopedClient: Client | undefined;
+  if (clientId) {
+    scopedClient = db.getClientById(clientId);
+    if (!scopedClient) return res.status(404).json({ error: "Client not found" });
+  }
+
+  const greeting = scopedClient
+    ? `שלום! אני שרה. אני כעת מתמקדת בלקוח ${scopedClient.name}. במה אוכל לעזור?`
+    : "שלום! אני שרה, עוזרת יועץ המשכנתאות שלך. במה אוכל לעזור?";
+
+  console.log(`[chat] session reset for scope: ${clientId ?? "global"}`);
+
+  res.json({
+    clientId: clientId ?? null,
+    chatHistory: [] as ChatMessage[],
+    greeting,
+  });
 });
 
 export default router;

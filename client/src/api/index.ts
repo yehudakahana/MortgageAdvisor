@@ -17,6 +17,22 @@ export async function sendChatMessage(
   return res.json() as Promise<ChatMessage>;
 }
 
+// Clear Chat / New Topic: tell the backend to start a fresh session for the
+// given scope. Returns an empty history plus the scoped greeting to render.
+export async function resetChat(clientId?: string) {
+  const res = await fetch(`${BASE}/chat/reset`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ clientId }),
+  });
+  if (!res.ok) throw new Error("Chat reset failed");
+  return res.json() as Promise<{
+    clientId: string | null;
+    chatHistory: ChatMessage[];
+    greeting: string;
+  }>;
+}
+
 export async function getClients() {
   const res = await fetch(`${BASE}/clients`);
   if (!res.ok) throw new Error("Failed to fetch clients");

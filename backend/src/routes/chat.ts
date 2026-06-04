@@ -122,11 +122,7 @@ router.post("/reset", (req: Request, res: Response) => {
 
   console.log(`[chat] session reset for scope: ${clientId ?? "global"}`);
 
-  res.json({
-    clientId: clientId ?? null,
-    chatHistory: [] as ChatMessage[],
-    greeting,
-  });
+  res.json({ greeting });
 });
 
 export default router;

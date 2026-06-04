@@ -26,11 +26,7 @@ export async function resetChat(clientId?: string) {
     body: JSON.stringify({ clientId }),
   });
   if (!res.ok) throw new Error("Chat reset failed");
-  return res.json() as Promise<{
-    clientId: string | null;
-    chatHistory: ChatMessage[];
-    greeting: string;
-  }>;
+  return res.json() as Promise<{ greeting: string }>;
 }
 
 export async function getClients() {

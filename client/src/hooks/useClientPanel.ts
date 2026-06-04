@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { getClients, createClient } from "../api";
+import { getClients, createClient, authFetch } from "../api";
 import type { Client } from "../types/client";
 
 export function useClientPanel() {
@@ -59,7 +59,7 @@ export function useClientPanel() {
       const form = new FormData();
       form.append("file", file);
       form.append("type", uploadType);
-      const res = await fetch(`/api/upload/${selectedId}`, { method: "POST", body: form });
+      const res = await authFetch(`/api/upload/${selectedId}`, { method: "POST", body: form });
       if (!res.ok) throw new Error();
       const updated: Client = await res.json();
       setClients((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));

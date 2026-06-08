@@ -1,5 +1,4 @@
 import Anthropic from "@anthropic-ai/sdk";
-import fs from "fs";
 import { ClientData, LLMAdapter, LLMRequest, LLMResponse } from "./types";
 import { EXTRACTION_SYSTEM, EXTRACTION_PROMPT } from "./prompts";
 
@@ -80,8 +79,7 @@ function extractText(content: Anthropic.ContentBlock[]): string {
 export const claudeAdapter: LLMAdapter = {
   async run(request: LLMRequest, model: string): Promise<LLMResponse> {
     if (request.taskType === "EXTRACTION") {
-      const fileBuffer = fs.readFileSync(request.filePath);
-      const base64 = fileBuffer.toString("base64");
+      const base64 = request.buffer.toString("base64");
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const response = await (anthropic.beta.messages as any).create({

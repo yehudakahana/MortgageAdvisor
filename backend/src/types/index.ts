@@ -15,7 +15,12 @@ export interface ExtractionError {
 export interface Document {
   id: string;
   type: "paystub" | "bank_statement" | "id_card" | "other";
+  // Original client filename, kept for display only (may be Hebrew).
   filename: string;
+  // R2 object key. Optional for backward compat with legacy disk-era records.
+  key?: string;
+  // Resolved MIME type of the stored object (used for re-extraction/serving).
+  mimetype?: string;
   uploadedAt: Date;
   extractedData?: ExtractedData | ExtractionError;
 }

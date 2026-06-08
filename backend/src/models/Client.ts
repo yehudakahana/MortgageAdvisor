@@ -12,6 +12,10 @@ const DocumentSchema = new Schema<Document>(
       default: "other",
     },
     filename: { type: String, required: true },
+    // R2 object key + resolved MIME. Optional so legacy disk-era subdocuments
+    // (which predate R2) still validate on read/save.
+    key: { type: String },
+    mimetype: { type: String },
     uploadedAt: { type: Date, default: Date.now },
     // Polymorphic: either { structuredFields?, rawText? } on success or
     // { error, raw? } on failure — kept loose as Mixed.

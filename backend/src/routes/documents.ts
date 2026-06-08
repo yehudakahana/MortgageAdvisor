@@ -6,6 +6,7 @@ import {
   uploadObject,
   getViewUrl,
   buildContentDisposition,
+  ownerKeySegment,
 } from "../services/storageService";
 
 const router = Router();
@@ -16,12 +17,13 @@ router.post("/", uploadSingle("file"), validateBuffer, async (req: Request, res:
   const file = req.file;
   const resolved = req.resolvedFile;
   const owner = req.user?.username;
-  if (!file || !resolved) return res.status(400).json({ error: "לא הועלה קובץ" });
-  if (!owner) return res.status(401).json({ error: "לא מאומת" });
+  if (!file || !resolved) return res.status(400).json({ error: "No file uploaded" });
+  if (!owner) return res.status(401).json({ error: "Unauthorized" });
 
-  // Key extension comes from the RESOLVED mime, never the client filename.
+  // Key extension comes from the RESOLVED mime, never the client filename. The
+  // owner segment is sanitized to stay ASCII-safe (usernames may be Hebrew).
   const uuid = randomUUID();
-  const key = `uploads/${owner}/${uuid}.${resolved.ext}`;
+  const key = `uploads/${ownerKeySegment(owner)}/${uuid}.${resolved.ext}`;
 
   try {
     await uploadObject({
@@ -32,7 +34,7 @@ router.post("/", uploadSingle("file"), validateBuffer, async (req: Request, res:
     });
   } catch (err) {
     console.error("[documents] R2 upload failed:", err);
-    return res.status(500).json({ error: "העלאת הקובץ נכשלה" });
+    return res.status(500).json({ error: "Failed to upload file" });
   }
 
   try {
@@ -47,7 +49,7 @@ router.post("/", uploadSingle("file"), validateBuffer, async (req: Request, res:
     res.status(201).json(doc);
   } catch (err) {
     console.error("[documents] failed to persist metadata:", err);
-    res.status(500).json({ error: "שמירת פרטי הקובץ נכשלה" });
+    res.status(500).json({ error: "Failed to save document" });
   }
 });
 
@@ -62,10 +64,10 @@ router.get("/:id/view", async (req: Request, res: Response) => {
     doc = await DocumentModel.findOne({ id: req.params.id });
   } catch (err) {
     console.error("[documents] lookup failed:", err);
-    return res.status(500).json({ error: "טעינת הקובץ נכשלה" });
+    return res.status(500).json({ error: "Failed to load document" });
   }
   if (!doc || doc.owner !== owner) {
-    return res.status(404).json({ error: "הקובץ לא נמצא" });
+    return res.status(404).json({ error: "Document not found" });
   }
 
   try {
@@ -73,7 +75,7 @@ router.get("/:id/view", async (req: Request, res: Response) => {
     res.json({ url });
   } catch (err) {
     console.error("[documents] presign failed:", err);
-    res.status(500).json({ error: "יצירת הקישור נכשלה" });
+    res.status(500).json({ error: "Failed to create view link" });
   }
 });
 

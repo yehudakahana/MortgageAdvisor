@@ -8,6 +8,7 @@ import uploadRouter from "./routes/upload";
 import chatRouter from "./routes/chat";
 import authRouter from "./routes/auth";
 import { authenticateToken } from "./middleware/authMiddleware";
+import { connectDB } from "./config/db";
 
 const app = express();
 const PORT = process.env.PORT ?? 3001;
@@ -40,6 +41,10 @@ app.use("/api/clients", clientsRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/chat", chatRouter);
 
-app.listen(PORT, () => {
-  console.log(`Sara backend running on http://localhost:${PORT}`);
+// Connect to MongoDB before accepting traffic — no request is served without a
+// live database connection.
+connectDB().then(() => {
+  app.listen(PORT, () => {
+    console.log(`Sara backend running on http://localhost:${PORT}`);
+  });
 });

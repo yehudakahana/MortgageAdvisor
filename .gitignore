@@ -5,6 +5,5 @@ build/
 uploads/
 *.log
 
-# Legacy local DB — retired in favor of MongoDB; never commit (holds real client data)
 backend/db.json
 db.json

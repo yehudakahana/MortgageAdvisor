@@ -4,18 +4,9 @@ import {
   GetObjectCommand,
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { createHash } from "crypto";
 import { r2, R2_BUCKET_NAME } from "../config/r2";
 
 const VIEW_URL_TTL_SECONDS = 15 * 60; // 15 minutes
-
-// Build an ASCII-safe key segment from an owner id. Usernames are often Hebrew,
-// and non-ASCII object keys are fragile in URLs — keep a readable slug when the
-// id is already ASCII, otherwise fall back to a stable hash.
-export function ownerKeySegment(owner: string): string {
-  const slug = owner.toLowerCase().replace(/[^a-z0-9_-]+/g, "");
-  return slug || createHash("sha256").update(owner).digest("hex").slice(0, 16);
-}
 
 interface UploadParams {
   key: string;

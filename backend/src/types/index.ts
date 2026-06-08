@@ -39,15 +39,3 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
 }
-
-// Metadata for an R2-backed upload. The binary lives in the private R2 bucket;
-// only this record is persisted in MongoDB.
-export interface StoredDocument {
-  id: string;
-  key: string;
-  originalName: string;
-  mimetype: string;
-  size: number;
-  owner: string;
-  uploadedAt: Date;
-}

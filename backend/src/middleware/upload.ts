@@ -32,13 +32,13 @@ export function uploadSingle(field: string) {
       if (err instanceof multer.MulterError) {
         const message =
           err.code === "LIMIT_FILE_SIZE"
-            ? "File too large (max 10MB)"
-            : "File upload failed";
+            ? "הקובץ גדול מדי (מקסימום 10MB)"
+            : "העלאת הקובץ נכשלה";
         res.status(400).json({ error: message });
         return;
       }
       if (err) {
-        res.status(400).json({ error: "File upload failed" });
+        res.status(400).json({ error: "העלאת הקובץ נכשלה" });
         return;
       }
       next();
@@ -103,19 +103,19 @@ export async function validateBuffer(
   next: NextFunction
 ): Promise<void> {
   if (!req.file) {
-    res.status(400).json({ error: "No file uploaded" });
+    res.status(400).json({ error: "לא הועלה קובץ" });
     return;
   }
   try {
     const resolved = await resolveType(req.file.buffer, req.file.originalname);
     if (!resolved) {
-      res.status(400).json({ error: "Unsupported file type" });
+      res.status(400).json({ error: "סוג קובץ לא נתמך" });
       return;
     }
     req.resolvedFile = resolved;
     next();
   } catch (err) {
     console.error("[upload] buffer validation failed:", err);
-    res.status(400).json({ error: "File validation failed" });
+    res.status(400).json({ error: "אימות הקובץ נכשל" });
   }
 }

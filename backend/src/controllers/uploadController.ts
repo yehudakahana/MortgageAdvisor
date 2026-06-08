@@ -25,7 +25,7 @@ function setExtraction(clientId: string, docId: string, data: Document["extracte
 export async function uploadDocument(req: Request, res: Response) {
   const file = req.file;
   const resolved = req.resolvedFile;
-  if (!file || !resolved) return res.status(400).json({ error: "No file uploaded" });
+  if (!file || !resolved) return res.status(400).json({ error: "לא הועלה קובץ" });
 
   const { clientId } = req.params;
   const docType = (req.body.type as Document["type"]) ?? "other";
@@ -43,7 +43,7 @@ export async function uploadDocument(req: Request, res: Response) {
     });
   } catch (err) {
     console.error("[upload] R2 upload failed:", err);
-    return res.status(500).json({ error: "Failed to upload file" });
+    return res.status(500).json({ error: "העלאת הקובץ נכשלה" });
   }
 
   const doc: Document = {
@@ -65,11 +65,11 @@ export async function uploadDocument(req: Request, res: Response) {
   } catch (err) {
     console.error("[upload] failed to attach document:", err);
     await deleteObject(key).catch(() => undefined); // avoid an orphaned R2 object
-    return res.status(500).json({ error: "Failed to save document" });
+    return res.status(500).json({ error: "שמירת המסמך נכשלה" });
   }
   if (!updated) {
     await deleteObject(key).catch(() => undefined);
-    return res.status(404).json({ error: "Client not found" });
+    return res.status(404).json({ error: "הלקוח לא נמצא" });
   }
   res.status(201).json(updated);
 
@@ -97,17 +97,17 @@ export async function viewDocument(req: Request, res: Response) {
     client = await ClientModel.findOne({ id: clientId });
   } catch (err) {
     console.error("[view] lookup failed:", err);
-    return res.status(500).json({ error: "Failed to load client" });
+    return res.status(500).json({ error: "טעינת הלקוח נכשלה" });
   }
   const doc = client?.documents.find((d) => d.id === docId);
-  if (!doc || !doc.key) return res.status(404).json({ error: "Document not found" });
+  if (!doc || !doc.key) return res.status(404).json({ error: "המסמך לא נמצא" });
 
   try {
     const url = await getViewUrl(doc.key);
     res.json({ url });
   } catch (err) {
     console.error("[view] presign failed:", err);
-    res.status(500).json({ error: "Failed to create view link" });
+    res.status(500).json({ error: "יצירת קישור הצפייה נכשלה" });
   }
 }
 
@@ -121,19 +121,19 @@ export async function reExtractDocument(req: Request, res: Response) {
     client = await ClientModel.findOne({ id: clientId });
   } catch (err) {
     console.error("[re-extract] lookup failed:", err);
-    return res.status(500).json({ error: "Failed to load client" });
+    return res.status(500).json({ error: "טעינת הלקוח נכשלה" });
   }
-  if (!client) return res.status(404).json({ error: "Client not found" });
+  if (!client) return res.status(404).json({ error: "הלקוח לא נמצא" });
 
   const doc = client.documents.find((d) => d.id === docId);
-  if (!doc || !doc.key) return res.status(404).json({ error: "Document not found" });
+  if (!doc || !doc.key) return res.status(404).json({ error: "המסמך לא נמצא" });
 
   let buffer: Buffer;
   try {
     buffer = await getObjectBuffer(doc.key);
   } catch (err) {
     console.error("[re-extract] R2 download failed:", err);
-    return res.status(404).json({ error: "File not found in storage" });
+    return res.status(404).json({ error: "הקובץ לא נמצא באחסון" });
   }
 
   try {

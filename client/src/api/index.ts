@@ -62,6 +62,21 @@ export async function getClients() {
   return res.json();
 }
 
+export async function getClient(id: string) {
+  const res = await authFetch(`${BASE}/clients/${id}`);
+  if (!res.ok) throw new Error("Failed to fetch client");
+  return res.json();
+}
+
+// Retry extraction for an already-uploaded document. Returns the updated client.
+export async function reExtractDocument(clientId: string, docId: string) {
+  const res = await authFetch(`${BASE}/upload/${clientId}/${docId}/re-extract`, {
+    method: "POST",
+  });
+  if (!res.ok) throw new Error("Re-extract failed");
+  return res.json();
+}
+
 export async function createClient(data: { name: string; phone: string; email?: string; notes?: string }) {
   const res = await authFetch(`${BASE}/clients`, {
     method: "POST",

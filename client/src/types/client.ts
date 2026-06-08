@@ -3,6 +3,23 @@ export interface Document {
   type: string;
   filename: string;
   uploadedAt: string;
+  // Set asynchronously by the backend after Gemini extraction. Absent while
+  // pending, { error } on failure, otherwise the extracted blob on success.
+  extractedData?: {
+    structuredFields?: unknown;
+    rawText?: unknown;
+    error?: string;
+  } | null;
+}
+
+export type ExtractionStatus = "pending" | "success" | "error";
+
+// Derive the user-facing extraction state of a document from its extractedData.
+export function getExtractionStatus(doc: Document): ExtractionStatus {
+  const ed = doc.extractedData;
+  if (!ed) return "pending";
+  if (ed.error) return "error";
+  return "success";
 }
 
 export interface Client {

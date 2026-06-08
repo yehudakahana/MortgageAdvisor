@@ -117,7 +117,12 @@ router.post("/reset", async (req: Request, res: Response) => {
 
   let scopedClient: Client | null = null;
   if (clientId) {
-    scopedClient = await ClientModel.findOne({ id: clientId });
+    try {
+      scopedClient = await ClientModel.findOne({ id: clientId });
+    } catch (err) {
+      console.error("[chat] reset failed to load client:", err);
+      return res.status(500).json({ error: "Failed to load client data" });
+    }
     if (!scopedClient) return res.status(404).json({ error: "Client not found" });
   }
 

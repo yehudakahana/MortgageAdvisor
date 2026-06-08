@@ -16,6 +16,7 @@ export default function ClientPanel() {
     saving, formError, setFormError, handleCreate,
     uploadType, setUploadType, isUploading, uploadError,
     handleFileSelect, fileInputRef,
+    handleReExtract, reExtractingId,
     searchQuery, setSearchQuery,
   } = useClientPanel();
 
@@ -97,6 +98,7 @@ export default function ClientPanel() {
                     uploadType={uploadType} setUploadType={setUploadType}
                     isUploading={isUploading} uploadError={uploadError}
                     fileInputRef={fileInputRef} onFileSelect={handleFileSelect}
+                    onReExtract={handleReExtract} reExtractingId={reExtractingId}
                   />
                 )}
               </Fragment>

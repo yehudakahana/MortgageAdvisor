@@ -16,7 +16,7 @@ export interface Document {
   id: string;
   type: "paystub" | "bank_statement" | "id_card" | "other";
   filename: string;
-  uploadedAt: string;
+  uploadedAt: Date;
   extractedData?: ExtractedData | ExtractionError;
 }
 
@@ -25,13 +25,9 @@ export interface Client {
   name: string;
   phone: string;
   email: string;
-  createdAt: string;
+  createdAt: Date;
   documents: Document[];
   notes: string;
-}
-
-export interface DB {
-  clients: Client[];
 }
 
 export interface ChatMessage {

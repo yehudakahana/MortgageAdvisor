@@ -1,9 +1,9 @@
-import { useRef } from "react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileUp, Loader2 } from "lucide-react";
+import { FileUp, Loader2, CheckCircle2, AlertCircle, RotateCw } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { DOC_TYPE_LABELS, DOC_TYPE_STYLES, formatUploadDate } from "../types/client";
+import { DOC_TYPE_LABELS, DOC_TYPE_STYLES, formatUploadDate, getExtractionStatus } from "../types/client";
 import type { Document } from "../types/client";
 
 interface Props {
@@ -14,9 +14,11 @@ interface Props {
   uploadError: string;
   fileInputRef: React.RefObject<HTMLInputElement>;
   onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onReExtract: (docId: string) => void;
+  reExtractingId: string | null;
 }
 
-export default function ClientDocuments({ documents, uploadType, setUploadType, isUploading, uploadError, fileInputRef, onFileSelect }: Props) {
+export default function ClientDocuments({ documents, uploadType, setUploadType, isUploading, uploadError, fileInputRef, onFileSelect, onReExtract, reExtractingId }: Props) {
   return (
     <div className="bg-indigo-50/40 border-b border-border/50 border-s-2 border-s-indigo-600 px-4 py-4 space-y-4">
       <div>
@@ -24,16 +26,53 @@ export default function ClientDocuments({ documents, uploadType, setUploadType, 
         {documents.length === 0 ? (
           <p className="text-xs text-muted-foreground/60">לא הועלו מסמכים עדיין.</p>
         ) : (
-          <ul className="space-y-2">
-            {documents.map((d) => (
-              <li key={d.id} className="flex items-center gap-2">
-                <Badge className={cn("shrink-0 rounded-full text-[11px] font-medium", DOC_TYPE_STYLES[d.type] ?? "bg-gray-50 text-gray-600 border-gray-200")}>
-                  {DOC_TYPE_LABELS[d.type] ?? d.type}
-                </Badge>
-                <span className="text-xs text-muted-foreground truncate flex-1">{d.filename}</span>
-                <span className="text-[11px] text-muted-foreground/50 shrink-0 tabular-nums">{formatUploadDate(d.uploadedAt)}</span>
-              </li>
-            ))}
+          <ul className="space-y-2.5">
+            {documents.map((d) => {
+              const status = getExtractionStatus(d);
+              return (
+                <li key={d.id} className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <Badge className={cn("shrink-0 rounded-full text-[11px] font-medium", DOC_TYPE_STYLES[d.type] ?? "bg-gray-50 text-gray-600 border-gray-200")}>
+                      {DOC_TYPE_LABELS[d.type] ?? d.type}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground truncate flex-1">{d.filename}</span>
+                    <span className="text-[11px] text-muted-foreground/50 shrink-0 tabular-nums">{formatUploadDate(d.uploadedAt)}</span>
+                  </div>
+                  {status === "pending" && (
+                    <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground ps-1">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <span>מחלץ נתונים מהמסמך...</span>
+                    </div>
+                  )}
+                  {status === "success" && (
+                    <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 ps-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      <span>המסמך חולץ בהצלחה</span>
+                    </div>
+                  )}
+                  {status === "error" && (
+                    <div className="flex items-center gap-2 ps-1">
+                      <span className="flex items-center gap-1.5 text-[11px] text-destructive">
+                        <AlertCircle className="w-3 h-3" />
+                        חילוץ המסמך נכשל
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-6 px-2 text-[11px] gap-1"
+                        disabled={reExtractingId === d.id}
+                        onClick={() => onReExtract(d.id)}
+                      >
+                        {reExtractingId === d.id
+                          ? <Loader2 className="w-3 h-3 animate-spin" />
+                          : <RotateCw className="w-3 h-3" />}
+                        נסה שוב
+                      </Button>
+                    </div>
+                  )}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>

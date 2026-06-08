@@ -1,5 +1,5 @@
 import { Router, Request, Response } from "express";
-import * as db from "../services/dbService";
+import { ClientModel } from "../models/Client";
 import { routeToLLM } from "../services/llm/router";
 import { ClientData } from "../services/llm/types";
 import { ChatMessage, Client } from "../types";
@@ -68,12 +68,17 @@ router.post("/", async (req: Request, res: Response) => {
 
   // Optional clientId scopes the chat to one client; otherwise query all clients.
   let clients: Client[];
-  if (clientId) {
-    const client = db.getClientById(clientId);
-    if (!client) return res.status(404).json({ error: "Client not found" });
-    clients = [client];
-  } else {
-    clients = db.getAllClients();
+  try {
+    if (clientId) {
+      const client = await ClientModel.findOne({ id: clientId });
+      if (!client) return res.status(404).json({ error: "Client not found" });
+      clients = [client];
+    } else {
+      clients = await ClientModel.find();
+    }
+  } catch (err) {
+    console.error("[chat] failed to load clients:", err);
+    return res.status(500).json({ error: "Failed to load client data" });
   }
 
   const history: ChatMessage[] = Array.isArray(chatHistory)
@@ -107,12 +112,12 @@ router.post("/", async (req: Request, res: Response) => {
 // it stays intact as the baseline context — letting prompt caching kick in
 // fresh against an empty history. Older messages, if logged elsewhere, are
 // untouched: this is a non-destructive acknowledgment, not a deletion.
-router.post("/reset", (req: Request, res: Response) => {
+router.post("/reset", async (req: Request, res: Response) => {
   const { clientId } = req.body as { clientId?: string };
 
-  let scopedClient: Client | undefined;
+  let scopedClient: Client | null = null;
   if (clientId) {
-    scopedClient = db.getClientById(clientId);
+    scopedClient = await ClientModel.findOne({ id: clientId });
     if (!scopedClient) return res.status(404).json({ error: "Client not found" });
   }
 

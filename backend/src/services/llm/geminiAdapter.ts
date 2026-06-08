@@ -1,5 +1,4 @@
 import { GoogleGenAI } from "@google/genai";
-import fs from "fs";
 import { LLMAdapter, LLMRequest, LLMResponse } from "./types";
 import { EXTRACTION_SYSTEM, EXTRACTION_PROMPT } from "./prompts";
 
@@ -28,7 +27,7 @@ export const geminiAdapter: LLMAdapter = {
       );
     }
 
-    const base64 = fs.readFileSync(request.filePath).toString("base64");
+    const base64 = request.buffer.toString("base64");
 
     let lastErr: unknown;
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {

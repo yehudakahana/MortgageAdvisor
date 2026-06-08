@@ -6,7 +6,9 @@ export type ClientData = ExtractedData;
 
 export interface ExtractionRequest {
   taskType: "EXTRACTION";
-  filePath: string;
+  // The file bytes in memory — sourced from the upload buffer or downloaded from
+  // R2 for re-extraction. No local disk path is involved.
+  buffer: Buffer;
   mimeType: string;
 }
 

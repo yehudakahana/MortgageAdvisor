@@ -1,93 +1,126 @@
 import { Router, Request, Response } from "express";
-import multer from "multer";
-import path from "path";
-import fs from "fs";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 import { ClientModel } from "../models/Client";
 import { Document } from "../types";
-import { extractFromFile } from "../services/extractionService";
+import { extractFromBuffer } from "../services/extractionService";
+import { uploadSingle, validateBuffer } from "../middleware/upload";
+import {
+  uploadObject,
+  deleteObject,
+  getObjectBuffer,
+  getViewUrl,
+  buildContentDisposition,
+} from "../services/storageService";
 
 const router = Router();
 
-const storage = multer.diskStorage({
-  destination: (req, _file, cb) => {
-    const clientId = req.params.clientId;
-    const dir = path.resolve(__dirname, `../../../uploads/${clientId}`);
-    fs.mkdirSync(dir, { recursive: true });
-    cb(null, dir);
-  },
-  filename: (_req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${uuidv4()}${ext}`);
-  },
-});
+// POST /:clientId — auth → multer (buffer + 10MB) → validateBuffer → handler.
+// Files go to the private R2 bucket; only metadata is embedded on the client.
+router.post(
+  "/:clientId",
+  uploadSingle("file"),
+  validateBuffer,
+  async (req: Request, res: Response) => {
+    const file = req.file;
+    const resolved = req.resolvedFile;
+    if (!file || !resolved) return res.status(400).json({ error: "No file uploaded" });
 
-const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB
-  fileFilter: (_req, file, cb) => {
-    if (file.mimetype === "application/pdf") {
-      cb(null, true);
-    } else {
-      cb(new Error("Only PDF files are allowed"));
-    }
-  },
-});
+    const { clientId } = req.params;
+    const docType = (req.body.type as Document["type"]) ?? "other";
 
-router.post("/:clientId", upload.single("file"), async (req: Request, res: Response) => {
-  if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+    // Key extension comes from the RESOLVED mime, never the client filename.
+    const uuid = randomUUID();
+    const key = `uploads/${clientId}/${uuid}.${resolved.ext}`;
 
-  const docType = (req.body.type as Document["type"]) ?? "other";
-  const doc: Document = {
-    id: uuidv4(),
-    type: docType,
-    filename: req.file.filename,
-    uploadedAt: new Date(),
-  };
-
-  // Capture before sending response
-  const filePath = req.file.path;
-  const mimeType = req.file.mimetype;
-  const { clientId } = req.params;
-
-  let updated;
-  try {
-    updated = await ClientModel.findOneAndUpdate(
-      { id: clientId },
-      { $push: { documents: doc } },
-      { returnDocument: "after" }
-    );
-  } catch (err) {
-    console.error("[upload] failed to attach document:", err);
-    return res.status(500).json({ error: "Failed to save document" });
-  }
-  if (!updated) return res.status(404).json({ error: "Client not found" });
-  res.status(201).json(updated);
-
-  // Non-blocking background extraction — never delays the upload response.
-  // Uses the positional operator to patch only the matching embedded document.
-  void (async () => {
-    const setExtraction = (data: Document["extractedData"]) =>
-      ClientModel.findOneAndUpdate(
-        { id: clientId, "documents.id": doc.id },
-        { $set: { "documents.$.extractedData": data } }
-      );
+    // Upload to R2 FIRST — persist metadata only after a successful upload.
     try {
-      const data = await extractFromFile(filePath, mimeType);
-      await setExtraction(data);
-      console.log(`[extraction] completed for doc ${doc.id}`);
+      await uploadObject({
+        key,
+        body: file.buffer,
+        contentType: resolved.mime,
+        contentDisposition: buildContentDisposition(resolved.mime, file.originalname),
+      });
     } catch (err) {
-      const reason = err instanceof Error ? err.message : String(err);
-      console.error(`[extraction] failed for doc ${doc.id}:`, reason);
-      await setExtraction({ error: reason });
+      console.error("[upload] R2 upload failed:", err);
+      return res.status(500).json({ error: "Failed to upload file" });
     }
-  })();
+
+    const doc: Document = {
+      id: uuid,
+      type: docType,
+      filename: file.originalname,
+      key,
+      mimetype: resolved.mime,
+      uploadedAt: new Date(),
+    };
+
+    let updated;
+    try {
+      updated = await ClientModel.findOneAndUpdate(
+        { id: clientId },
+        { $push: { documents: doc } },
+        { returnDocument: "after" }
+      );
+    } catch (err) {
+      console.error("[upload] failed to attach document:", err);
+      // Avoid an orphaned R2 object when the metadata write fails.
+      await deleteObject(key).catch(() => undefined);
+      return res.status(500).json({ error: "Failed to save document" });
+    }
+    if (!updated) {
+      await deleteObject(key).catch(() => undefined);
+      return res.status(404).json({ error: "Client not found" });
+    }
+    res.status(201).json(updated);
+
+    // Non-blocking background extraction — never delays the upload response.
+    // Reuses the in-memory buffer, so no disk read is involved.
+    void (async () => {
+      const setExtraction = (data: Document["extractedData"]) =>
+        ClientModel.findOneAndUpdate(
+          { id: clientId, "documents.id": uuid },
+          { $set: { "documents.$.extractedData": data } }
+        );
+      try {
+        const data = await extractFromBuffer(file.buffer, resolved.mime);
+        await setExtraction(data);
+        console.log(`[extraction] completed for doc ${uuid}`);
+      } catch (err) {
+        const reason = err instanceof Error ? err.message : String(err);
+        console.error(`[extraction] failed for doc ${uuid}:`, reason);
+        await setExtraction({ error: reason });
+      }
+    })();
+  }
+);
+
+// GET /:clientId/:docId/view — short-lived (15-min) presigned GET URL for an
+// uploaded file. The bucket is private, so this is the only way to view it.
+router.get("/:clientId/:docId/view", async (req: Request, res: Response) => {
+  const { clientId, docId } = req.params;
+
+  let client;
+  try {
+    client = await ClientModel.findOne({ id: clientId });
+  } catch (err) {
+    console.error("[view] lookup failed:", err);
+    return res.status(500).json({ error: "Failed to load client" });
+  }
+  const doc = client?.documents.find((d) => d.id === docId);
+  if (!doc || !doc.key) return res.status(404).json({ error: "Document not found" });
+
+  try {
+    const url = await getViewUrl(doc.key);
+    res.json({ url });
+  } catch (err) {
+    console.error("[view] presign failed:", err);
+    res.status(500).json({ error: "Failed to create view link" });
+  }
 });
 
-// Re-run extraction for an already-uploaded document — e.g. after a transient
-// Gemini failure (503/quota). Reads the stored file back from disk and
-// overwrites its extractedData. Runs synchronously so the client gets the final
-// result (success or error) in the response.
+// POST /:clientId/:docId/re-extract — re-run extraction for an already-uploaded
+// document, e.g. after a transient Gemini failure. Downloads the file from R2
+// into memory and overwrites its extractedData synchronously.
 router.post("/:clientId/:docId/re-extract", async (req: Request, res: Response) => {
   const { clientId, docId } = req.params;
 
@@ -101,11 +134,14 @@ router.post("/:clientId/:docId/re-extract", async (req: Request, res: Response) 
   if (!client) return res.status(404).json({ error: "Client not found" });
 
   const doc = client.documents.find((d) => d.id === docId);
-  if (!doc) return res.status(404).json({ error: "Document not found" });
+  if (!doc || !doc.key) return res.status(404).json({ error: "Document not found" });
 
-  const filePath = path.resolve(__dirname, `../../../uploads/${clientId}/${doc.filename}`);
-  if (!fs.existsSync(filePath)) {
-    return res.status(404).json({ error: "File not found on disk" });
+  let buffer: Buffer;
+  try {
+    buffer = await getObjectBuffer(doc.key);
+  } catch (err) {
+    console.error("[re-extract] R2 download failed:", err);
+    return res.status(404).json({ error: "File not found in storage" });
   }
 
   const setExtraction = (data: Document["extractedData"]) =>
@@ -116,7 +152,7 @@ router.post("/:clientId/:docId/re-extract", async (req: Request, res: Response) 
     );
 
   try {
-    const data = await extractFromFile(filePath, "application/pdf");
+    const data = await extractFromBuffer(buffer, doc.mimetype ?? "application/pdf");
     const updated = await setExtraction(data);
     console.log(`[re-extract] completed for doc ${docId}`);
     res.json(updated);

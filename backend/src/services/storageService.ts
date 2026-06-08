@@ -46,6 +46,19 @@ export async function deleteObject(key: string): Promise<void> {
   await r2.send(new DeleteObjectCommand({ Bucket: R2_BUCKET_NAME, Key: key }));
 }
 
+// Downloads an object's bytes into memory — used to re-run extraction on a
+// stored file without keeping any local disk copy.
+export async function getObjectBuffer(key: string): Promise<Buffer> {
+  const res = await r2.send(
+    new GetObjectCommand({ Bucket: R2_BUCKET_NAME, Key: key })
+  );
+  const body = res.Body as
+    | { transformToByteArray: () => Promise<Uint8Array> }
+    | undefined;
+  if (!body) throw new Error(`[r2] empty body for key: ${key}`);
+  return Buffer.from(await body.transformToByteArray());
+}
+
 // Short-lived (15-minute) presigned GET URL. The bucket stays fully private;
 // this is the only way a file is ever served.
 export async function getViewUrl(key: string): Promise<string> {

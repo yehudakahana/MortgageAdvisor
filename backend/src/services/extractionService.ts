@@ -10,11 +10,11 @@ function parseJsonResponse(raw: string): ExtractedData {
   return JSON.parse(stripped) as ExtractedData;
 }
 
-export async function extractFromFile(
-  filePath: string,
+export async function extractFromBuffer(
+  buffer: Buffer,
   mimeType: string
 ): Promise<ExtractedData | ExtractionError> {
-  const response = await routeToLLM("EXTRACTION", { filePath, mimeType });
+  const response = await routeToLLM("EXTRACTION", { buffer, mimeType });
 
   try {
     return parseJsonResponse(response.content);

@@ -55,7 +55,7 @@ router.post("/:clientId", upload.single("file"), async (req: Request, res: Respo
     updated = await ClientModel.findOneAndUpdate(
       { id: clientId },
       { $push: { documents: doc } },
-      { new: true }
+      { returnDocument: "after" }
     );
   } catch (err) {
     console.error("[upload] failed to attach document:", err);
@@ -112,7 +112,7 @@ router.post("/:clientId/:docId/re-extract", async (req: Request, res: Response) 
     ClientModel.findOneAndUpdate(
       { id: clientId, "documents.id": docId },
       { $set: { "documents.$.extractedData": data } },
-      { new: true }
+      { returnDocument: "after" }
     );
 
   try {

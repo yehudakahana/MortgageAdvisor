@@ -5,6 +5,7 @@ import express from "express";
 import cors from "cors";
 import clientsRouter from "./routes/clients";
 import uploadRouter from "./routes/upload";
+import documentsRouter from "./routes/documents";
 import chatRouter from "./routes/chat";
 import authRouter from "./routes/auth";
 import { authenticateToken } from "./middleware/authMiddleware";
@@ -39,6 +40,7 @@ app.use(authenticateToken);
 
 app.use("/api/clients", clientsRouter);
 app.use("/api/upload", uploadRouter);
+app.use("/api/documents", documentsRouter);
 app.use("/api/chat", chatRouter);
 
 // Connect to MongoDB before accepting traffic — no request is served without a

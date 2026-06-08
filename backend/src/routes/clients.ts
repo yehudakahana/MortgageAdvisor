@@ -52,7 +52,7 @@ router.patch("/:id", async (req: Request, res: Response) => {
     const updated = await ClientModel.findOneAndUpdate(
       { id: req.params.id },
       req.body as Partial<Client>,
-      { new: true }
+      { returnDocument: "after" }
     );
     if (!updated) return res.status(404).json({ error: "Client not found" });
     res.json(updated);

@@ -70,6 +70,14 @@ export async function getClient(id: string) {
   return res.json();
 }
 
+// Upload a document for a client. Routes through BASE so it reaches the backend
+// in production (a relative /api path would hit the static site and 405).
+export async function uploadDocument(clientId: string, form: FormData) {
+  const res = await authFetch(`${BASE}/upload/${clientId}`, { method: "POST", body: form });
+  if (!res.ok) throw new Error("Upload failed");
+  return res.json();
+}
+
 // Retry extraction for an already-uploaded document. Returns the updated client.
 export async function reExtractDocument(clientId: string, docId: string) {
   const res = await authFetch(`${BASE}/upload/${clientId}/${docId}/re-extract`, {

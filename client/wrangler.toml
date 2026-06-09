@@ -1,0 +1,9 @@
+# Cloudflare Workers (static assets) config for the Sara client SPA.
+# The Git build runs `npm run build` to produce ./dist, then `wrangler deploy`
+# uploads only that folder. Unknown routes fall back to index.html for the SPA.
+name = "mortage-advisor"
+compatibility_date = "2026-06-01"
+
+[assets]
+directory = "./dist"
+not_found_handling = "single-page-application"

@@ -39,7 +39,7 @@ export function useChat() {
   }
 
   // Clear Chat / New Topic: drop the local history and start fresh. Clears the
-  // view optimistically and holds `loading` so sends are blocked mid-reset,,
+  // view optimistically and holds `loading` so sends are blocked mid-reset,,1
   // then refines with the backend greeting; the local greeting already shown
   // stands if the request fails.
   async function clearChat() {

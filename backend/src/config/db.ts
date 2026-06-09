@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-// Initialize the MongoDB connection from MONGO_URI. Called once at startup,
+// Initialize the .. .. MongoDB connection from MONGO_URI. Called once at startup,
 // before the HTTP server begins listening, so no request is served without a
 // live database connection. On failure we exit the process — running the API
 // against a dead DB would only surface errors on every request.

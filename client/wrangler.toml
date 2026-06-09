@@ -1,0 +1,9 @@
+# Cloudflare deploy config for the Sara client (static SPA).
+# The built Vite output in ./dist is served as static assets; any unknown
+# route falls back to index.html so client-side rendering works.
+name = "mortage-advisor"
+compatibility_date = "2026-06-01"
+
+[assets]
+directory = "./dist"
+not_found_handling = "single-page-application"

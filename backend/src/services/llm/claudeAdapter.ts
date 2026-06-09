@@ -1,8 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { anthropic } from "./anthropicClient";
 import { ClientData, LLMAdapter, LLMRequest, LLMResponse } from "./types";
-import { EXTRACTION_SYSTEM, EXTRACTION_PROMPT } from "./prompts";
-
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+import { extractWithClaude } from "./claudeExtraction";
 
 // ---------------------------------------------------------------------------
 // CHAT
@@ -79,30 +78,7 @@ function extractText(content: Anthropic.ContentBlock[]): string {
 export const claudeAdapter: LLMAdapter = {
   async run(request: LLMRequest, model: string): Promise<LLMResponse> {
     if (request.taskType === "EXTRACTION") {
-      const base64 = request.buffer.toString("base64");
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const response = await (anthropic.beta.messages as any).create({
-        model,
-        max_tokens: 4096,
-        system: EXTRACTION_SYSTEM,
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "document",
-                source: { type: "base64", media_type: request.mimeType, data: base64 },
-              },
-              { type: "text", text: EXTRACTION_PROMPT },
-            ],
-          },
-        ],
-        betas: ["pdfs-2024-09-25"],
-      });
-
-      const textBlock = response.content.find((b: { type: string }) => b.type === "text");
-      return { content: (textBlock as { text: string } | undefined)?.text ?? "" };
+      return extractWithClaude(request, model);
     }
 
     if (request.taskType === "CHAT") {

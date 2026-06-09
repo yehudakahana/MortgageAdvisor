@@ -64,9 +64,12 @@ export function useClientPanel() {
 
   // Extraction runs asynchronously on the backend, so poll the client until the
   // given document's extractedData resolves (success or error), then stop.
-  async function pollExtraction(clientId: string, docId: string, attempts = 8) {
+  // The window (attempts × interval) must comfortably exceed the worst-case
+  // backend time: Gemini's 503 retries (1s+2s+4s backoff) plus the Claude
+  // fallback request. ~90s avoids giving up while extraction is still running.
+  async function pollExtraction(clientId: string, docId: string, attempts = 30) {
     for (let i = 0; i < attempts; i++) {
-      await new Promise((r) => setTimeout(r, 2500));
+      await new Promise((r) => setTimeout(r, 3000));
       const client = await refreshClient(clientId);
       const doc = client?.documents.find((d) => d.id === docId);
       if (doc?.extractedData) return;

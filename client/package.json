@@ -8,7 +8,8 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && npx wrangler@3 deploy"
   },
   "dependencies": {
     "@radix-ui/react-label": "^2.1.8",

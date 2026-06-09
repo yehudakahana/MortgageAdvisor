@@ -1,6 +1,6 @@
-# Cloudflare deploy config for the Sara client (static SPA).
-# The built Vite output in ./dist is served as static assets; any unknown
-# route falls back to index.html so client-side rendering works.
+# Cloudflare Workers (static assets) config for the Sara client SPA.
+# The Git build runs `npm run build` to produce ./dist, then `wrangler deploy`
+# uploads only that folder. Unknown routes fall back to index.html for the SPA.
 name = "mortage-advisor"
 compatibility_date = "2026-06-01"
 

@@ -1,7 +1,8 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { FileUp, Loader2, CheckCircle2, AlertCircle, RotateCw } from "lucide-react";
+import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
+import { FileUp, Loader2, CheckCircle2, AlertCircle, RotateCw, Info } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DOC_TYPE_LABELS, DOC_TYPE_STYLES, formatUploadDate, getExtractionStatus } from "../types/client";
 import type { Document } from "../types/client";
@@ -20,6 +21,7 @@ interface Props {
 
 export default function ClientDocuments({ documents, uploadType, setUploadType, isUploading, uploadError, fileInputRef, onFileSelect, onReExtract, reExtractingId }: Props) {
   return (
+    <TooltipProvider delayDuration={150}>
     <div className="bg-indigo-50/40 border-b border-border/50 border-s-2 border-s-indigo-600 px-4 py-4 space-y-4">
       <div>
         <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">מסמכים</p>
@@ -56,6 +58,18 @@ export default function ClientDocuments({ documents, uploadType, setUploadType, 
                         <AlertCircle className="w-3 h-3" />
                         חילוץ המסמך נכשל
                       </span>
+                      {d.extractedData?.error && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button type="button" aria-label="הצג את הודעת השגיאה" className="text-muted-foreground hover:text-destructive transition-colors">
+                              <Info className="w-3.5 h-3.5" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent dir="ltr" className="max-w-xs text-left break-words">
+                            {d.extractedData.error}
+                          </TooltipContent>
+                        </Tooltip>
+                      )}
                       <Button
                         size="sm"
                         variant="outline"
@@ -105,5 +119,6 @@ export default function ClientDocuments({ documents, uploadType, setUploadType, 
         {uploadError && <p className="text-destructive text-xs">{uploadError}</p>}
       </div>
     </div>
+    </TooltipProvider>
   );
 }

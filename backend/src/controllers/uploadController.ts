@@ -11,6 +11,21 @@ import {
   buildContentDisposition,
 } from "../services/storageService";
 
+// LLM/provider errors often arrive as a JSON blob (e.g. Gemini's
+// {"error":{"code":503,"message":"...high demand..."}}). Surface the human
+// message when present so the client can show something readable.
+function formatExtractionError(err: unknown): string {
+  const raw = err instanceof Error ? err.message : String(err);
+  try {
+    const parsed = JSON.parse(raw);
+    const message = parsed?.error?.message;
+    if (typeof message === "string" && message.trim()) return message;
+  } catch {
+    // not JSON — fall through to the raw string
+  }
+  return raw;
+}
+
 // Patch only the matching embedded document's extractedData via the positional
 // operator. Shared by the upload (background) and re-extract flows.
 function setExtraction(clientId: string, docId: string, data: Document["extractedData"]) {
@@ -81,7 +96,7 @@ export async function uploadDocument(req: Request, res: Response) {
       await setExtraction(clientId, uuid, data);
       console.log(`[extraction] completed for doc ${uuid}`);
     } catch (err) {
-      const reason = err instanceof Error ? err.message : String(err);
+      const reason = formatExtractionError(err);
       console.error(`[extraction] failed for doc ${uuid}:`, reason);
       await setExtraction(clientId, uuid, { error: reason });
     }

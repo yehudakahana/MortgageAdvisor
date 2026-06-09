@@ -16,3 +16,10 @@ export const TASK_MODEL_MAP: Record<TaskType, ModelConfig> = {
   DOCUMENT_GENERATION: { provider: "claude", model: CLAUDE_MODEL },
   CHAT: { provider: "claude", model: CLAUDE_MODEL },
 };
+
+// Cross-provider fallback used when the primary provider fails (e.g. Gemini
+// returns a persistent 503 "high demand"). Extraction falls back to Claude,
+// which reads PDFs and images natively.
+export const TASK_FALLBACK_MAP: Partial<Record<TaskType, ModelConfig>> = {
+  EXTRACTION: { provider: "claude", model: CLAUDE_MODEL },
+};

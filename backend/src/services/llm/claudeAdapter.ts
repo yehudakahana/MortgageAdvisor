@@ -80,29 +80,61 @@ export const claudeAdapter: LLMAdapter = {
   async run(request: LLMRequest, model: string): Promise<LLMResponse> {
     if (request.taskType === "EXTRACTION") {
       const base64 = request.buffer.toString("base64");
+      const mime = request.mimeType;
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const response = await (anthropic.beta.messages as any).create({
-        model,
-        max_tokens: 4096,
-        system: EXTRACTION_SYSTEM,
-        messages: [
-          {
-            role: "user",
-            content: [
-              {
-                type: "document",
-                source: { type: "base64", media_type: request.mimeType, data: base64 },
-              },
-              { type: "text", text: EXTRACTION_PROMPT },
-            ],
-          },
-        ],
-        betas: ["pdfs-2024-09-25"],
-      });
+      // PDFs go through a document block (beta); images through an image block.
+      // docx/xlsx are not natively readable by Claude — throw so the router
+      // surfaces the primary provider's error instead of a misleading one.
+      if (mime === "application/pdf") {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const response = await (anthropic.beta.messages as any).create({
+          model,
+          max_tokens: 4096,
+          system: EXTRACTION_SYSTEM,
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "document",
+                  source: { type: "base64", media_type: "application/pdf", data: base64 },
+                },
+                { type: "text", text: EXTRACTION_PROMPT },
+              ],
+            },
+          ],
+          betas: ["pdfs-2024-09-25"],
+        });
+        const textBlock = response.content.find((b: { type: string }) => b.type === "text");
+        return { content: (textBlock as { text: string } | undefined)?.text ?? "" };
+      }
 
-      const textBlock = response.content.find((b: { type: string }) => b.type === "text");
-      return { content: (textBlock as { text: string } | undefined)?.text ?? "" };
+      if (mime.startsWith("image/")) {
+        const response = await anthropic.messages.create({
+          model,
+          max_tokens: 4096,
+          system: EXTRACTION_SYSTEM,
+          messages: [
+            {
+              role: "user",
+              content: [
+                {
+                  type: "image",
+                  source: {
+                    type: "base64",
+                    media_type: mime as "image/jpeg" | "image/png" | "image/webp" | "image/gif",
+                    data: base64,
+                  },
+                },
+                { type: "text", text: EXTRACTION_PROMPT },
+              ],
+            },
+          ],
+        });
+        return { content: extractText(response.content) };
+      }
+
+      throw new Error(`Claude extraction does not support mime type: ${mime}`);
     }
 
     if (request.taskType === "CHAT") {

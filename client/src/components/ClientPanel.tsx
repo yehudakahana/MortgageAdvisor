@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, UserPlus, Users } from "lucide-react";
+import { Loader2, Search, UserPlus, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClientPanel } from "../hooks/useClientPanel";
 import ClientAvatar from "./ClientAvatar";
@@ -10,13 +10,13 @@ import ClientDocuments from "./ClientDocuments";
 
 export default function ClientPanel() {
   const {
-    clients, filteredClients, selectedId, selectClient,
+    clients, filteredClients, isLoading, selectedId, selectClient,
     isCreatingClient, setIsCreatingClient,
     name, setName, phone, setPhone, email, setEmail,
     saving, formError, setFormError, handleCreate,
     uploadType, setUploadType, isUploading, uploadError,
     handleFileSelect, fileInputRef,
-    handleReExtract, reExtractingId,
+    handleReExtract, reExtractingId, timedOutDocIds,
     searchQuery, setSearchQuery,
   } = useClientPanel();
 
@@ -60,7 +60,12 @@ export default function ClientPanel() {
 
       {/* Client List */}
       <div className="flex-1 overflow-y-auto">
-        {clients.length === 0 ? (
+        {isLoading ? (
+          <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            <p className="text-sm">טוען לקוחות...</p>
+          </div>
+        ) : clients.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3 text-center px-6">
             <div className="w-14 h-14 rounded-2xl bg-secondary/70 flex items-center justify-center">
               <Users className="w-7 h-7 text-muted-foreground/50" />
@@ -99,6 +104,7 @@ export default function ClientPanel() {
                     isUploading={isUploading} uploadError={uploadError}
                     fileInputRef={fileInputRef} onFileSelect={handleFileSelect}
                     onReExtract={handleReExtract} reExtractingId={reExtractingId}
+                    timedOutDocIds={timedOutDocIds}
                   />
                 )}
               </Fragment>

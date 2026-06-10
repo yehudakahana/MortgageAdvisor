@@ -72,7 +72,9 @@ function buildCachedSystem(
 
 function extractText(content: Anthropic.ContentBlock[]): string {
   const textBlock = content.find((b) => b.type === "text");
-  return textBlock?.type === "text" ? textBlock.text : "";
+  if (textBlock?.type === "text") return textBlock.text;
+  console.warn("[claude] no text block in response");
+  return "";
 }
 
 export const claudeAdapter: LLMAdapter = {

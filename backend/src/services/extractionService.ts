@@ -1,6 +1,10 @@
 import { ExtractedData, ExtractionError } from "../types";
 import { routeToLLM } from "./llm/router";
 
+// Cap on how much of a malformed LLM response is persisted to Mongo; the full
+// response is still logged via console.error for debugging.
+const MAX_PERSISTED_RAW_LENGTH = 1000;
+
 function parseJsonResponse(raw: string): ExtractedData {
   const stripped = raw
     .replace(/^```(?:json)?\s*/i, "")
@@ -22,6 +26,6 @@ export async function extractFromBuffer(
     // Never throw on malformed JSON — log the raw response and persist it so the
     // failure is visible and debuggable rather than silently swallowed.
     console.error("[extraction] parse_failed — raw LLM response:", response.content);
-    return { error: "parse_failed", raw: response.content };
+    return { error: "parse_failed", raw: response.content.slice(0, MAX_PERSISTED_RAW_LENGTH) };
   }
 }

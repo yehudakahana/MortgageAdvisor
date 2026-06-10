@@ -1,22 +1,25 @@
 import { useState, useEffect, useRef } from "react";
-import { getClients, getClient, createClient, reExtractDocument, uploadDocument } from "../api";
+import { getClients, getClient, reExtractDocument, uploadDocument } from "../api";
 import type { Client } from "../types/client";
+import { useClientForm } from "./useClientForm";
 
 export function useClientPanel() {
   const [clients, setClients] = useState<Client[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [isCreatingClient, setIsCreatingClient] = useState(false);
-  const [name, setName] = useState("");
-  const [phone, setPhone] = useState("");
-  const [email, setEmail] = useState("");
-  const [saving, setSaving] = useState(false);
-  const [formError, setFormError] = useState("");
   const [uploadType, setUploadType] = useState<string>("paystub");
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [reExtractingId, setReExtractingId] = useState<string | null>(null);
+  const [timedOutDocIds, setTimedOutDocIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const form = useClientForm((client) => {
+    setClients((prev) => [...prev, client]);
+    setSelectedId(client.id);
+    setSearchQuery("");
+  });
 
   async function loadClients() {
     try {
@@ -24,32 +27,12 @@ export function useClientPanel() {
       setClients(data);
     } catch {
       // silently ignore on initial load
+    } finally {
+      setIsLoading(false);
     }
   }
 
   useEffect(() => { loadClients(); }, []);
-
-  async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
-    setFormError("");
-    if (!name.trim() || !phone.trim()) {
-      setFormError("שם וטלפון הם שדות חובה.");
-      return;
-    }
-    setSaving(true);
-    try {
-      const client = await createClient({ name: name.trim(), phone: phone.trim(), email: email.trim() });
-      setClients((prev) => [...prev, client]);
-      setSelectedId(client.id);
-      setSearchQuery("");
-      setIsCreatingClient(false);
-      setName(""); setPhone(""); setEmail("");
-    } catch {
-      setFormError("יצירת לקוח נכשלה.");
-    } finally {
-      setSaving(false);
-    }
-  }
 
   // Refetch a single client and merge it into local state.
   async function refreshClient(clientId: string): Promise<Client | null> {
@@ -72,8 +55,13 @@ export function useClientPanel() {
       await new Promise((r) => setTimeout(r, 3000));
       const client = await refreshClient(clientId);
       const doc = client?.documents.find((d) => d.id === docId);
-      if (doc?.extractedData) return;
+      if (doc?.extractedData) {
+        setTimedOutDocIds((prev) => prev.filter((id) => id !== docId));
+        return;
+      }
     }
+    // Polling gave up while extraction may still be running on the backend.
+    setTimedOutDocIds((prev) => (prev.includes(docId) ? prev : [...prev, docId]));
   }
 
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
@@ -82,10 +70,10 @@ export function useClientPanel() {
     setUploadError("");
     setIsUploading(true);
     try {
-      const form = new FormData();
-      form.append("file", file);
-      form.append("type", uploadType);
-      const updated: Client = await uploadDocument(selectedId, form);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("type", uploadType);
+      const updated: Client = await uploadDocument(selectedId, formData);
       setClients((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
       if (fileInputRef.current) fileInputRef.current.value = "";
       const newDoc = updated.documents[updated.documents.length - 1];
@@ -101,6 +89,7 @@ export function useClientPanel() {
   async function handleReExtract(docId: string) {
     if (!selectedId) return;
     setReExtractingId(docId);
+    setTimedOutDocIds((prev) => prev.filter((id) => id !== docId));
     try {
       const updated: Client = await reExtractDocument(selectedId, docId);
       setClients((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
@@ -123,13 +112,11 @@ export function useClientPanel() {
     : clients;
 
   return {
-    clients, filteredClients, selectedId, selectClient,
-    isCreatingClient, setIsCreatingClient,
-    name, setName, phone, setPhone, email, setEmail,
-    saving, formError, setFormError, handleCreate,
+    clients, filteredClients, isLoading, selectedId, selectClient,
+    ...form,
     uploadType, setUploadType, isUploading, uploadError,
     handleFileSelect, fileInputRef,
-    handleReExtract, reExtractingId,
+    handleReExtract, reExtractingId, timedOutDocIds,
     searchQuery, setSearchQuery,
   };
 }

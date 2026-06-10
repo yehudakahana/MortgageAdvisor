@@ -50,9 +50,14 @@ export default function LoginForm() {
               <Input
                 id="username"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  if (error) setError("");
+                }}
                 autoComplete="username"
                 autoFocus
+                aria-invalid={error ? true : undefined}
+                className={error ? "border-destructive" : undefined}
               />
             </div>
             <div className="space-y-1.5">
@@ -61,8 +66,13 @@ export default function LoginForm() {
                 id="password"
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (error) setError("");
+                }}
                 autoComplete="current-password"
+                aria-invalid={error ? true : undefined}
+                className={error ? "border-destructive" : undefined}
               />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}

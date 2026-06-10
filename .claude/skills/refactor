@@ -1,0 +1,385 @@
+name: refactor
+description: >
+  Deep, whole-project refactoring workflow. Use this skill whenever the user asks to
+  "refactor", "clean up the codebase", "scan the project", "improve the architecture",
+  "find tech debt", or wants a full audit of files, routes, and data flows — even if
+  they only hint at it (e.g. "the code is getting messy", "lots of duplication").
+  The skill scans the entire project in depth, proposes prioritized refactoring tasks
+  (up to and including full rewrites of files and route flows) plus low-effort product
+  quick wins, gets explicit user approval, and then dispatches the approved work to
+  up to 5 parallel subagents. For a single-file or single-function refactor, do NOT
+  use this skill — just do it directly. If the user's intent is unclear (venting vs
+  actually wanting a full audit), ask before launching the deep scan.
+---
+
+# Refactor — Whole-Project Audit & Parallel Refactoring
+
+This skill runs in five strict phases. **Never skip a phase. Never write or modify
+any code before Phase 3 approval is given.**
+
+```
+Phase 0: Preconditions → Phase 1: Deep Scan → Phase 2: Findings Report → Phase 3: User Approval → Phase 4: Parallel Agents
+```
+
+---
+
+## Phase 0 — Preconditions
+
+Run `git status` (read-only). If the working tree is not clean, STOP and tell the user:
+a large refactor should start from a clean tree so the diff is reviewable, and so a
+selective rollback in the recovery protocol can never discard the user's own uncommitted
+work. Offer to wait until they commit or stash. Only proceed on a dirty tree if the
+user explicitly says so — and in that case, the rollback exception (`git restore <file>`)
+is disabled for the entire run; recovery must be proposed as manual edits instead.
+
+Once the tree is clean, suggest (don't execute): "מומלץ לפתוח branch ייעודי לריפקטור
+(`git checkout -b refactor/<topic>`) לפני שנמשיך — רוצה?" The user runs it themselves;
+this skill never switches branches. Proceed either way after they answer.
+
+---
+
+## Critical Files — never touched without explicit, named approval
+
+The following are **critical files**. No agent may modify, rename, move, or delete them
+unless the user explicitly approved a finding that names them:
+
+- `.env*`, secrets, API keys, anything credential-related
+- Auth code: JWT logic, login routes, auth middleware, rate-limiting config
+- Database layer: connection setup, schemas/models, migration scripts, `db.json`-style data files
+- File-storage/upload security: presigned-URL logic, MIME validation, IDOR protections
+- `package.json`, lockfiles, and any dependency changes (add/remove/upgrade)
+- Deployment & infra: Railway config, Dockerfiles, CI/CD files, proxy/trust settings
+- Build & tooling configs: `tsconfig.json` (and variants), `vite.config.*` /
+  `webpack.config.*` / equivalent bundler configs, test-runner configs
+  (`jest.config.*`, `vitest.config.*`), and linter/formatter configs
+  (`.eslintrc*`, `.prettierrc*`)
+- `CLAUDE.md` and everything under `.claude/`
+
+A blanket `all` approval does **not** cover critical files — they require item-level,
+named confirmation (see Phase 3).
+
+---
+
+## Phase 1 — Deep Scan (read-only)
+
+Goal: build a complete mental model of the project. This phase is **strictly read-only**.
+
+1. **Map the structure.** Read the directory tree (ignore `node_modules`, `dist`, `build`,
+   `.git`, lockfiles). Identify the monorepo layout: frontend (React/Vite), backend
+   (Node/Express), shared code, config, scripts.
+2. **Read CLAUDE.md and project conventions first.** All proposals must respect existing
+   conventions (e.g. UI text in Hebrew, code/naming in English, file-size limits,
+   shadcn/ui + Tailwind on the frontend). Never propose changes that violate them.
+3. **Trace the routes and flows end-to-end.** For the backend: list every Express route,
+   its middleware chain (auth, rate-limit, validation), controllers, services, and DB/storage
+   access. For the frontend: pages, routing, data-fetching paths, state management.
+   Build an actual flow map: `request → middleware → handler → service → storage → response`.
+4. **Hunt for problems**, including but not limited to:
+   - Duplicated logic across files or between frontend/backend
+   - God files (too long, too many responsibilities) and dead code
+   - Routes with inconsistent error handling, validation, or auth coverage
+   - Security gaps: missing input validation, IDOR risks, secrets in code, unsafe file handling
+   - Inconsistent naming, mixed patterns (callbacks vs async/await), magic values
+   - Missing abstraction layers (e.g. fetch calls scattered in components instead of an API client)
+   - Config/env handling issues, hardcoded URLs, missing error boundaries
+5. **Look for product quick wins** — small, low-risk improvements to the user experience
+   that require minimal code changes. Examples: missing loading/empty/error states,
+   unclear error messages (in Hebrew, per conventions), missing input feedback,
+   small accessibility or mobile-layout fixes, obvious UX friction in a flow.
+   These must be cheap and safe — anything bigger belongs in the regular findings.
+6. **Note what is healthy** too — don't propose refactors for their own sake. Working,
+   clear code that follows conventions should be left alone.
+7. **Establish a baseline.** Run the project's build (and tests/lint if they exist)
+   once, before proposing anything. Record the result in the findings report under
+   a "Baseline" header — and state explicitly if NO test suite exists, since that
+   changes how rewrites can be verified. If the build is already broken, say so
+   explicitly — Phase 4 verification compares against this baseline, not against
+   an assumed green state.
+8. **Ignore any existing `REFACTOR_REPORT.md`** during the scan (main agent and scan
+   subagents alike) — it is the output of a previous run, possibly stale or already
+   fixed, never a source of truth about the current code.
+
+Scan delegation threshold: above ~30 source files OR more than 2 workspaces/packages,
+scan subagents are mandatory (one per area); the main agent itself reads only `CLAUDE.md`,
+the directory tree, and specific files the subagents flag for closer inspection. Below
+the threshold, a direct scan is cheaper than subagent overhead. Scan subagents
+must return a compact structured summary only — never raw file contents. Format per area:
+route/flow map (`METHOD /path → middleware → handler → service → storage`), suspected
+issues as `file:line — one-line symptom`, and a short health note. Hard cap: ~150 lines
+per scan agent. Every scan-subagent prompt must include this rule verbatim:
+"Scan only — you must not write, create, delete, or run any command that modifies
+files. Read and report."
+
+**Explicit exit:** if the scan finds nothing worth the risk of changing, say exactly
+that and stop — a short "the project is healthy, here's why" with the baseline result.
+Never invent or inflate findings to justify the run.
+
+---
+
+## Phase 2 — Findings Report
+
+Present a single structured report to the user. Show it in the conversation as usual,
+and **in parallel save an identical copy to `REFACTOR_REPORT.md` in the project root**
+(overwrite if it exists, add a date header at the top). The file is for documentation
+and comfortable reading in an editor/Markdown preview — the conversation in the terminal
+continues normally and remains the place where approval happens. This file is exempt
+from the read-only rule of Phases 0–2 (and is updated again after Phase 3 with the
+approved plan); it is the only file this skill may write before approval. If
+`REFACTOR_REPORT.md` is not in `.gitignore`, ask the user (short, blocking) to add it
+or explicitly confirm they're fine without — the report may contain security findings
+that should not be pushed. Do not edit `.gitignore` yourself. The presence of `REFACTOR_REPORT.md` as an untracked/modified
+file does NOT count as a dirty tree for this skill's purposes — it's expected; don't
+stop or "fix" it.
+
+Format:
+
+```
+## Baseline
+(result of the pre-refactor build/tests/lint from Phase 1 — green, or exact failures)
+
+## Project Overview
+(2–4 sentences: what the system does, main flows, overall health assessment)
+
+## Findings
+
+###  High Impact
+R1. <Title> — <files/routes affected>
+    Problem: ...
+    Proposed fix: ... (can be a full rewrite of files/flows when justified)
+    Risk: low/medium/high | Estimated scope: S/M/L
+
+###  Medium Impact
+R4. ...
+
+###  Nice to Have
+R7. ...
+
+###  Quick Wins (product polish — low effort, low risk)
+Q1. <Title> — <file/screen affected>
+    What: one-line description of the improvement
+    Effort: tiny (a few lines) — must be low risk by definition
+```
+
+Rules for the report:
+- Every finding gets a stable ID (R1, R2, … / Q1, Q2, …) so the user can approve by ID.
+- Any finding whose fix touches a critical file (see Critical Files section) must be
+  marked ** CRITICAL** in its title and must name the exact critical files involved.
+- Be concrete: name files, routes, and line-level symptoms. No vague "improve code quality".
+- For full-rewrite proposals, explain *why* incremental change isn't enough and what the
+  target architecture looks like.
+- Order by impact, not by file order.
+- Scope guide: S = single file, < ~50 changed lines; M = 2–4 files; L = cross-cutting
+  or full rewrite of a flow.
+- Cap the report at ~15 R-findings. If there are more, group the long tail into one
+  "additional minor items" finding.
+- Cap Quick Wins at 5 items. Only include items that are genuinely tiny and safe —
+  if a "quick win" needs new dependencies, schema changes, or touches auth/storage,
+  it is not a quick win; promote it to a regular finding instead.
+- **Verification field for every L-scope finding (mandatory for rewrites).** A passing
+  build does not prove behavior was preserved. Each L finding must state how it will
+  be verified: either (a) a prerequisite finding to write characterization tests for
+  the flow BEFORE the rewrite, which the rewrite finding depends on, or (b) a concrete
+  manual check list for the user to run after. A rewrite with neither is automatically
+  marked Risk: high.
+- **Security content stays symptom-level.** If the scan finds a secret in code, the
+  report names its location (`file:line`) but NEVER quotes the value. Security
+  findings (IDOR, missing validation, etc.) are phrased as symptoms and fixes — never
+  as exploitation steps. Remember this file sits in the repo root.
+
+---
+
+## Phase 3 — User Approval (hard gate)
+
+Ask the user explicitly which findings to execute:
+
+> "Which items should I execute? You can reply with IDs (e.g. `R1, R3, Q2`), `all`,
+> or ask me to adjust any proposal first."
+
+- **Do not proceed without an explicit answer.**
+- **Ambiguous answers are never treated as `all`.** Replies like "yes", "ok", "sure,
+  go ahead" do not name IDs and do not mean `all` — ask again, showing the expected
+  format (`R1, R3, Q2` or `all`).
+- **Oversized approvals get a warning.** If the approved set exceeds ~8 findings or
+  includes more than 2 L-scope items, suggest splitting into two runs — quality drops
+  when every agent carries a huge scope. The user can still insist on one run.
+- **Critical files require double confirmation.** If any approved item is marked
+   CRITICAL, confirm it separately and by name, even if the user replied `all`:
+  > "R2 modifies the auth middleware (`server/middleware/auth.js`) — confirm this
+  > specific change?"
+  No critical file is touched until its item gets this named confirmation.
+- If the user modifies a proposal, update the plan and re-confirm only the changed item.
+- If the user approves only some items, drop the rest entirely — do not "sneak in"
+  unapproved changes, even trivial ones.
+
+After approval, show the **execution plan**: which agent gets which tasks (see Phase 4),
+the order of any dependent work, and which files each agent owns. One short confirmation
+("looks good?") and then go.
+
+Immediately after approval, append the plan to `REFACTOR_REPORT.md` so it survives
+context compaction during long runs:
+
+```
+## Approved & Execution Plan (added after Phase 3)
+- Approved: R1, R3, Q2
+- Critical confirmations: R2 → server/middleware/auth.js (confirmed by name)
+- Agent A: R1 → files: [...]
+- Agent B: R3, Q2 → files: [...]
+```
+
+If context is ever compacted mid-run, re-read this section from the file — it is the
+single source of truth for what was approved and who owns what.
+
+---
+
+## Phase 4 — Parallel Agent Dispatch
+
+Split the approved work into **up to 5 subagents**, sized to the actual work, and run
+them in parallel via the Task tool. One agent is fine for a small approval set. Never
+add agents (or tasks) just to reach a number. If no Task tool is available in the
+environment, execute the tasks sequentially as the main agent — same rules, same
+file-ownership boundaries, same wave order.
+
+### Splitting rules (critical — prevents merge conflicts)
+- **Partition by file ownership, never by task type.** No two agents may touch the same file.
+- **Ownership spans the entire run, across all waves.** If a file is touched in
+  Wave 1, only its owning agent may touch it in Wave 2 — never a different agent.
+  This keeps every file's changes attributable to exactly one agent and one set of
+  findings, which the rollback depends on.
+- Natural split for this stack: e.g.
+  - Agent A: backend routes & middleware
+  - Agent B: backend services / storage / DB layer
+  - Agent C: frontend components & pages
+  - Agent D: frontend data layer (API client, hooks, state)
+  - Agent E: shared utils, config, cross-cutting cleanups
+  Adjust the split to the actual approved tasks — fewer agents is fine if work is small.
+- Approved Quick Wins are folded into whichever agent already owns the relevant files —
+  they never get their own agent.
+- If two approved tasks must touch the same file, assign both to the same agent.
+- **Contract changes own their callers.** A finding that changes a public contract —
+  exports, function signatures, route paths, request/response shapes — must include
+  ALL its callers in the same finding, assigned to the same agent; or, if the callers
+  are too spread out, the change goes through the wave structure: new contract in
+  Wave 1, all consumers updated in Wave 2. Never let one agent change a contract
+  while another agent's files still call the old one.
+
+### Dependency mapping & waves
+Before dispatching, map dependencies between approved tasks (e.g. a frontend component
+that will consume an API endpoint another agent is changing). Explicitly check: does
+any finding change something that is imported or called from files owned by another
+agent? If yes, that is a dependency.
+- **No dependencies** → dispatch all agents in one parallel wave. Do not add waves
+  for their own sake.
+- **Dependencies exist** → split into waves:
+  - **Wave 1 (foundation):** shared utils, API clients, core services, backend
+    endpoints — anything other tasks consume.
+  - **Wave 2 (consumers):** downstream tasks (e.g. frontend UI using the new
+    endpoints). Dispatch only after Wave 1 agents return, report completion,
+    and an intermediate build (plus tests if they exist) — run by the main agent
+    only — passes against the Phase 1 baseline. If the intermediate build fails,
+    the recovery protocol applies immediately and Wave 2 is held until the failure
+    is resolved or the user decides. When the intermediate build passes, suggest
+    the user make a checkpoint commit themselves before Wave 2 (the skill never
+    commits) — it creates a real restore point so a later rollback of Wave 2 files
+    cannot erase Wave 1's good work. Before dispatching Wave 2, the main agent reads
+    the contract **as actually implemented** by Wave 1 (real signatures, route paths,
+    request/response shapes) and pastes it into every Wave 2 brief as the source of
+    truth — never the original finding description, which may differ from what was
+    actually written.
+- A dependency between two small tasks can instead be resolved by giving both
+  to the same agent sequentially — prefer this when it avoids an extra wave.
+
+### Per-agent brief (include all of this in each Task prompt)
+1. The exact finding IDs and full descriptions it owns
+2. The explicit list of files it may modify (and that all other files are off-limits)
+3. The critical-files list, with this rule verbatim: "If your task seems to require
+   touching ANY file — critical or not — that is not in your allowed-files list,
+   STOP and report back instead of working around it. Critical files are off-limits
+   even to suggest, unless explicitly named in your list."
+4. Project conventions: Hebrew UI text, English code naming, file-size limits,
+   shadcn/ui + Tailwind, existing error-handling patterns — copied from CLAUDE.md
+5. Requirement: keep behavior identical unless the finding says otherwise.
+   Verification rule: agents may run at most a targeted lint on their own files
+   (e.g. `eslint <their files>`). Agents must NEVER run the project build,
+   typecheck, or test suite — parallel builds in a shared directory corrupt
+   `dist/` and caches and produce fake failures. Full build/tests are run only
+   by the main agent, once, after agents return (and between waves).
+6. Hard rule: no git write operations — never run `git commit`, `git push`,
+   `git reset`, `git checkout`, `git restore`, `git stash`, or anything that
+   discards or hides changes
+7. Output format — three explicit lists plus a one-line note per finding ID:
+   `created:` (files the agent created), `modified:`, `skipped:` (with reason).
+   The created/modified distinction is mandatory — the recovery protocol
+   depends on it.
+
+### After all agents return
+1. **Verify against git — never trust self-reports alone.** Run
+   `git status --porcelain` and `git diff --stat` (read-only) and cross-check every
+   changed/untracked file against the agents' allowed-files lists. Git is the source
+   of truth: untracked = created, modified = modified. `REFACTOR_REPORT.md` is exempt
+   from this check. Any changed file that no agent was allowed to touch is a
+   **violation**: report it to the user explicitly and mark it as a rollback candidate.
+   Run this same check at the end of every wave, not just at the end.
+2. **Persist agent outputs.** Append each agent's `created:` / `modified:` / `skipped:`
+   lists (reconciled against git) to a dedicated section in `REFACTOR_REPORT.md`, so
+   the recovery protocol still has accurate data after context compaction.
+3. Aggregate results into one summary: per finding ID — done / partially done /
+   skipped (why) / **blocked**. A finding is blocked when its agent stopped because
+   the task required a critical file (or any file) outside its allowed list.
+4. **Blocked findings are never re-dispatched automatically.** Present to the user:
+   what was blocked, which file was needed and why, and the options — approve that
+   file by name, adjust the finding, or drop it. The user decides.
+5. Run the project's build (and tests/lint if they exist) once to verify the combined result.
+6. Show the user a final diff-level summary grouped by finding ID, and flag any follow-ups.
+7. Do **not** commit. Let the user review and commit (or use their commit slash command).
+
+### Build failure & recovery protocol
+If the build, tests, or lint fail after aggregation — meaning new failures relative
+to the Phase 1 baseline — follow these steps in order:
+1. **Triage.** Read the logs and identify the cause: minor syntax issue, missing
+   import, or an uncoordinated signature/type change between two agents. Map each
+   failure to the finding ID and agent that caused it.
+2. **Trivial hotfix only — main agent only.** If the fix is strictly one of: adding
+   a missing import, updating a type reference, or fixing a syntax slip — AND it
+   stays inside files already approved for that finding — the main agent (never a
+   subagent) applies it, re-runs the build, and lists every hotfix in the final
+   summary. Anything beyond that (changing logic, signatures, structure, or touching
+   any file outside the approved set — especially a critical file) is NOT a hotfix.
+   **Hard cap: 3 hotfix attempts.** If the build is still red after 3, stop fixing
+   and go to step 3 — a creeping hotfix loop is exactly how scope expands silently.
+   Never expand scope to make the build pass; go to step 3.
+3. **Rollback & propose.** If the failure is systemic or risky, do not leave the
+   workspace broken and do not improvise. Present the user with: which finding/agent
+   caused the break, what the error is, and a proposal to selectively revert that
+   specific task's files while keeping the other successful refactors. The proposal
+   must include **cascade dependents**: if another finding imports from or depends on
+   the reverted files, name it and propose reverting or adjusting it too — otherwise
+   the build will just fail again for a new reason. Revert only after the user
+   approves, and only the named files. Mechanics: modified files are restored with
+   `git restore <file>`; files **created during this run** (per the git-verified
+   `created:` list) are removed with a plain targeted `rm <file>` — named files only,
+   never wildcards, never `git clean`, main agent only. After every revert, re-run
+   the build before presenting the final summary.
+
+---
+
+## Safety rules (always apply)
+
+- Read-only until Phase 3 approval. No exceptions — other than writing
+  `REFACTOR_REPORT.md` in Phase 2. (Running build/tests for the baseline is allowed;
+  it modifies no source files.)
+- Critical files (see top section) are never modified without item-level, named user
+  confirmation — a blanket `all` is not enough.
+- Never delete files in Phase 0–2; in Phase 4, deletions must have been explicitly
+  listed in the approved finding.
+- No git write operations — neither this skill nor any subagent may run
+  `git commit`, `git push`, `git reset`, `git checkout`, `git restore`, `git stash`,
+  or anything that rewrites history, discards, or hides changes. Git is read-only
+  (status/diff/log) throughout.
+  **Single exception:** during the recovery protocol, the main agent may restore
+  specific files (`git restore <file>` for modified files, targeted `rm <file>`
+  for files created during this run) — only the files the user explicitly approved
+  for rollback, named one by one, never wildcards or `git clean`, never repo-wide,
+  never by a subagent, and only if the run started from a clean working tree
+  (Phase 0); otherwise propose manual edits.
+- Respect the repo's existing formatting/lint setup; don't introduce new tooling
+  unless approved as a finding.

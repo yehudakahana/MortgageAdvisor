@@ -1,0 +1,1 @@
+Read the skill file at `.claude/skills/refactor` and follow it exactly, starting from Phase 0.

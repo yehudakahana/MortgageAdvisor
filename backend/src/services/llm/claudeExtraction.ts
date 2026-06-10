@@ -20,8 +20,7 @@ export async function extractWithClaude(
   const mime = request.mimeType;
 
   if (mime === "application/pdf") {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const response = await (anthropic.beta.messages as any).create({
+    const response = await anthropic.beta.messages.create({
       model,
       max_tokens: 4096,
       system: EXTRACTION_SYSTEM,

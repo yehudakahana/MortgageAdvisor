@@ -1,7 +1,7 @@
 import { Fragment } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Loader2, Search, UserPlus, Users } from "lucide-react";
+import { Loader2, Search, Trash2, UserPlus, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useClientPanel } from "../hooks/useClientPanel";
 import ClientAvatar from "./ClientAvatar";
@@ -17,6 +17,8 @@ export default function ClientPanel() {
     uploadType, setUploadType, isUploading, uploadError,
     handleFileSelect, fileInputRef,
     handleReExtract, reExtractingId, timedOutDocIds,
+    handleDeleteClient, deletingClientId,
+    handleDeleteDocument, deletingDocId,
     searchQuery, setSearchQuery,
   } = useClientPanel();
 
@@ -96,6 +98,14 @@ export default function ClientPanel() {
                       {c.documents.length}
                     </span>
                   )}
+                  <Button
+                    size="sm" variant="ghost" aria-label="מחק לקוח"
+                    className="h-7 w-7 p-0 shrink-0 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10"
+                    disabled={deletingClientId === c.id}
+                    onClick={(e) => { e.stopPropagation(); handleDeleteClient(c.id); }}
+                  >
+                    {deletingClientId === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                  </Button>
                 </div>
                 {c.id === selectedId && (
                   <ClientDocuments
@@ -105,6 +115,7 @@ export default function ClientPanel() {
                     fileInputRef={fileInputRef} onFileSelect={handleFileSelect}
                     onReExtract={handleReExtract} reExtractingId={reExtractingId}
                     timedOutDocIds={timedOutDocIds}
+                    onDeleteDocument={handleDeleteDocument} deletingDocId={deletingDocId}
                   />
                 )}
               </Fragment>

@@ -5,6 +5,7 @@ import {
   viewDocument,
   reExtractDocument,
 } from "../controllers/uploadController";
+import { deleteDocument } from "../controllers/documentController";
 
 const router = Router();
 
@@ -12,5 +13,6 @@ const router = Router();
 router.post("/:clientId", uploadSingle("file"), validateBuffer, uploadDocument);
 router.get("/:clientId/:docId/view", viewDocument);
 router.post("/:clientId/:docId/re-extract", reExtractDocument);
+router.delete("/:clientId/:docId", deleteDocument);
 
 export default router;

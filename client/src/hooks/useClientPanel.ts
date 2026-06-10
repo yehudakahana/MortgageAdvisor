@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { getClients, getClient, reExtractDocument, uploadDocument } from "../api";
+import { getClients, getClient, reExtractDocument, uploadDocument, deleteClient, deleteDocument } from "../api";
 import type { Client } from "../types/client";
 import { useClientForm } from "./useClientForm";
 
@@ -11,6 +11,8 @@ export function useClientPanel() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadError, setUploadError] = useState("");
   const [reExtractingId, setReExtractingId] = useState<string | null>(null);
+  const [deletingClientId, setDeletingClientId] = useState<string | null>(null);
+  const [deletingDocId, setDeletingDocId] = useState<string | null>(null);
   const [timedOutDocIds, setTimedOutDocIds] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -100,6 +102,36 @@ export function useClientPanel() {
     }
   }
 
+  // Deletion is irreversible (removes the stored files too), so always confirm.
+  async function handleDeleteClient(id: string) {
+    if (!window.confirm("למחוק את הלקוח וכל המסמכים שלו? פעולה זו אינה הפיכה.")) return;
+    setDeletingClientId(id);
+    try {
+      await deleteClient(id);
+      setClients((prev) => prev.filter((c) => c.id !== id));
+      setSelectedId((prev) => (prev === id ? null : prev));
+    } catch {
+      window.alert("מחיקת הלקוח נכשלה. נסו שוב.");
+    } finally {
+      setDeletingClientId(null);
+    }
+  }
+
+  async function handleDeleteDocument(docId: string) {
+    if (!selectedId) return;
+    if (!window.confirm("למחוק את המסמך? פעולה זו אינה הפיכה.")) return;
+    setDeletingDocId(docId);
+    try {
+      const updated: Client = await deleteDocument(selectedId, docId);
+      setClients((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
+      setTimedOutDocIds((prev) => prev.filter((id) => id !== docId));
+    } catch {
+      window.alert("מחיקת המסמך נכשלה. נסו שוב.");
+    } finally {
+      setDeletingDocId(null);
+    }
+  }
+
   function selectClient(id: string) {
     setSelectedId((prev) => (prev === id ? null : id));
     setUploadError("");
@@ -117,6 +149,8 @@ export function useClientPanel() {
     uploadType, setUploadType, isUploading, uploadError,
     handleFileSelect, fileInputRef,
     handleReExtract, reExtractingId, timedOutDocIds,
+    handleDeleteClient, deletingClientId,
+    handleDeleteDocument, deletingDocId,
     searchQuery, setSearchQuery,
   };
 }

@@ -1,1 +1,1 @@
-Read the skill file at `.claude/skills/refactor and folow it exactly, starting from Pashe 0.
+Read the skill file at `.claude/skills/refactor` and follow it exactly, starting from Phase 0.

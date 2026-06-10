@@ -57,7 +57,7 @@ router.patch("/:id", async (req: Request, res: Response) => {
     if (typeof body[field] === "string") update[field] = body[field] as string;
   }
   if (Object.keys(update).length === 0) {
-    return res.status(400).json({ error: "No valid fields to update" });
+    return res.status(400).json({ error: "אין שדות תקינים לעדכון" });
   }
   try {
     const updated = await ClientModel.findOneAndUpdate(

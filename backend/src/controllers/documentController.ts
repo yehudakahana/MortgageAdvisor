@@ -27,6 +27,8 @@ export async function deleteDocument(req: Request, res: Response) {
       { $pull: { documents: { id: docId } } },
       { returnDocument: "after" }
     );
+    // The client may have been deleted between the lookup and the update.
+    if (!updated) return res.status(404).json({ error: "הלקוח לא נמצא" });
     res.json(updated);
   } catch (err) {
     console.error("[delete-doc] failed to remove document:", err);

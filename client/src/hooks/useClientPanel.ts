@@ -53,16 +53,19 @@ export function useClientPanel() {
   // backend time: Gemini's 503 retries (1s+2s+4s backoff) plus the Claude
   // fallback request. ~90s avoids giving up while extraction is still running.
   async function pollExtraction(clientId: string, docId: string, attempts = 30) {
+    let doc: Client["documents"][number] | undefined;
     for (let i = 0; i < attempts; i++) {
       await new Promise((r) => setTimeout(r, 3000));
       const client = await refreshClient(clientId);
-      const doc = client?.documents.find((d) => d.id === docId);
+      doc = client?.documents.find((d) => d.id === docId);
       if (doc?.extractedData) {
         setTimedOutDocIds((prev) => prev.filter((id) => id !== docId));
         return;
       }
     }
     // Polling gave up while extraction may still be running on the backend.
+    // Skip if the document was deleted mid-poll — nothing to flag anymore.
+    if (!doc) return;
     setTimedOutDocIds((prev) => (prev.includes(docId) ? prev : [...prev, docId]));
   }
 

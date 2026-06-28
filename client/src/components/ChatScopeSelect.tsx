@@ -24,7 +24,7 @@ export default function ChatScopeSelect({ clients, value, onChange, disabled }: 
   return (
     <div
       className={cn(
-        "flex items-center gap-3 border-b px-4 py-3 transition-colors",
+        "flex items-center gap-3 max-md:gap-2 border-b px-4 max-md:px-3 py-3 transition-colors",
         isScoped
           ? "border-indigo-200 bg-gradient-to-l from-indigo-50 to-indigo-100/60"
           : "border-border/60 bg-secondary/40"
@@ -39,7 +39,7 @@ export default function ChatScopeSelect({ clients, value, onChange, disabled }: 
         {isScoped ? <UserCheck className="h-4 w-4" /> : <Users className="h-4 w-4" />}
       </div>
 
-      <div className="flex flex-col">
+      <div className="flex flex-col max-md:hidden">
         <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
           מצב שיחה
         </span>
@@ -55,7 +55,7 @@ export default function ChatScopeSelect({ clients, value, onChange, disabled }: 
       >
         <SelectTrigger
           className={cn(
-            "h-10 flex-1 text-sm font-medium shadow-sm",
+            "h-10 max-md:h-11 flex-1 text-sm font-medium shadow-sm",
             isScoped
               ? "border-indigo-300 bg-white text-indigo-900 focus:ring-indigo-400"
               : "border-border/70 bg-card"

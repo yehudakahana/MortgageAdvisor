@@ -43,7 +43,7 @@ export default function ClientPanel({ variant = "static" }: { variant?: "static"
         <Button
           size="sm"
           variant={isCreatingClient ? "outline" : "default"}
-          className={cn("h-8 gap-1 text-xs", !isCreatingClient && "bg-gradient-to-br from-indigo-600 to-indigo-900 hover:from-indigo-700 hover:to-indigo-950 shadow-sm border-0")}
+          className={cn("h-8 gap-1 text-xs max-md:h-10 max-md:text-sm", !isCreatingClient && "bg-gradient-to-br from-indigo-600 to-indigo-900 hover:from-indigo-700 hover:to-indigo-950 shadow-sm border-0")}
           onClick={() => { setIsCreatingClient((v) => !v); setFormError(""); }}
         >
           {isCreatingClient ? "ביטול" : <><UserPlus className="w-3 h-3" /><span>לקוח חדש</span></>}
@@ -55,7 +55,7 @@ export default function ClientPanel({ variant = "static" }: { variant?: "static"
         <div className="px-3 py-2 border-b border-border/70">
           <div className="relative">
             <Search className="absolute start-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50 pointer-events-none" />
-            <Input placeholder="חיפוש לקוח..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-8 ps-8 text-sm" />
+            <Input placeholder="חיפוש לקוח..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-8 max-md:h-11 ps-8 text-sm max-md:text-base" />
           </div>
         </div>
       )}

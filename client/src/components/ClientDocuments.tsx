@@ -53,7 +53,7 @@ export default function ClientDocuments({ documents, uploadType, setUploadType, 
                     </div>
                   )}
                   {status === "error" && (
-                    <div className="flex items-center gap-2 ps-1">
+                    <div className="flex items-center gap-2 ps-1 max-md:flex-wrap">
                       <span className="flex items-center gap-1.5 text-[11px] text-destructive">
                         <AlertCircle className="w-3 h-3" />
                         חילוץ המסמך נכשל
@@ -73,7 +73,7 @@ export default function ClientDocuments({ documents, uploadType, setUploadType, 
                       <Button
                         size="sm"
                         variant="outline"
-                        className="h-6 px-2 text-[11px] gap-1"
+                        className="h-6 px-2 text-[11px] gap-1 max-md:h-9 max-md:px-3"
                         disabled={reExtractingId === d.id}
                         onClick={() => onReExtract(d.id)}
                       >
@@ -94,7 +94,7 @@ export default function ClientDocuments({ documents, uploadType, setUploadType, 
       <div className="space-y-2 pt-1 border-t border-border/40">
         <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-1">העלאת מסמך</p>
         <Select value={uploadType} onValueChange={setUploadType}>
-          <SelectTrigger className="w-full h-9 text-sm"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-full h-9 max-md:h-11 text-sm"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="paystub">תלוש שכר</SelectItem>
             <SelectItem value="bank_statement">דף חשבון</SelectItem>
@@ -104,7 +104,7 @@ export default function ClientDocuments({ documents, uploadType, setUploadType, 
         </Select>
 
         <label className={cn(
-          "flex items-center gap-2 w-full border border-dashed border-border rounded-lg px-3 py-2.5 cursor-pointer hover:bg-card hover:border-indigo-400 transition-colors group",
+          "flex items-center gap-2 w-full border border-dashed border-border rounded-lg px-3 py-2.5 max-md:py-3 cursor-pointer hover:bg-card hover:border-indigo-400 transition-colors group",
           isUploading && "opacity-60 pointer-events-none"
         )}>
           {isUploading

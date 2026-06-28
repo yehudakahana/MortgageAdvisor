@@ -1,6 +1,8 @@
 // In dev, VITE_API_URL is empty so requests stay relative and hit the Vite
 // proxy. In production (Cloudflare Pages) set it to the Railway backend origin.
-const BASE = `${import.meta.env.VITE_API_URL ?? ""}/api`;
+// Trailing slashes are stripped so a value like "https://host/" doesn't
+// produce "//api/..." URLs, which Express rejects with a 404.
+const BASE = `${(import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "")}/api`;
 
 export type ChatMessage = { role: "user" | "assistant"; content: string };
 

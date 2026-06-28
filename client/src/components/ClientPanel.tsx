@@ -8,7 +8,7 @@ import ClientAvatar from "./ClientAvatar";
 import NewClientForm from "./NewClientForm";
 import ClientDocuments from "./ClientDocuments";
 
-export default function ClientPanel() {
+export default function ClientPanel({ variant = "static" }: { variant?: "static" | "drawer" }) {
   const {
     clients, filteredClients, isLoading, selectedId, selectClient,
     isCreatingClient, setIsCreatingClient,
@@ -23,9 +23,16 @@ export default function ClientPanel() {
   } = useClientPanel();
 
   return (
-    <aside className="w-96 flex-shrink-0 border-s border-border/70 bg-card flex flex-col overflow-hidden shadow-[-4px_0_20px_-4px_rgba(0,0,0,0.06)]">
+    <aside
+      className={cn(
+        "flex flex-col overflow-hidden bg-card",
+        variant === "drawer"
+          ? "h-full w-full"
+          : "w-96 flex-shrink-0 border-s border-border/70 shadow-[-4px_0_20px_-4px_rgba(0,0,0,0.06)]"
+      )}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-border/70 bg-gradient-to-b from-slate-50 to-card">
+      <div className={cn("flex items-center justify-between px-4 py-4 border-b border-border/70 bg-gradient-to-b from-slate-50 to-card", variant === "drawer" && "pe-12")}>
         <div className="flex items-center gap-2">
           <Users className="w-4 h-4 text-muted-foreground/70" />
           <h2 className="font-semibold text-sm">לקוחות</h2>
@@ -38,7 +45,7 @@ export default function ClientPanel() {
         <Button
           size="sm"
           variant={isCreatingClient ? "outline" : "default"}
-          className={cn("h-8 gap-1 text-xs", !isCreatingClient && "bg-gradient-to-br from-indigo-600 to-indigo-900 hover:from-indigo-700 hover:to-indigo-950 shadow-sm border-0")}
+          className={cn("h-8 gap-1 text-xs max-md:h-10 max-md:text-sm", !isCreatingClient && "bg-gradient-to-br from-indigo-600 to-indigo-900 hover:from-indigo-700 hover:to-indigo-950 shadow-sm border-0")}
           onClick={() => { setIsCreatingClient((v) => !v); setFormError(""); }}
         >
           {isCreatingClient ? "ביטול" : <><UserPlus className="w-3 h-3" /><span>לקוח חדש</span></>}
@@ -50,7 +57,7 @@ export default function ClientPanel() {
         <div className="px-3 py-2 border-b border-border/70">
           <div className="relative">
             <Search className="absolute start-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50 pointer-events-none" />
-            <Input placeholder="חיפוש לקוח..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-8 ps-8 text-sm" />
+            <Input placeholder="חיפוש לקוח..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-8 max-md:h-11 ps-8 text-sm max-md:text-base" />
           </div>
         </div>
       )}

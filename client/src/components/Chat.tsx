@@ -44,12 +44,12 @@ export default function Chat() {
     <div className="flex flex-col flex-1 overflow-hidden bg-gradient-to-b from-background via-secondary/30 to-background">
       <ChatScopeSelect clients={clients} value={scopeId} onChange={changeScope} disabled={loading} />
 
-      <div className="flex-1 overflow-y-auto px-5 py-5 flex flex-col gap-4">
+      <div className="flex-1 overflow-y-auto px-5 py-5 max-md:px-3 max-md:py-4 flex flex-col gap-4">
         {messages.map((msg, i) => (
           <div
             key={i}
             className={cn(
-              "flex flex-col gap-1.5 max-w-[76%]",
+              "flex flex-col gap-1.5 max-w-[76%] max-md:max-w-[88%]",
               msg.role === "user" ? "self-end items-end" : "self-start items-start"
             )}
           >
@@ -66,7 +66,7 @@ export default function Chat() {
             </div>
             <div
               className={cn(
-                "rounded-2xl px-5 py-3 text-base leading-relaxed break-words whitespace-pre-wrap",
+                "rounded-2xl px-5 py-3 max-md:px-4 text-base leading-relaxed break-words whitespace-pre-wrap",
                 msg.role === "user"
                   ? "bg-gradient-to-br from-indigo-600 to-indigo-900 text-white shadow-md shadow-indigo-900/20"
                   : "bg-card border border-border/70 text-foreground shadow-sm"
@@ -78,7 +78,7 @@ export default function Chat() {
         ))}
 
         {loading && (
-          <div className="flex flex-col gap-1.5 self-start items-start max-w-[76%]">
+          <div className="flex flex-col gap-1.5 self-start items-start max-w-[76%] max-md:max-w-[88%]">
             <div className="flex items-center gap-1.5">
               <AssistantAvatar />
               <span className="text-xs text-muted-foreground font-medium tracking-wide">שרה</span>
@@ -104,7 +104,7 @@ export default function Chat() {
         </Button>
       </div>
 
-      <div className="border-t border-border/50 px-4 py-3 bg-card/80 backdrop-blur-sm flex gap-2.5 items-end flex-shrink-0">
+      <div className="border-t border-border/50 px-4 py-3 max-md:pb-[max(env(safe-area-inset-bottom),0.75rem)] bg-card/80 backdrop-blur-sm flex gap-2.5 items-end flex-shrink-0">
         <Textarea
           rows={1}
           value={input}

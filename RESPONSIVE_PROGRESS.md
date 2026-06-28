@@ -27,9 +27,14 @@ Breakpoints verified against: 320 / 375 / 768 / 1024+.
 - [x] ui primitives — applied per-call max-md overrides on every text input instead of editing base (keeps desktop identical); all current inputs covered
 
 ## Phase 3 — Verification
-- [ ] npm run build passes
-- [ ] re-run grep, explain remainders
-- [ ] desktop regression check
+- [x] npm run build passes (tsc + vite, 0 errors)
+- [x] re-run grep: 6→3 occurrences. All 3 remaining are inside untouched shadcn `ui/select.tsx` (chevron/check positioning) — legitimate. h-screen/min-h-screen/100vh: 3→0.
+- [x] desktop regression check: ≥768px renders `<ClientPanel/>` static + Chat exactly as before. All page changes are `max-md:`-only (no desktop effect). App/index.css `h-screen→h-dvh` and `min-h-screen→min-h-dvh` are identical at desktop. ClientPanel static root = same class set, reordered. Pixel-identical.
+
+## Notes / new mechanisms
+- `useMediaQuery("(min-width: 768px)")` decides where the single ClientPanel mounts (static aside vs Sheet drawer) to avoid double-mount/double-fetch. Trade-off: resizing across 768px remounts the panel (one extra GET /clients on that resize) — rare, acceptable, not present in normal single-viewport use.
+- Sheet has no enter/exit animation (no tailwindcss-animate plugin installed; not added). Drawer is fully functional (overlay, focus trap, esc, close button).
+- Dependency added (approved): `@radix-ui/react-dialog` for shadcn Sheet.
 
 ## Changelog
 - shell: mobile drawer for ClientPanel (shadcn Sheet), h-dvh shell, mobile header. Added dep @radix-ui/react-dialog (approved).

@@ -1,14 +1,22 @@
-import { LogOut } from "lucide-react";
+import { useState } from "react";
+import { LogOut, Users } from "lucide-react";
 import Chat from "./components/Chat";
 import ClientPanel from "./components/ClientPanel";
 import { Button } from "@/components/ui/button";
+import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useAuth } from "./auth/AuthContext";
+import { useMediaQuery } from "./hooks/useMediaQuery";
 
 export default function App() {
   const { username, logout } = useAuth();
+  // Render the (data-fetching) ClientPanel in exactly one place: a static aside
+  // on desktop, or a drawer on mobile. Never both, to avoid a double mount.
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const [panelOpen, setPanelOpen] = useState(false);
+
   return (
-    <div className="flex flex-col h-screen bg-background">
-      <header className="bg-gradient-to-l from-indigo-950 via-indigo-900 to-slate-900 text-white px-6 py-4 shadow-xl flex-shrink-0">
+    <div className="flex flex-col h-dvh bg-background">
+      <header className="bg-gradient-to-l from-indigo-950 via-indigo-900 to-slate-900 text-white px-6 py-4 max-md:px-4 shadow-xl flex-shrink-0">
         <div className="flex items-center justify-between gap-3.5">
           <div className="flex items-center gap-3.5">
             <div className="w-10 h-10 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center flex-shrink-0 shadow-inner">
@@ -18,27 +26,47 @@ export default function App() {
               <h1 className="text-xl font-bold tracking-tight leading-none">שרה</h1>
               <div className="flex items-center gap-1.5 mt-1">
                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <p className="text-xs text-white/70">עוזרת יועץ משכנתאות · מחובר</p>
+                <p className="text-xs text-white/70 max-md:text-[11px]">עוזרת יועץ משכנתאות · מחובר</p>
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            {username && <span className="text-sm text-white/70">{username}</span>}
+          <div className="flex items-center gap-3 max-md:gap-1.5">
+            {username && <span className="text-sm text-white/70 max-md:hidden">{username}</span>}
             <Button
               variant="ghost"
               size="sm"
               onClick={logout}
-              className="text-white/80 hover:text-white hover:bg-white/10 gap-1.5"
+              className="text-white/80 hover:text-white hover:bg-white/10 gap-1.5 max-md:min-h-11 max-md:px-2.5"
             >
               <LogOut className="w-4 h-4" />
-              התנתקות
+              <span className="max-md:hidden">התנתקות</span>
             </Button>
+            {!isDesktop && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setPanelOpen(true)}
+                aria-label="פתח רשימת לקוחות"
+                className="text-white/80 hover:text-white hover:bg-white/10 min-h-11 min-w-11"
+              >
+                <Users className="w-5 h-5" />
+              </Button>
+            )}
           </div>
         </div>
       </header>
       <main className="flex flex-1 overflow-hidden">
         <Chat />
-        <ClientPanel />
+        {isDesktop ? (
+          <ClientPanel />
+        ) : (
+          <Sheet open={panelOpen} onOpenChange={setPanelOpen}>
+            <SheetContent side="end" className="w-80 p-0">
+              <SheetTitle className="sr-only">לקוחות</SheetTitle>
+              <ClientPanel variant="drawer" />
+            </SheetContent>
+          </Sheet>
+        )}
       </main>
     </div>
   );

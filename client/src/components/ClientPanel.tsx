@@ -8,7 +8,7 @@ import ClientAvatar from "./ClientAvatar";
 import NewClientForm from "./NewClientForm";
 import ClientDocuments from "./ClientDocuments";
 
-export default function ClientPanel() {
+export default function ClientPanel({ variant = "static" }: { variant?: "static" | "drawer" }) {
   const {
     clients, filteredClients, selectedId, selectClient,
     isCreatingClient, setIsCreatingClient,
@@ -21,9 +21,16 @@ export default function ClientPanel() {
   } = useClientPanel();
 
   return (
-    <aside className="w-96 flex-shrink-0 border-s border-border/70 bg-card flex flex-col overflow-hidden shadow-[-4px_0_20px_-4px_rgba(0,0,0,0.06)]">
+    <aside
+      className={cn(
+        "flex flex-col overflow-hidden bg-card",
+        variant === "drawer"
+          ? "h-full w-full"
+          : "w-96 flex-shrink-0 border-s border-border/70 shadow-[-4px_0_20px_-4px_rgba(0,0,0,0.06)]"
+      )}
+    >
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-4 border-b border-border/70 bg-gradient-to-b from-slate-50 to-card">
+      <div className={cn("flex items-center justify-between px-4 py-4 border-b border-border/70 bg-gradient-to-b from-slate-50 to-card", variant === "drawer" && "pe-12")}>
         <div className="flex items-center gap-2">
           <Users className="w-4 h-4 text-muted-foreground/70" />
           <h2 className="font-semibold text-sm">לקוחות</h2>

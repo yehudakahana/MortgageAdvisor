@@ -18,7 +18,7 @@ Breakpoints verified against: 320 / 375 / 768 / 1024+.
 - [x] ui/sheet.tsx (new, @radix-ui/react-dialog) + hooks/useMediaQuery.ts (new)
 
 ### Pages / features
-- [ ] Chat.tsx (primary)
+- [x] Chat.tsx (primary) — mobile padding, wider bubbles (88%), input safe-area pb
 - [ ] ChatScopeSelect.tsx
 - [ ] ClientDocuments.tsx
 - [ ] NewClientForm.tsx

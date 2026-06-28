@@ -32,7 +32,7 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-bl from-indigo-950 via-indigo-900 to-slate-900 p-4">
+    <div className="flex items-center justify-center min-h-dvh bg-gradient-to-bl from-indigo-950 via-indigo-900 to-slate-900 p-4">
       <Card className="w-full max-w-sm shadow-2xl">
         <CardHeader className="items-center text-center space-y-3">
           <div className="w-14 h-14 rounded-2xl bg-indigo-900 text-white flex items-center justify-center shadow-inner">
@@ -53,6 +53,7 @@ export default function LoginForm() {
                 onChange={(e) => setUsername(e.target.value)}
                 autoComplete="username"
                 autoFocus
+                className="max-md:h-11 max-md:text-base"
               />
             </div>
             <div className="space-y-1.5">
@@ -63,10 +64,11 @@ export default function LoginForm() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 autoComplete="current-password"
+                className="max-md:h-11 max-md:text-base"
               />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full max-md:h-11 max-md:text-base" disabled={loading}>
               {loading ? "מתחבר..." : "התחברות"}
             </Button>
           </form>

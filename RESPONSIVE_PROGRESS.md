@@ -19,11 +19,12 @@ Breakpoints verified against: 320 / 375 / 768 / 1024+.
 
 ### Pages / features
 - [x] Chat.tsx (primary) — mobile padding, wider bubbles (88%), input safe-area pb
-- [ ] ChatScopeSelect.tsx
-- [ ] ClientDocuments.tsx
-- [ ] NewClientForm.tsx
-- [ ] LoginForm.tsx
-- [ ] ui primitives (input/textarea touch targets + 16px font)
+- [x] ChatScopeSelect.tsx — reduced gaps/padding, hid redundant label text on mobile, h-11 trigger
+- [x] ClientDocuments.tsx — error row wraps, select/label/retry touch targets
+- [x] NewClientForm.tsx — inputs/button h-11 + text-base (no iOS zoom)
+- [x] ClientPanel.tsx (controls) — search input + new-client button touch/zoom
+- [x] LoginForm.tsx — min-h-dvh, inputs/button h-11 + text-base
+- [x] ui primitives — applied per-call max-md overrides on every text input instead of editing base (keeps desktop identical); all current inputs covered
 
 ## Phase 3 — Verification
 - [ ] npm run build passes

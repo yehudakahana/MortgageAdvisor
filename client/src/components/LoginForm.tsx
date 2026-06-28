@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 export default function LoginForm() {
   const { login } = useAuth();
@@ -50,10 +51,14 @@ export default function LoginForm() {
               <Input
                 id="username"
                 value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                onChange={(e) => {
+                  setUsername(e.target.value);
+                  if (error) setError("");
+                }}
                 autoComplete="username"
                 autoFocus
-                className="max-md:h-11 max-md:text-base"
+                aria-invalid={error ? true : undefined}
+                className={cn("max-md:h-11 max-md:text-base", error && "border-destructive")}
               />
             </div>
             <div className="space-y-1.5">
@@ -62,9 +67,13 @@ export default function LoginForm() {
                 id="password"
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={(e) => {
+                  setPassword(e.target.value);
+                  if (error) setError("");
+                }}
                 autoComplete="current-password"
-                className="max-md:h-11 max-md:text-base"
+                aria-invalid={error ? true : undefined}
+                className={cn("max-md:h-11 max-md:text-base", error && "border-destructive")}
               />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}

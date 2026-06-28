@@ -89,6 +89,20 @@ export async function reExtractDocument(clientId: string, docId: string) {
   return res.json();
 }
 
+// Delete a client; the backend also removes their stored files from R2.
+export async function deleteClient(id: string) {
+  const res = await authFetch(`${BASE}/clients/${id}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete client");
+  return res.json();
+}
+
+// Delete a single document (stored file + metadata). Returns the updated client.
+export async function deleteDocument(clientId: string, docId: string) {
+  const res = await authFetch(`${BASE}/upload/${clientId}/${docId}`, { method: "DELETE" });
+  if (!res.ok) throw new Error("Failed to delete document");
+  return res.json();
+}
+
 export async function createClient(data: { name: string; phone: string; email?: string; notes?: string }) {
   const res = await authFetch(`${BASE}/clients`, {
     method: "POST",

@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tooltip, TooltipTrigger, TooltipContent, TooltipProvider } from "@/components/ui/tooltip";
-import { FileUp, Loader2, CheckCircle2, AlertCircle, RotateCw, Info } from "lucide-react";
+import { FileUp, Loader2, CheckCircle2, AlertCircle, RotateCw, Info, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { DOC_TYPE_LABELS, DOC_TYPE_STYLES, formatUploadDate, getExtractionStatus } from "../types/client";
 import type { Document } from "../types/client";
@@ -17,9 +17,21 @@ interface Props {
   onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onReExtract: (docId: string) => void;
   reExtractingId: string | null;
+  timedOutDocIds: string[];
+  onDeleteDocument: (docId: string) => void;
+  deletingDocId: string | null;
 }
 
-export default function ClientDocuments({ documents, uploadType, setUploadType, isUploading, uploadError, fileInputRef, onFileSelect, onReExtract, reExtractingId }: Props) {
+function ReExtractButton({ docId, onReExtract, reExtracting }: { docId: string; onReExtract: (docId: string) => void; reExtracting: boolean }) {
+  return (
+    <Button size="sm" variant="outline" className="h-6 px-2 text-[11px] gap-1 max-md:h-9 max-md:px-3" disabled={reExtracting} onClick={() => onReExtract(docId)}>
+      {reExtracting ? <Loader2 className="w-3 h-3 animate-spin" /> : <RotateCw className="w-3 h-3" />}
+      נסה שוב
+    </Button>
+  );
+}
+
+export default function ClientDocuments({ documents, uploadType, setUploadType, isUploading, uploadError, fileInputRef, onFileSelect, onReExtract, reExtractingId, timedOutDocIds, onDeleteDocument, deletingDocId }: Props) {
   return (
     <TooltipProvider delayDuration={150}>
     <div className="bg-indigo-50/40 border-b border-border/50 border-s-2 border-s-indigo-600 px-4 py-4 space-y-4">
@@ -31,6 +43,7 @@ export default function ClientDocuments({ documents, uploadType, setUploadType, 
           <ul className="space-y-2.5">
             {documents.map((d) => {
               const status = getExtractionStatus(d);
+              const timedOut = timedOutDocIds.includes(d.id);
               return (
                 <li key={d.id} className="space-y-1">
                   <div className="flex items-center gap-2">
@@ -39,11 +52,27 @@ export default function ClientDocuments({ documents, uploadType, setUploadType, 
                     </Badge>
                     <span className="text-xs text-muted-foreground truncate flex-1">{d.filename}</span>
                     <span className="text-[11px] text-muted-foreground/50 shrink-0 tabular-nums">{formatUploadDate(d.uploadedAt)}</span>
+                    <button
+                      type="button" aria-label="מחק מסמך"
+                      disabled={deletingDocId === d.id}
+                      onClick={() => onDeleteDocument(d.id)}
+                      className="text-muted-foreground/40 hover:text-destructive transition-colors shrink-0 disabled:opacity-50"
+                    >
+                      {deletingDocId === d.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                    </button>
                   </div>
-                  {status === "pending" && (
+                  {status === "pending" && !timedOut && (
                     <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground ps-1">
                       <Loader2 className="w-3 h-3 animate-spin" />
                       <span>מחלץ נתונים מהמסמך...</span>
+                    </div>
+                  )}
+                  {status === "pending" && timedOut && (
+                    <div className="flex items-center gap-2 ps-1">
+                      <span className="text-[11px] text-muted-foreground flex-1">
+                        חילוץ המסמך עדיין רץ — אפשר לנסות שוב עם כפתור החילוץ מחדש.
+                      </span>
+                      <ReExtractButton docId={d.id} onReExtract={onReExtract} reExtracting={reExtractingId === d.id} />
                     </div>
                   )}
                   {status === "success" && (
@@ -70,18 +99,7 @@ export default function ClientDocuments({ documents, uploadType, setUploadType, 
                           </TooltipContent>
                         </Tooltip>
                       )}
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="h-6 px-2 text-[11px] gap-1 max-md:h-9 max-md:px-3"
-                        disabled={reExtractingId === d.id}
-                        onClick={() => onReExtract(d.id)}
-                      >
-                        {reExtractingId === d.id
-                          ? <Loader2 className="w-3 h-3 animate-spin" />
-                          : <RotateCw className="w-3 h-3" />}
-                        נסה שוב
-                      </Button>
+                      <ReExtractButton docId={d.id} onReExtract={onReExtract} reExtracting={reExtractingId === d.id} />
                     </div>
                   )}
                 </li>

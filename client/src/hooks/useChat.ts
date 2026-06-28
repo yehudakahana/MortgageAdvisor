@@ -69,11 +69,14 @@ export function useChat() {
       // Commit the exchange only after a successful round trip.
       historyRef.current = [...historyRef.current, userMessage, reply];
       setMessages((prev) => [...prev, reply]);
-    } catch {
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "משהו השתבש. אנא נסה שוב." },
-      ]);
+    } catch (err) {
+      // fetch rejects with TypeError on network failure; the API client throws
+      // a plain Error when the server responded with a non-OK status.
+      const content =
+        err instanceof TypeError
+          ? "בעיה בחיבור לשרת. בדקו את החיבור ונסו שוב."
+          : "שרה לא הצליחה לענות כרגע. נסו שוב בעוד רגע.";
+      setMessages((prev) => [...prev, { role: "assistant", content }]);
     } finally {
       setLoading(false);
     }

@@ -132,7 +132,7 @@ export default function DocumentRow({ clientId, document: d, timedOut, onReExtra
           <DialogTitle className="pe-8 truncate">{d.filename}</DialogTitle>
           <DialogDescription>סיכום AI — {DOC_TYPE_LABELS[d.type] ?? d.type}</DialogDescription>
           <div className="mt-4 overflow-y-auto">
-            <DocumentSummary document={d} />
+            <DocumentSummary doc={d} />
           </div>
         </DialogContent>
       </Dialog>

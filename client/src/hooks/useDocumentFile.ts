@@ -34,16 +34,22 @@ export function useDocumentFile(clientId: string, docId: string) {
   // The signed URL carries Content-Disposition: attachment, so navigating to it
   // downloads without leaving the page. A hidden iframe triggers that fetch
   // without opening a blank tab or replacing the current document.
+  //
+  // The iframe fires no load event for an attachment response (the browser
+  // cancels the navigation and hands off to its download manager), so we cannot
+  // track the transfer itself — the spinner only covers the presign request.
+  // A toast confirms the hand-off so the user isn't left wondering.
   async function download() {
     setLoading("download");
     try {
       const { url } = await getDocumentUrl(clientId, docId, "download");
-      const iframe = document.createElement("iframe");
+      const iframe = window.document.createElement("iframe");
       iframe.style.display = "none";
       iframe.src = url;
-      document.body.appendChild(iframe);
+      window.document.body.appendChild(iframe);
       // Give the browser time to start the download before removing the iframe.
       window.setTimeout(() => iframe.remove(), 60_000);
+      toast("ההורדה החלה — בדקו את הורדות הדפדפן.", "success");
     } catch {
       toast("לא ניתן להוריד את הקובץ. ייתכן שהוא לא נשמר במערכת.");
     } finally {

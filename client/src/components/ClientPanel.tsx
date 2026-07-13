@@ -116,6 +116,7 @@ export default function ClientPanel({ variant = "static" }: { variant?: "static"
                 </div>
                 {c.id === selectedId && (
                   <ClientDocuments
+                    clientId={c.id}
                     documents={c.documents}
                     uploadType={uploadType} setUploadType={setUploadType}
                     isUploading={isUploading} uploadError={uploadError}

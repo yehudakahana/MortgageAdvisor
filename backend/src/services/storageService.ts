@@ -60,11 +60,32 @@ export async function getObjectBuffer(key: string): Promise<Buffer> {
 }
 
 // Short-lived (15-minute) presigned GET URL. The bucket stays fully private;
-// this is the only way a file is ever served.
-export async function getViewUrl(key: string): Promise<string> {
+// this is the only way a file is ever served. `disposition` overrides the
+// object's stored Content-Disposition at fetch time: "inline" to preview in the
+// browser (PDF/image), "attachment" to force a download with the original
+// (Hebrew-safe) filename. Omit to use whatever was stored on the object.
+export async function getViewUrl(
+  key: string,
+  disposition?: "inline" | "attachment",
+  filename?: string
+): Promise<string> {
+  let responseContentDisposition: string | undefined;
+  if (disposition === "attachment") {
+    responseContentDisposition = buildContentDisposition(
+      "application/octet-stream",
+      filename ?? "document"
+    );
+  } else if (disposition === "inline") {
+    responseContentDisposition = "inline";
+  }
+
   return getSignedUrl(
     r2,
-    new GetObjectCommand({ Bucket: R2_BUCKET_NAME, Key: key }),
+    new GetObjectCommand({
+      Bucket: R2_BUCKET_NAME,
+      Key: key,
+      ResponseContentDisposition: responseContentDisposition,
+    }),
     { expiresIn: VIEW_URL_TTL_SECONDS }
   );
 }

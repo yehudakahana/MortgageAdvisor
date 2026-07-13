@@ -80,6 +80,19 @@ export async function uploadDocument(clientId: string, form: FormData) {
   return res.json();
 }
 
+// Fetch a short-lived presigned URL for a document. mode "view" previews inline
+// (PDF/image); "download" forces an attachment with the original filename.
+export async function getDocumentUrl(
+  clientId: string,
+  docId: string,
+  mode: "view" | "download" = "view"
+) {
+  const query = mode === "download" ? "?mode=download" : "";
+  const res = await authFetch(`${BASE}/upload/${clientId}/${docId}/view${query}`);
+  if (!res.ok) throw new Error("Failed to get document URL");
+  return res.json() as Promise<{ url: string }>;
+}
+
 // Retry extraction for an already-uploaded document. Returns the updated client.
 export async function reExtractDocument(clientId: string, docId: string) {
   const res = await authFetch(`${BASE}/upload/${clientId}/${docId}/re-extract`, {

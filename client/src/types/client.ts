@@ -2,6 +2,8 @@ export interface Document {
   id: string;
   type: string;
   filename: string;
+  // Resolved MIME of the stored file; used to decide inline preview vs download.
+  mimetype?: string;
   uploadedAt: string;
   // Set asynchronously by the backend after Gemini extraction. Absent while
   // pending, { error } on failure, otherwise the extracted blob on success.
@@ -10,6 +12,16 @@ export interface Document {
     rawText?: unknown;
     error?: string;
   } | null;
+}
+
+// Only PDFs and images render inline in a browser tab; Word/Excel files can
+// only be downloaded. Legacy records may lack `mimetype`, so fall back to the
+// filename extension. Used to decide whether to offer an inline "view" action.
+export function canPreviewInline(doc: Document): boolean {
+  const mt = doc.mimetype ?? "";
+  if (mt === "application/pdf" || mt.startsWith("image/")) return true;
+  if (mt) return false;
+  return /\.(pdf|jpe?g|png|webp)$/i.test(doc.filename);
 }
 
 export type ExtractionStatus = "pending" | "success" | "error";

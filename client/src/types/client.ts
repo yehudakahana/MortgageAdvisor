@@ -14,6 +14,16 @@ export interface Document {
   } | null;
 }
 
+// Only PDFs and images render inline in a browser tab; Word/Excel files can
+// only be downloaded. Legacy records may lack `mimetype`, so fall back to the
+// filename extension. Used to decide whether to offer an inline "view" action.
+export function canPreviewInline(doc: Document): boolean {
+  const mt = doc.mimetype ?? "";
+  if (mt === "application/pdf" || mt.startsWith("image/")) return true;
+  if (mt) return false;
+  return /\.(pdf|jpe?g|png|webp)$/i.test(doc.filename);
+}
+
 export type ExtractionStatus = "pending" | "success" | "error";
 
 // Derive the user-facing extraction state of a document from its extractedData.

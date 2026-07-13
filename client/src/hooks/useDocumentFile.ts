@@ -1,24 +1,31 @@
 import { useState } from "react";
 import { getDocumentUrl } from "../api";
+import { toast } from "../lib/toast";
 
 type Action = "view" | "download";
 
 // Fetches a short-lived signed URL for a document and either previews it inline
 // or forces a download. `loading` names the in-flight action so each button can
-// show its own spinner (and both disable while either is running).
+// show its own spinner (and both disable while either is running). On failure —
+// most often a legacy record with no stored file (backend 404) — we surface a
+// toast instead of opening a blank browser tab.
 export function useDocumentFile(clientId: string, docId: string) {
   const [loading, setLoading] = useState<Action | null>(null);
 
-  // Open a blank tab synchronously so the popup blocker doesn't kill it after
-  // the async presign, then point it at the signed URL.
+  // Resolve the URL FIRST, then open a tab only on success — no blank-tab flash
+  // when the file is missing. If the popup is blocked, fall back to a toast.
   async function open() {
-    const win = window.open("", "_blank");
     setLoading("view");
     try {
       const { url } = await getDocumentUrl(clientId, docId, "view");
-      if (win) win.location.href = url;
+      // Not passing "noopener" here: with it, window.open returns null even on
+      // success, which we can't distinguish from a blocked popup. Null the
+      // opener manually instead (best-effort) to avoid reverse tabnabbing.
+      const win = window.open(url, "_blank");
+      if (win) win.opener = null;
+      else toast("הדפדפן חסם את פתיחת הקובץ. אפשרו חלונות קופצים ונסו שוב.");
     } catch {
-      win?.close();
+      toast("לא ניתן לפתוח את הקובץ. ייתכן שהוא לא נשמר במערכת.");
     } finally {
       setLoading(null);
     }
@@ -38,7 +45,7 @@ export function useDocumentFile(clientId: string, docId: string) {
       // Give the browser time to start the download before removing the iframe.
       window.setTimeout(() => iframe.remove(), 60_000);
     } catch {
-      // ignore — the file simply won't download
+      toast("לא ניתן להוריד את הקובץ. ייתכן שהוא לא נשמר במערכת.");
     } finally {
       setLoading(null);
     }

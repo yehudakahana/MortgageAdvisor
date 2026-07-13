@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/compone
 import { Loader2, CheckCircle2, AlertCircle, RotateCw, Info, Trash2, Eye, Download, FileText } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useDocumentFile } from "../hooks/useDocumentFile";
-import { DOC_TYPE_LABELS, DOC_TYPE_STYLES, formatUploadDate, getExtractionStatus } from "../types/client";
+import { DOC_TYPE_LABELS, DOC_TYPE_STYLES, formatUploadDate, getExtractionStatus, canPreviewInline } from "../types/client";
 import type { Document } from "../types/client";
 import DocumentSummary from "./DocumentSummary";
 
@@ -54,6 +54,7 @@ export default function DocumentRow({ clientId, document: d, timedOut, onReExtra
   const { loading, open, download } = useDocumentFile(clientId, d.id);
   const status = getExtractionStatus(d);
   const busy = loading !== null;
+  const previewable = canPreviewInline(d);
 
   return (
     <li className="space-y-1">
@@ -64,9 +65,11 @@ export default function DocumentRow({ clientId, document: d, timedOut, onReExtra
         <span className="text-xs text-muted-foreground truncate flex-1">{d.filename}</span>
         <span className="text-[11px] text-muted-foreground/50 shrink-0 tabular-nums">{formatUploadDate(d.uploadedAt)}</span>
         <div className="flex items-center gap-2 shrink-0">
-          <IconAction label="צפייה בקובץ" disabled={busy} onClick={open}>
-            {loading === "view" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5" />}
-          </IconAction>
+          {previewable && (
+            <IconAction label="צפייה בקובץ" disabled={busy} onClick={open}>
+              {loading === "view" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Eye className="w-3.5 h-3.5" />}
+            </IconAction>
+          )}
           <IconAction label="הורדת קובץ" disabled={busy} onClick={download}>
             {loading === "download" ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
           </IconAction>

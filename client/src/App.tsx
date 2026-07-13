@@ -2,6 +2,7 @@ import { useState } from "react";
 import { LogOut, Users } from "lucide-react";
 import Chat from "./components/Chat";
 import ClientPanel from "./components/ClientPanel";
+import Toaster from "./components/Toaster";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useAuth } from "./auth/AuthContext";
@@ -68,6 +69,7 @@ export default function App() {
           </Sheet>
         )}
       </main>
+      <Toaster />
     </div>
   );
 }

@@ -2,6 +2,8 @@ export interface Document {
   id: string;
   type: string;
   filename: string;
+  // Resolved MIME of the stored file; used to decide inline preview vs download.
+  mimetype?: string;
   uploadedAt: string;
   // Set asynchronously by the backend after Gemini extraction. Absent while
   // pending, { error } on failure, otherwise the extracted blob on success.

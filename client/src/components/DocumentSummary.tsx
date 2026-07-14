@@ -2,6 +2,7 @@ import { useState } from "react";
 import { fieldLabel, groupFields } from "@/lib/documentFields";
 import { FieldList, FieldTable, Label, Section } from "./DocumentSummaryFields";
 import type { Document } from "../types/client";
+import LLMSourceNote from "./LLMSourceNote";
 
 // Renders the AI extraction already stored on the document (no new LLM calls).
 // The stored blob is English-keyed and mixes scalars, nested objects and row
@@ -76,6 +77,12 @@ export default function DocumentSummary({ doc }: { doc: Document }) {
             </p>
           )}
         </div>
+      )}
+
+      {ed?.extractedBy && (
+        <p className="text-[11px] text-muted-foreground/60">
+          חולץ על ידי <LLMSourceNote source={ed.extractedBy} />
+        </p>
       )}
     </div>
   );

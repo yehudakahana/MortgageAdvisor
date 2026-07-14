@@ -11,6 +11,8 @@ export interface Document {
     structuredFields?: unknown;
     rawText?: unknown;
     error?: string;
+    // Which model produced this extraction (fallbacks included).
+    extractedBy?: { provider: string; model: string; usedFallback?: boolean };
   } | null;
 }
 

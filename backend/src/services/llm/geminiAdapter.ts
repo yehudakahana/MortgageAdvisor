@@ -1,12 +1,17 @@
 import { GoogleGenAI } from "@google/genai";
-import { LLMAdapter, LLMRequest, LLMResponse } from "./types";
-import { EXTRACTION_SYSTEM, EXTRACTION_PROMPT } from "./prompts";
+import { ChatRequest, ExtractionRequest, LLMAdapter, LLMResponse } from "./types";
+import {
+  EXTRACTION_SYSTEM,
+  EXTRACTION_PROMPT,
+  CHAT_SYSTEM_PROMPT,
+  serializeClientData,
+} from "./prompts";
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
-// Gemini extraction occasionally returns transient 503 (UNAVAILABLE, "high
-// demand") or 429 (RESOURCE_EXHAUSTED). Retry those with exponential backoff so
-// a temporary overload self-heals instead of needing a manual re-extract.
+// Gemini occasionally returns transient 503 (UNAVAILABLE, "high demand") or
+// 429 (RESOURCE_EXHAUSTED). Retry those with exponential backoff so a temporary
+// overload self-heals instead of needing a manual re-extract.
 const MAX_RETRIES = 3;
 const BASE_DELAY_MS = 1000;
 
@@ -17,35 +22,56 @@ function isTransient(err: unknown): boolean {
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+async function runExtraction(request: ExtractionRequest, model: string): Promise<LLMResponse> {
+  const base64 = request.buffer.toString("base64");
+  const response = await ai.models.generateContent({
+    model,
+    contents: [
+      { inlineData: { mimeType: request.mimeType, data: base64 } },
+      { text: EXTRACTION_PROMPT },
+    ],
+    config: {
+      systemInstruction: EXTRACTION_SYSTEM,
+      // Force a clean JSON object — no markdown fences for the parser to strip.
+      responseMimeType: "application/json",
+    },
+  });
+  return { content: response.text ?? "" };
+}
+
+// CHAT is normally served by Claude; this path runs when the router falls back
+// to Gemini. Same shared persona prompt and client data, so answers stay
+// consistent across providers. Gemini's history role for the assistant is
+// "model", not "assistant".
+async function runChat(request: ChatRequest, model: string): Promise<LLMResponse> {
+  const contents = [
+    ...request.chatHistory.map((m) => ({
+      role: m.role === "assistant" ? ("model" as const) : ("user" as const),
+      parts: [{ text: m.content }],
+    })),
+    { role: "user" as const, parts: [{ text: request.userMessage }] },
+  ];
+
+  const response = await ai.models.generateContent({
+    model,
+    contents,
+    config: {
+      systemInstruction: `${CHAT_SYSTEM_PROMPT}\n\nנתוני הלקוח:\n${serializeClientData(request.clientData)}`,
+      // Matches the Claude chat max_tokens so reply length is provider-agnostic.
+      maxOutputTokens: 2048,
+    },
+  });
+  return { content: response.text ?? "" };
+}
+
 export const geminiAdapter: LLMAdapter = {
-  async run(request: LLMRequest, model: string): Promise<LLMResponse> {
-    // Gemini is wired only for document extraction; CHAT and DOCUMENT_GENERATION
-    // stay on Claude (see config/llmModels.ts).
-    if (request.taskType !== "EXTRACTION") {
-      throw new Error(
-        `Gemini adapter: "${request.taskType}" is not implemented. Route it to Claude in config/llmModels.ts.`
-      );
-    }
-
-    const base64 = request.buffer.toString("base64");
-
+  async run(request, model): Promise<LLMResponse> {
     let lastErr: unknown;
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
-        const response = await ai.models.generateContent({
-          model,
-          contents: [
-            { inlineData: { mimeType: request.mimeType, data: base64 } },
-            { text: EXTRACTION_PROMPT },
-          ],
-          config: {
-            systemInstruction: EXTRACTION_SYSTEM,
-            // Force a clean JSON object — no markdown fences for the parser to strip.
-            responseMimeType: "application/json",
-          },
-        });
-
-        return { content: response.text ?? "" };
+        return request.taskType === "EXTRACTION"
+          ? await runExtraction(request, model)
+          : await runChat(request, model);
       } catch (err) {
         lastErr = err;
         if (attempt < MAX_RETRIES && isTransient(err)) {

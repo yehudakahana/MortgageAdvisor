@@ -101,14 +101,14 @@ router.post("/", async (req: Request, res: Response) => {
   const windowedHistory = history.slice(-CHAT_HISTORY_LIMIT);
 
   try {
-    const { content } = await routeToLLM("CHAT", {
+    const { content, provider, model, usedFallback } = await routeToLLM("CHAT", {
       clientData: buildClientData(clients),
       chatHistory: windowedHistory,
       userMessage: message,
     });
 
-    const reply: ChatMessage = { role: "assistant", content };
-    res.json(reply);
+    // `llm` tells the client which model actually answered (fallbacks included).
+    res.json({ role: "assistant", content, llm: { provider, model, usedFallback } });
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
     console.error("[chat] LLM request failed:", reason);

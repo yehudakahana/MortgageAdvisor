@@ -9,6 +9,7 @@ import { useDocumentFile } from "../hooks/useDocumentFile";
 import { DOC_TYPE_LABELS, DOC_TYPE_STYLES, formatUploadDate, getExtractionStatus, canPreviewInline } from "../types/client";
 import type { Document } from "../types/client";
 import DocumentSummary from "./DocumentSummary";
+import LLMSourceNote from "./LLMSourceNote";
 
 interface Props {
   clientId: string;
@@ -104,6 +105,7 @@ export default function DocumentRow({ clientId, document: d, timedOut, onReExtra
         <div className="flex items-center gap-1.5 text-[11px] text-emerald-600 ps-1">
           <CheckCircle2 className="w-3 h-3" />
           <span>המסמך חולץ בהצלחה</span>
+          {d.extractedData?.extractedBy && <LLMSourceNote source={d.extractedData.extractedBy} />}
         </div>
       )}
       {status === "error" && (
@@ -112,6 +114,7 @@ export default function DocumentRow({ clientId, document: d, timedOut, onReExtra
             <AlertCircle className="w-3 h-3" />
             חילוץ המסמך נכשל
           </span>
+          {d.extractedData?.extractedBy && <LLMSourceNote source={d.extractedData.extractedBy} />}
           {d.extractedData?.error && (
             <Tooltip>
               <TooltipTrigger asChild>

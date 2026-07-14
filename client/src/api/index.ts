@@ -1,6 +1,8 @@
 // In dev, VITE_API_URL is empty so requests stay relative and hit the Vite
 // proxy. In production (Cloudflare Pages) set it to the Railway backend origin.
-const BASE = `${import.meta.env.VITE_API_URL ?? ""}/api`;
+// Trailing slashes are stripped so a value like "https://host/" doesn't
+// produce "//api/..." URLs, which Express rejects with a 404.
+const BASE = `${(import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "")}/api`;
 
 export type ChatMessage = { role: "user" | "assistant"; content: string };
 
@@ -76,6 +78,19 @@ export async function uploadDocument(clientId: string, form: FormData) {
   const res = await authFetch(`${BASE}/upload/${clientId}`, { method: "POST", body: form });
   if (!res.ok) throw new Error("Upload failed");
   return res.json();
+}
+
+// Fetch a short-lived presigned URL for a document. mode "view" previews inline
+// (PDF/image); "download" forces an attachment with the original filename.
+export async function getDocumentUrl(
+  clientId: string,
+  docId: string,
+  mode: "view" | "download" = "view"
+) {
+  const query = mode === "download" ? "?mode=download" : "";
+  const res = await authFetch(`${BASE}/upload/${clientId}/${docId}/view${query}`);
+  if (!res.ok) throw new Error("Failed to get document URL");
+  return res.json() as Promise<{ url: string }>;
 }
 
 // Retry extraction for an already-uploaded document. Returns the updated client.

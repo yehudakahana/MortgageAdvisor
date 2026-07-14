@@ -13,6 +13,15 @@ import { isDocumentType } from "../validation/validators";
 // LLM/provider errors often arrive as a JSON blob (e.g. Gemini's
 // {"error":{"code":503,"message":"...high demand..."}}). Surface the human
 // message when present so the client can show something readable.
+// busboy (via multer) decodes multipart filenames as latin1, so UTF-8 names —
+// typically Hebrew here — arrive as mojibake ("×§×××¥ ..."). Re-encode the
+// latin1 bytes back to UTF-8 to recover the original name. If the string already
+// contains chars outside the latin1 range it was decoded correctly, so leave it.
+function decodeOriginalName(name: string): string {
+  if (/[^\x00-\xff]/.test(name)) return name;
+  return Buffer.from(name, "latin1").toString("utf8");
+}
+
 // Shared with documentController (re-extract flow).
 export function formatExtractionError(err: unknown): string {
   const raw = err instanceof Error ? err.message : String(err);
@@ -55,13 +64,14 @@ export async function uploadDocument(req: Request, res: Response) {
   // Key extension comes from the RESOLVED mime, never the client filename.
   const uuid = randomUUID();
   const key = `uploads/${clientId}/${uuid}.${resolved.ext}`;
+  const originalName = decodeOriginalName(file.originalname);
 
   try {
     await uploadObject({
       key,
       body: file.buffer,
       contentType: resolved.mime,
-      contentDisposition: buildContentDisposition(resolved.mime, file.originalname),
+      contentDisposition: buildContentDisposition(resolved.mime, originalName),
     });
   } catch (err) {
     console.error("[upload] R2 upload failed:", err);
@@ -71,7 +81,7 @@ export async function uploadDocument(req: Request, res: Response) {
   const doc: Document = {
     id: uuid,
     type: docType,
-    filename: file.originalname,
+    filename: originalName,
     key,
     mimetype: resolved.mime,
     uploadedAt: new Date(),

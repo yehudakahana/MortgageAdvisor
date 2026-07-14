@@ -49,6 +49,6 @@
     -moz-osx-font-smoothing: grayscale;
   }
   #root {
-    @apply h-screen flex flex-col;
+    @apply h-dvh flex flex-col;
   }
 }

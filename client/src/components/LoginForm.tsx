@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 export default function LoginForm() {
   const { login } = useAuth();
@@ -32,7 +33,7 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gradient-to-bl from-indigo-950 via-indigo-900 to-slate-900 p-4">
+    <div className="flex items-center justify-center min-h-dvh bg-gradient-to-bl from-indigo-950 via-indigo-900 to-slate-900 p-4">
       <Card className="w-full max-w-sm shadow-2xl">
         <CardHeader className="items-center text-center space-y-3">
           <div className="w-14 h-14 rounded-2xl bg-indigo-900 text-white flex items-center justify-center shadow-inner">
@@ -57,7 +58,7 @@ export default function LoginForm() {
                 autoComplete="username"
                 autoFocus
                 aria-invalid={error ? true : undefined}
-                className={error ? "border-destructive" : undefined}
+                className={cn("max-md:h-11 max-md:text-base", error && "border-destructive")}
               />
             </div>
             <div className="space-y-1.5">
@@ -72,11 +73,11 @@ export default function LoginForm() {
                 }}
                 autoComplete="current-password"
                 aria-invalid={error ? true : undefined}
-                className={error ? "border-destructive" : undefined}
+                className={cn("max-md:h-11 max-md:text-base", error && "border-destructive")}
               />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full max-md:h-11 max-md:text-base" disabled={loading}>
               {loading ? "מתחבר..." : "התחברות"}
             </Button>
           </form>

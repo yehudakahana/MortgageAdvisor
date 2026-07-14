@@ -43,8 +43,12 @@ export async function deleteDocument(req: Request, res: Response) {
 }
 
 // Short-lived (15-min) presigned GET URL — the only way to view a private file.
+// `?mode=download` forces an attachment (with the original filename); otherwise
+// the browser previews inline (PDF/image). Office files can't render inline, so
+// they always come back as an attachment regardless of mode.
 export async function viewDocument(req: Request, res: Response) {
   const { clientId, docId } = req.params;
+  const wantsDownload = req.query.mode === "download";
 
   let client;
   try {
@@ -56,8 +60,12 @@ export async function viewDocument(req: Request, res: Response) {
   const doc = client?.documents.find((d) => d.id === docId);
   if (!doc || !doc.key) return res.status(404).json({ error: "המסמך לא נמצא" });
 
+  const canPreviewInline =
+    doc.mimetype === "application/pdf" || doc.mimetype?.startsWith("image/");
+  const disposition = wantsDownload || !canPreviewInline ? "attachment" : "inline";
+
   try {
-    const url = await getViewUrl(doc.key);
+    const url = await getViewUrl(doc.key, disposition, doc.filename);
     res.json({ url });
   } catch (err) {
     console.error("[view] presign failed:", err);

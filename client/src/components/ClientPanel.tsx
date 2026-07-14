@@ -30,7 +30,7 @@ export default function ClientPanel({ variant = "static" }: { variant?: "static"
         "flex flex-col overflow-hidden bg-card",
         variant === "drawer"
           ? "h-full w-full"
-          : "w-96 flex-shrink-0 border-s border-border/70 shadow-[-4px_0_20px_-4px_rgba(0,0,0,0.06)]"
+          : "w-1/2 flex-shrink-0 border-s border-border/70 shadow-[-4px_0_20px_-4px_rgba(0,0,0,0.06)]"
       )}
     >
       {/* Header */}

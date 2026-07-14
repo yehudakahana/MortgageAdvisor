@@ -1,4 +1,5 @@
 import { ChatMessage, ExtractedData } from "../../types";
+import { Provider } from "../../config/llmModels";
 
 // Static, per-client context shared across an entire conversation / generation.
 // This is the document extraction output (structured JSON + raw text).
@@ -19,19 +20,18 @@ export interface ChatRequest {
   userMessage: string;
 }
 
-export interface DocumentGenerationRequest {
-  taskType: "DOCUMENT_GENERATION";
-  clientData: ClientData;
-  // Defaults to a contract when omitted.
-  documentType?: string;
-  // Optional extra instructions for the generated document.
-  instructions?: string;
-}
-
-export type LLMRequest = ExtractionRequest | ChatRequest | DocumentGenerationRequest;
+export type LLMRequest = ExtractionRequest | ChatRequest;
 
 export interface LLMResponse {
   content: string;
+}
+
+// Adapter response decorated by the router with the provider/model that
+// actually served the request — including when the fallback provider did.
+export interface RoutedLLMResponse extends LLMResponse {
+  provider: Provider;
+  model: string;
+  usedFallback: boolean;
 }
 
 export interface LLMAdapter {

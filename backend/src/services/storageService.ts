@@ -46,6 +46,11 @@ export async function deleteObject(key: string): Promise<void> {
   await r2.send(new DeleteObjectCommand({ Bucket: R2_BUCKET_NAME, Key: key }));
 }
 
+// Best-effort deletion: swallows storage errors so cleanup never fails the caller.
+export function safeDeleteObject(key: string): Promise<void> {
+  return deleteObject(key).catch(() => undefined);
+}
+
 // Downloads an object's bytes into memory — used to re-run extraction on a
 // stored file without keeping any local disk copy.
 export async function getObjectBuffer(key: string): Promise<Buffer> {

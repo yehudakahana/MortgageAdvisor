@@ -5,6 +5,8 @@ build/
 uploads/
 *.log
 
+REFACTOR_REPORT.md
+
 backend/db.json
 db.json
 

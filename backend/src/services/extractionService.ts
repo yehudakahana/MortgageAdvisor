@@ -19,13 +19,23 @@ export async function extractFromBuffer(
   mimeType: string
 ): Promise<ExtractedData | ExtractionError> {
   const response = await routeToLLM("EXTRACTION", { buffer, mimeType });
+  // Persisted alongside the result so the UI can show which model extracted it.
+  const extractedBy = {
+    provider: response.provider,
+    model: response.model,
+    usedFallback: response.usedFallback,
+  };
 
   try {
-    return parseJsonResponse(response.content);
+    return { ...parseJsonResponse(response.content), extractedBy };
   } catch {
     // Never throw on malformed JSON — log the raw response and persist it so the
     // failure is visible and debuggable rather than silently swallowed.
     console.error("[extraction] parse_failed — raw LLM response:", response.content);
-    return { error: "parse_failed", raw: response.content.slice(0, MAX_PERSISTED_RAW_LENGTH) };
+    return {
+      error: "parse_failed",
+      raw: response.content.slice(0, MAX_PERSISTED_RAW_LENGTH),
+      extractedBy,
+    };
   }
 }

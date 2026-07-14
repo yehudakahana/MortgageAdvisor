@@ -1,21 +1,24 @@
-import { useState, useEffect, useRef } from "react";
-import { getClients, getClient, reExtractDocument, uploadDocument, deleteClient, deleteDocument } from "../api";
+import { useState } from "react";
+import { deleteClient, deleteDocument } from "../api";
 import type { Client } from "../types/client";
 import { useClientForm } from "./useClientForm";
+import { useClients } from "../context/ClientsContext";
+import { useDocumentUpload } from "./useDocumentUpload";
+
+type PendingDelete =
+  | { kind: "client"; id: string }
+  | { kind: "document"; id: string; clientId: string };
 
 export function useClientPanel() {
-  const [clients, setClients] = useState<Client[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { clients, setClients, isLoading, loadError, loadClients } = useClients();
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [uploadType, setUploadType] = useState<string>("paystub");
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadError, setUploadError] = useState("");
-  const [reExtractingId, setReExtractingId] = useState<string | null>(null);
+  const [pendingDelete, setPendingDelete] = useState<PendingDelete | null>(null);
   const [deletingClientId, setDeletingClientId] = useState<string | null>(null);
   const [deletingDocId, setDeletingDocId] = useState<string | null>(null);
-  const [timedOutDocIds, setTimedOutDocIds] = useState<string[]>([]);
+  const [deleteError, setDeleteError] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
-  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const upload = useDocumentUpload(selectedId);
 
   const form = useClientForm((client) => {
     setClients((prev) => [...prev, client]);
@@ -23,122 +26,64 @@ export function useClientPanel() {
     setSearchQuery("");
   });
 
-  async function loadClients() {
-    try {
-      const data = await getClients();
-      setClients(data);
-    } catch {
-      // silently ignore on initial load
-    } finally {
-      setIsLoading(false);
-    }
+  // Deletion is irreversible (removes the stored files too), so always confirm via the dialog.
+  function handleDeleteClient(id: string) {
+    setDeleteError("");
+    setPendingDelete({ kind: "client", id });
   }
 
-  useEffect(() => { loadClients(); }, []);
-
-  // Refetch a single client and merge it into local state.
-  async function refreshClient(clientId: string): Promise<Client | null> {
-    try {
-      const client: Client = await getClient(clientId);
-      setClients((prev) => prev.map((c) => (c.id === client.id ? client : c)));
-      return client;
-    } catch {
-      return null;
-    }
-  }
-
-  // Extraction runs asynchronously on the backend, so poll the client until the
-  // given document's extractedData resolves (success or error), then stop.
-  // The window (attempts × interval) must comfortably exceed the worst-case
-  // backend time: Gemini's 503 retries (1s+2s+4s backoff) plus the Claude
-  // fallback request. ~90s avoids giving up while extraction is still running.
-  async function pollExtraction(clientId: string, docId: string, attempts = 30) {
-    let doc: Client["documents"][number] | undefined;
-    for (let i = 0; i < attempts; i++) {
-      await new Promise((r) => setTimeout(r, 3000));
-      const client = await refreshClient(clientId);
-      doc = client?.documents.find((d) => d.id === docId);
-      if (doc?.extractedData) {
-        setTimedOutDocIds((prev) => prev.filter((id) => id !== docId));
-        return;
-      }
-    }
-    // Polling gave up while extraction may still be running on the backend.
-    // Skip if the document was deleted mid-poll — nothing to flag anymore.
-    if (!doc) return;
-    setTimedOutDocIds((prev) => (prev.includes(docId) ? prev : [...prev, docId]));
-  }
-
-  async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file || !selectedId) return;
-    setUploadError("");
-    setIsUploading(true);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("type", uploadType);
-      const updated: Client = await uploadDocument(selectedId, formData);
-      setClients((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
-      if (fileInputRef.current) fileInputRef.current.value = "";
-      const newDoc = updated.documents[updated.documents.length - 1];
-      if (newDoc) void pollExtraction(updated.id, newDoc.id);
-    } catch {
-      setUploadError("העלאה נכשלה. PDF בלבד, מקסימום 10 מגה.");
-    } finally {
-      setIsUploading(false);
-    }
-  }
-
-  // Retry extraction for a document whose previous attempt failed.
-  async function handleReExtract(docId: string) {
+  function handleDeleteDocument(docId: string) {
     if (!selectedId) return;
-    setReExtractingId(docId);
-    setTimedOutDocIds((prev) => prev.filter((id) => id !== docId));
-    try {
-      const updated: Client = await reExtractDocument(selectedId, docId);
-      setClients((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
-    } catch {
-      // Keep the existing error state so the user can try again.
-    } finally {
-      setReExtractingId(null);
-    }
+    setDeleteError("");
+    setPendingDelete({ kind: "document", id: docId, clientId: selectedId });
   }
 
-  // Deletion is irreversible (removes the stored files too), so always confirm.
-  async function handleDeleteClient(id: string) {
-    if (!window.confirm("למחוק את הלקוח וכל המסמכים שלו? פעולה זו אינה הפיכה.")) return;
+  function cancelDelete() {
+    setPendingDelete(null);
+  }
+
+  async function confirmDelete() {
+    if (!pendingDelete) return;
+    const pending = pendingDelete;
+    setPendingDelete(null);
+    if (pending.kind === "client") await performDeleteClient(pending.id);
+    else await performDeleteDocument(pending.clientId, pending.id);
+  }
+
+  async function performDeleteClient(id: string) {
     setDeletingClientId(id);
     try {
       await deleteClient(id);
       setClients((prev) => prev.filter((c) => c.id !== id));
       setSelectedId((prev) => (prev === id ? null : prev));
     } catch {
-      window.alert("מחיקת הלקוח נכשלה. נסו שוב.");
+      setDeleteError("מחיקת הלקוח נכשלה. נסו שוב.");
     } finally {
       setDeletingClientId(null);
     }
   }
 
-  async function handleDeleteDocument(docId: string) {
-    if (!selectedId) return;
-    if (!window.confirm("למחוק את המסמך? פעולה זו אינה הפיכה.")) return;
+  async function performDeleteDocument(clientId: string, docId: string) {
     setDeletingDocId(docId);
     try {
-      const updated: Client = await deleteDocument(selectedId, docId);
+      const updated: Client = await deleteDocument(clientId, docId);
       setClients((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
-      setTimedOutDocIds((prev) => prev.filter((id) => id !== docId));
+      upload.clearDocTimeout(docId);
     } catch {
-      window.alert("מחיקת המסמך נכשלה. נסו שוב.");
+      setDeleteError("מחיקת המסמך נכשלה. נסו שוב.");
     } finally {
       setDeletingDocId(null);
     }
   }
 
+  const deleteConfirmMessage =
+    pendingDelete?.kind === "client"
+      ? "למחוק את הלקוח וכל המסמכים שלו? פעולה זו אינה הפיכה."
+      : "למחוק את המסמך? פעולה זו אינה הפיכה.";
+
   function selectClient(id: string) {
     setSelectedId((prev) => (prev === id ? null : id));
-    setUploadError("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
+    upload.resetUploadState();
   }
 
   const q = searchQuery.trim().toLowerCase();
@@ -147,13 +92,12 @@ export function useClientPanel() {
     : clients;
 
   return {
-    clients, filteredClients, isLoading, selectedId, selectClient,
+    clients, filteredClients, isLoading, loadError, loadClients, selectedId, selectClient,
     ...form,
-    uploadType, setUploadType, isUploading, uploadError,
-    handleFileSelect, fileInputRef,
-    handleReExtract, reExtractingId, timedOutDocIds,
+    ...upload,
     handleDeleteClient, deletingClientId,
     handleDeleteDocument, deletingDocId,
+    pendingDelete, deleteConfirmMessage, confirmDelete, cancelDelete, deleteError,
     searchQuery, setSearchQuery,
   };
 }

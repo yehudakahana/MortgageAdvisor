@@ -4,6 +4,7 @@ import { SendHorizontal, MessageSquarePlus } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useChat } from "../hooks/useChat";
 import ChatScopeSelect from "./ChatScopeSelect";
+import LLMSourceNote from "./LLMSourceNote";
 
 function TypingDots() {
   return (
@@ -74,6 +75,9 @@ export default function Chat() {
             >
               {msg.content}
             </div>
+            {msg.role === "assistant" && msg.llm && (
+              <LLMSourceNote source={msg.llm} className="px-1" />
+            )}
           </div>
         ))}
 

@@ -1,11 +1,11 @@
 import { Router } from "express";
 import { uploadSingle, validateBuffer } from "../middleware/upload";
+import { uploadDocument } from "../controllers/uploadController";
 import {
-  uploadDocument,
+  deleteDocument,
   viewDocument,
   reExtractDocument,
-} from "../controllers/uploadController";
-import { deleteDocument } from "../controllers/documentController";
+} from "../controllers/documentController";
 
 const router = Router();
 

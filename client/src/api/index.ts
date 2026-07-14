@@ -4,7 +4,11 @@
 // produce "//api/..." URLs, which Express rejects with a 404.
 const BASE = `${(import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "")}/api`;
 
-export type ChatMessage = { role: "user" | "assistant"; content: string };
+// Which LLM actually produced a reply/extraction (fallbacks included) — sent
+// by the backend so the UI can show the model in use.
+export type LLMSource = { provider: string; model: string; usedFallback?: boolean };
+
+export type ChatMessage = { role: "user" | "assistant"; content: string; llm?: LLMSource };
 
 // Wraps fetch to inject the Bearer token and auto-logout on auth failure.
 // On 401/403 it clears the session and signals the app to return to login.
@@ -116,7 +120,7 @@ export async function deleteDocument(clientId: string, docId: string) {
   return res.json();
 }
 
-export async function createClient(data: { name: string; phone: string; email?: string; notes?: string }) {
+export async function createClient(data: { name: string; phone: string; email?: string }) {
   const res = await authFetch(`${BASE}/clients`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

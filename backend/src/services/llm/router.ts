@@ -1,5 +1,5 @@
 import { TASK_MODEL_MAP, TASK_FALLBACK_MAP, TaskType } from "../../config/llmModels";
-import { LLMRequest, LLMResponse } from "./types";
+import { LLMRequest, RoutedLLMResponse } from "./types";
 import { claudeAdapter } from "./claudeAdapter";
 import { geminiAdapter } from "./geminiAdapter";
 
@@ -11,12 +11,13 @@ const adapters = {
 export async function routeToLLM(
   taskType: TaskType,
   payload: Omit<LLMRequest, "taskType">
-): Promise<LLMResponse> {
+): Promise<RoutedLLMResponse> {
   const request = { ...payload, taskType } as LLMRequest;
   const primary = TASK_MODEL_MAP[taskType];
 
   try {
-    return await adapters[primary.provider].run(request, primary.model);
+    const result = await adapters[primary.provider].run(request, primary.model);
+    return { ...result, provider: primary.provider, model: primary.model, usedFallback: false };
   } catch (err) {
     // If the primary provider fails (e.g. Gemini 503 overload), try the
     // configured fallback provider before giving up. If the fallback also
@@ -29,7 +30,8 @@ export async function routeToLLM(
       `[router] ${taskType} via ${primary.provider} failed (${reason}); falling back to ${fallback.provider}`
     );
     try {
-      return await adapters[fallback.provider].run(request, fallback.model);
+      const result = await adapters[fallback.provider].run(request, fallback.model);
+      return { ...result, provider: fallback.provider, model: fallback.model, usedFallback: true };
     } catch (fallbackErr) {
       const fbReason = fallbackErr instanceof Error ? fallbackErr.message : String(fallbackErr);
       console.error(`[router] ${taskType} fallback via ${fallback.provider} also failed: ${fbReason}`);

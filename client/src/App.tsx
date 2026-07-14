@@ -6,6 +6,7 @@ import Toaster from "./components/Toaster";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useAuth } from "./auth/AuthContext";
+import { ClientsProvider } from "./context/ClientsContext";
 import { useMediaQuery } from "./hooks/useMediaQuery";
 
 export default function App() {
@@ -25,10 +26,7 @@ export default function App() {
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight leading-none">שרה</h1>
-              <div className="flex items-center gap-1.5 mt-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <p className="text-xs text-white/70 max-md:text-[11px]">עוזרת יועץ משכנתאות · מחובר</p>
-              </div>
+              <p className="text-xs text-white/70 mt-1 max-md:text-[11px]">עוזרת יועץ משכנתאות</p>
             </div>
           </div>
           <div className="flex items-center gap-3 max-md:gap-1.5">
@@ -57,17 +55,19 @@ export default function App() {
         </div>
       </header>
       <main className="flex flex-1 overflow-hidden">
-        <Chat />
-        {isDesktop ? (
-          <ClientPanel />
-        ) : (
-          <Sheet open={panelOpen} onOpenChange={setPanelOpen}>
-            <SheetContent side="end" className="w-80 p-0">
-              <SheetTitle className="sr-only">לקוחות</SheetTitle>
-              <ClientPanel variant="drawer" />
-            </SheetContent>
-          </Sheet>
-        )}
+        <ClientsProvider>
+          <Chat />
+          {isDesktop ? (
+            <ClientPanel />
+          ) : (
+            <Sheet open={panelOpen} onOpenChange={setPanelOpen}>
+              <SheetContent side="end" className="w-80 p-0">
+                <SheetTitle className="sr-only">לקוחות</SheetTitle>
+                <ClientPanel variant="drawer" />
+              </SheetContent>
+            </Sheet>
+          )}
+        </ClientsProvider>
       </main>
       <Toaster />
     </div>

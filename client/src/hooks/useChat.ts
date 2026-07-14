@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from "react";
-import { sendChatMessage, resetChat, getClients, type ChatMessage } from "../api";
+import { sendChatMessage, resetChat, type ChatMessage } from "../api";
 import type { Client } from "../types/client";
+import { useClients } from "../context/ClientsContext";
 
 function greeting(client?: Client): ChatMessage {
   const content = client
@@ -10,7 +11,7 @@ function greeting(client?: Client): ChatMessage {
 }
 
 export function useChat() {
-  const [clients, setClients] = useState<Client[]>([]);
+  const { clients } = useClients();
   const [scopeId, setScopeId] = useState(""); // "" = all clients (global chat)
   const [messages, setMessages] = useState<ChatMessage[]>([greeting()]);
   const [input, setInput] = useState("");
@@ -20,12 +21,6 @@ export function useChat() {
   // Kept separate from `messages` so the greeting and failed turns (optimistic
   // user message + error bubble) never leak into the model's context.
   const historyRef = useRef<ChatMessage[]>([]);
-
-  useEffect(() => {
-    getClients()
-      .then((data: Client[]) => setClients(data))
-      .catch(() => setClients([]));
-  }, []);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -39,7 +34,7 @@ export function useChat() {
   }
 
   // Clear Chat / New Topic: drop the local history and start fresh. Clears the
-  // view optimistically and holds `loading` so sends are blocked mid-reset,,1
+  // view optimistically and holds `loading` so sends are blocked mid-reset,
   // then refines with the backend greeting; the local greeting already shown
   // stands if the request fails.
   async function clearChat() {

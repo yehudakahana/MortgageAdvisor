@@ -26,9 +26,9 @@ export default function ClientDocuments({ clientId, documents, uploadType, setUp
     <TooltipProvider delayDuration={150}>
     <div className="bg-indigo-50/40 border-b border-border/50 border-s-2 border-s-indigo-600 px-4 py-4 space-y-4">
       <div>
-        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">מסמכים</p>
+        <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">מסמכים</p>
         {documents.length === 0 ? (
-          <p className="text-xs text-muted-foreground/60">לא הועלו מסמכים עדיין.</p>
+          <p className="text-sm text-muted-foreground/60">לא הועלו מסמכים עדיין.</p>
         ) : (
           <ul className="space-y-2.5">
             {documents.map((d) => (
@@ -48,9 +48,9 @@ export default function ClientDocuments({ clientId, documents, uploadType, setUp
       </div>
 
       <div className="space-y-2 pt-1 border-t border-border/40">
-        <p className="text-[11px] font-semibold text-muted-foreground uppercase tracking-wider pt-1">העלאת מסמך</p>
+        <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider pt-1">העלאת מסמך</p>
         <Select value={uploadType} onValueChange={setUploadType}>
-          <SelectTrigger className="w-full h-9 max-md:h-11 text-sm"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-full h-10 max-md:h-11 text-base"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="paystub">תלוש שכר</SelectItem>
             <SelectItem value="bank_statement">דף חשבון</SelectItem>
@@ -66,13 +66,13 @@ export default function ClientDocuments({ clientId, documents, uploadType, setUp
           {isUploading
             ? <Loader2 className="w-4 h-4 text-indigo-500 animate-spin shrink-0" />
             : <FileUp className="w-4 h-4 text-muted-foreground/60 group-hover:text-indigo-600 transition-colors shrink-0" />}
-          <span className="text-sm text-muted-foreground truncate flex-1">
+          <span className="text-base text-muted-foreground truncate flex-1">
             {isUploading ? "מעלה..." : "בחר קובץ PDF להעלאה..."}
           </span>
           <input type="file" accept=".pdf" ref={fileInputRef} className="sr-only" onChange={onFileSelect} disabled={isUploading} />
         </label>
 
-        {uploadError && <p className="text-destructive text-xs">{uploadError}</p>}
+        {uploadError && <p className="text-destructive text-sm">{uploadError}</p>}
       </div>
     </div>
     </TooltipProvider>

@@ -36,10 +36,10 @@ export default function ClientPanel({ variant = "static" }: { variant?: "static"
       {/* Header */}
       <div className={cn("flex items-center justify-between px-4 py-4 border-b border-border/70 bg-gradient-to-b from-slate-50 to-card", variant === "drawer" && "pe-12")}>
         <div className="flex items-center gap-2">
-          <Users className="w-4 h-4 text-muted-foreground/70" />
-          <h2 className="font-semibold text-sm">לקוחות</h2>
+          <Users className="w-5 h-5 text-muted-foreground/70" />
+          <h2 className="font-semibold text-base">לקוחות</h2>
           {clients.length > 0 && (
-            <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-indigo-100 text-indigo-700 text-xs font-bold">
+            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-sm font-bold">
               {clients.length}
             </span>
           )}
@@ -47,7 +47,7 @@ export default function ClientPanel({ variant = "static" }: { variant?: "static"
         <Button
           size="sm"
           variant={isCreatingClient ? "outline" : "default"}
-          className={cn("h-8 gap-1 text-xs max-md:h-10 max-md:text-sm", !isCreatingClient && "bg-gradient-to-br from-indigo-600 to-indigo-900 hover:from-indigo-700 hover:to-indigo-950 shadow-sm border-0")}
+          className={cn("h-9 gap-1 text-sm max-md:h-10", !isCreatingClient && "bg-gradient-to-br from-indigo-600 to-indigo-900 hover:from-indigo-700 hover:to-indigo-950 shadow-sm border-0")}
           onClick={() => { setIsCreatingClient((v) => !v); setFormError(""); }}
         >
           {isCreatingClient ? "ביטול" : <><UserPlus className="w-3 h-3" /><span>לקוח חדש</span></>}
@@ -59,12 +59,12 @@ export default function ClientPanel({ variant = "static" }: { variant?: "static"
         <div className="px-3 py-2 border-b border-border/70">
           <div className="relative">
             <Search className="absolute start-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50 pointer-events-none" />
-            <Input placeholder="חיפוש לקוח..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-8 max-md:h-11 ps-8 text-sm max-md:text-base" />
+            <Input placeholder="חיפוש לקוח..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-10 max-md:h-11 ps-8 text-base" />
           </div>
         </div>
       )}
 
-      {deleteError && <p className="text-destructive text-xs px-4 py-2 border-b border-border/70">{deleteError}</p>}
+      {deleteError && <p className="text-destructive text-sm px-4 py-2 border-b border-border/70">{deleteError}</p>}
 
       {/* New Client Form */}
       {isCreatingClient && (
@@ -75,12 +75,12 @@ export default function ClientPanel({ variant = "static" }: { variant?: "static"
       <div className="flex-1 overflow-y-auto">
         {isLoading ? (
           <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
-            <Loader2 className="w-4 h-4 animate-spin" />
-            <p className="text-sm">טוען לקוחות...</p>
+            <Loader2 className="w-5 h-5 animate-spin" />
+            <p className="text-base">טוען לקוחות...</p>
           </div>
         ) : loadError ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3 text-center px-6">
-            <p className="text-sm text-muted-foreground">טעינת הלקוחות נכשלה. נסו לרענן.</p>
+            <p className="text-base text-muted-foreground">טעינת הלקוחות נכשלה. נסו לרענן.</p>
             <Button size="sm" variant="outline" onClick={() => loadClients()}>
               נסו שוב
             </Button>
@@ -90,13 +90,13 @@ export default function ClientPanel({ variant = "static" }: { variant?: "static"
             <div className="w-14 h-14 rounded-2xl bg-secondary/70 flex items-center justify-center">
               <Users className="w-7 h-7 text-muted-foreground/50" />
             </div>
-            <p className="text-sm text-muted-foreground">אין לקוחות עדיין.</p>
-            <p className="text-xs text-muted-foreground/60">לחץ "לקוח חדש" להוספת הלקוח הראשון.</p>
+            <p className="text-base text-muted-foreground">אין לקוחות עדיין.</p>
+            <p className="text-sm text-muted-foreground/60">לחץ "לקוח חדש" להוספת הלקוח הראשון.</p>
           </div>
         ) : filteredClients.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 gap-2 text-center px-6">
             <Search className="w-6 h-6 text-muted-foreground/30" />
-            <p className="text-sm text-muted-foreground">לא נמצאו לקוחות.</p>
+            <p className="text-base text-muted-foreground">לא נמצאו לקוחות.</p>
           </div>
         ) : (
           <div>
@@ -116,21 +116,21 @@ export default function ClientPanel({ variant = "static" }: { variant?: "static"
                 >
                   <ClientAvatar name={c.name} />
                   <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm truncate">{c.name}</p>
-                    <p className="text-[13px] text-muted-foreground mt-0.5">{c.phone}</p>
+                    <p className="font-semibold text-base truncate">{c.name}</p>
+                    <p className="text-sm text-muted-foreground mt-0.5">{c.phone}</p>
                   </div>
                   {c.documents.length > 0 && (
-                    <span className="text-[11px] text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-full px-1.5 py-0.5 shrink-0 font-medium">
+                    <span className="text-sm text-indigo-600 bg-indigo-50 border border-indigo-100 rounded-full px-2 py-0.5 shrink-0 font-medium">
                       {c.documents.length}
                     </span>
                   )}
                   <Button
                     size="sm" variant="ghost" aria-label="מחק לקוח"
-                    className="h-7 w-7 p-0 shrink-0 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10"
+                    className="h-8 w-8 p-0 shrink-0 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10"
                     disabled={deletingClientId === c.id}
                     onClick={(e) => { e.stopPropagation(); handleDeleteClient(c.id); }}
                   >
-                    {deletingClientId === c.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Trash2 className="w-3.5 h-3.5" />}
+                    {deletingClientId === c.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />}
                   </Button>
                 </div>
                 {c.id === selectedId && (

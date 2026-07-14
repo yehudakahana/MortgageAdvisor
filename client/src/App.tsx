@@ -34,7 +34,7 @@ export default function App() {
           </div>
         </div>
       </header>
-      <main className="flex flex-1 overflow-hidden">
+      <main className="flex flex-col md:flex-row flex-1 overflow-hidden">
         <ClientsProvider>
           <Chat />
           <ClientPanel />

@@ -1,3 +1,15 @@
+// Fail-fast at boot: both providers are in active use (Gemini for extraction,
+// Claude for chat and as the extraction fallback), so each API key must be
+// present or the process should refuse to start (mirrors the guard in
+// config/r2.ts and the connectDB() check in config/db.ts).
+const REQUIRED_ENV = ["ANTHROPIC_API_KEY", "GEMINI_API_KEY"] as const;
+
+for (const key of REQUIRED_ENV) {
+  if (!process.env[key]) {
+    throw new Error(`[llm] Missing required environment variable: ${key}`);
+  }
+}
+
 export type TaskType = "EXTRACTION" | "CHAT";
 export type Provider = "claude" | "gemini";
 

@@ -7,6 +7,7 @@ import { useClientPanel } from "../hooks/useClientPanel";
 import ClientAvatar from "./ClientAvatar";
 import NewClientForm from "./NewClientForm";
 import ClientDocuments from "./ClientDocuments";
+import ConfirmDialog from "./ConfirmDialog";
 
 export default function ClientPanel() {
   const {
@@ -19,11 +20,12 @@ export default function ClientPanel() {
     handleReExtract, reExtractingId, timedOutDocIds,
     handleDeleteClient, deletingClientId,
     handleDeleteDocument, deletingDocId,
+    pendingDelete, deleteConfirmMessage, confirmDelete, cancelDelete, deleteError,
     searchQuery, setSearchQuery,
   } = useClientPanel();
 
   return (
-    <aside className="w-96 flex-shrink-0 border-s border-border/70 bg-card flex flex-col overflow-hidden shadow-[-4px_0_20px_-4px_rgba(0,0,0,0.06)]">
+    <aside className="w-full max-h-[45vh] flex-shrink-0 border-t border-border/70 bg-card flex flex-col overflow-hidden shadow-[-4px_0_20px_-4px_rgba(0,0,0,0.06)] md:w-96 md:max-h-none md:border-t-0 md:border-s">
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-4 border-b border-border/70 bg-gradient-to-b from-slate-50 to-card">
         <div className="flex items-center gap-2">
@@ -54,6 +56,8 @@ export default function ClientPanel() {
           </div>
         </div>
       )}
+
+      {deleteError && <p className="text-destructive text-xs px-4 py-2 border-b border-border/70">{deleteError}</p>}
 
       {/* New Client Form */}
       {isCreatingClient && (
@@ -138,6 +142,8 @@ export default function ClientPanel() {
           </div>
         )}
       </div>
+
+      <ConfirmDialog open={pendingDelete !== null} message={deleteConfirmMessage} onConfirm={confirmDelete} onCancel={cancelDelete} />
     </aside>
   );
 }

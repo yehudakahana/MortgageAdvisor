@@ -20,7 +20,7 @@ const loginLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: "Too many login attempts, please try again later" },
+  message: { error: "יותר מדי ניסיונות התחברות, נסו שוב מאוחר יותר" },
 });
 
 // POST /api/login — validates credentials against the ALLOWED_USERS env map and
@@ -29,7 +29,7 @@ router.post("/", loginLimiter, (req, res) => {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
     console.error("[CONFIG ERROR] JWT_SECRET is not set.");
-    return res.status(500).json({ error: "Server auth misconfigured" });
+    return res.status(500).json({ error: "תקלה בהגדרות ההזדהות בשרת" });
   }
 
   let allowedUsers: Record<string, string>;
@@ -37,18 +37,18 @@ router.post("/", loginLimiter, (req, res) => {
     allowedUsers = JSON.parse(process.env.ALLOWED_USERS ?? "");
   } catch {
     console.error("[CONFIG ERROR] ALLOWED_USERS is missing or not valid JSON.");
-    return res.status(500).json({ error: "Server auth misconfigured" });
+    return res.status(500).json({ error: "תקלה בהגדרות ההזדהות בשרת" });
   }
 
   const { username, password } = req.body ?? {};
   if (typeof username !== "string" || typeof password !== "string") {
-    return res.status(400).json({ error: "Username and password are required" });
+    return res.status(400).json({ error: "נדרשים שם משתמש וסיסמה" });
   }
 
   // typeof guard also avoids prototype-chain lookups (e.g. "__proto__").
   const expected = allowedUsers[username];
   if (typeof expected !== "string" || !safeEqual(expected, password)) {
-    return res.status(401).json({ error: "Invalid credentials" });
+    return res.status(401).json({ error: "פרטי ההתחברות שגויים" });
   }
 
   const token = jwt.sign({ username }, secret, { expiresIn: "30d" });

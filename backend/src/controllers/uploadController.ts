@@ -5,16 +5,16 @@ import { Document } from "../types";
 import { extractFromBuffer } from "../services/extractionService";
 import {
   uploadObject,
-  deleteObject,
-  getObjectBuffer,
-  getViewUrl,
+  safeDeleteObject,
   buildContentDisposition,
 } from "../services/storageService";
+import { isDocumentType } from "../validation/validators";
 
 // LLM/provider errors often arrive as a JSON blob (e.g. Gemini's
 // {"error":{"code":503,"message":"...high demand..."}}). Surface the human
 // message when present so the client can show something readable.
-function formatExtractionError(err: unknown): string {
+// Shared with documentController (re-extract flow).
+export function formatExtractionError(err: unknown): string {
   const raw = err instanceof Error ? err.message : String(err);
   try {
     const parsed = JSON.parse(raw);
@@ -28,7 +28,7 @@ function formatExtractionError(err: unknown): string {
 
 // Patch only the matching embedded document's extractedData via the positional
 // operator. Shared by the upload (background) and re-extract flows.
-function setExtraction(clientId: string, docId: string, data: Document["extractedData"]) {
+export function setExtraction(clientId: string, docId: string, data: Document["extractedData"]) {
   return ClientModel.findOneAndUpdate(
     { id: clientId, "documents.id": docId },
     { $set: { "documents.$.extractedData": data } },
@@ -43,7 +43,14 @@ export async function uploadDocument(req: Request, res: Response) {
   if (!file || !resolved) return res.status(400).json({ error: "לא הועלה קובץ" });
 
   const { clientId } = req.params;
-  const docType = (req.body.type as Document["type"]) ?? "other";
+  const rawType = (req.body as Record<string, unknown>).type;
+  let docType: Document["type"] = "other";
+  if (rawType !== undefined) {
+    if (!isDocumentType(rawType)) {
+      return res.status(400).json({ error: "סוג המסמך אינו תקין" });
+    }
+    docType = rawType;
+  }
 
   // Key extension comes from the RESOLVED mime, never the client filename.
   const uuid = randomUUID();
@@ -79,11 +86,11 @@ export async function uploadDocument(req: Request, res: Response) {
     );
   } catch (err) {
     console.error("[upload] failed to attach document:", err);
-    await deleteObject(key).catch(() => undefined); // avoid an orphaned R2 object
+    await safeDeleteObject(key); // avoid an orphaned R2 object
     return res.status(500).json({ error: "שמירת המסמך נכשלה" });
   }
   if (!updated) {
-    await deleteObject(key).catch(() => undefined);
+    await safeDeleteObject(key);
     return res.status(404).json({ error: "הלקוח לא נמצא" });
   }
   res.status(201).json(updated);
@@ -101,65 +108,4 @@ export async function uploadDocument(req: Request, res: Response) {
       await setExtraction(clientId, uuid, { error: reason });
     }
   })();
-}
-
-// Short-lived (15-min) presigned GET URL — the only way to view a private file.
-export async function viewDocument(req: Request, res: Response) {
-  const { clientId, docId } = req.params;
-
-  let client;
-  try {
-    client = await ClientModel.findOne({ id: clientId });
-  } catch (err) {
-    console.error("[view] lookup failed:", err);
-    return res.status(500).json({ error: "טעינת הלקוח נכשלה" });
-  }
-  const doc = client?.documents.find((d) => d.id === docId);
-  if (!doc || !doc.key) return res.status(404).json({ error: "המסמך לא נמצא" });
-
-  try {
-    const url = await getViewUrl(doc.key);
-    res.json({ url });
-  } catch (err) {
-    console.error("[view] presign failed:", err);
-    res.status(500).json({ error: "יצירת קישור הצפייה נכשלה" });
-  }
-}
-
-// Re-run extraction after a transient failure: download from R2 into memory and
-// overwrite extractedData synchronously so the client gets the final result.
-export async function reExtractDocument(req: Request, res: Response) {
-  const { clientId, docId } = req.params;
-
-  let client;
-  try {
-    client = await ClientModel.findOne({ id: clientId });
-  } catch (err) {
-    console.error("[re-extract] lookup failed:", err);
-    return res.status(500).json({ error: "טעינת הלקוח נכשלה" });
-  }
-  if (!client) return res.status(404).json({ error: "הלקוח לא נמצא" });
-
-  const doc = client.documents.find((d) => d.id === docId);
-  if (!doc || !doc.key) return res.status(404).json({ error: "המסמך לא נמצא" });
-
-  let buffer: Buffer;
-  try {
-    buffer = await getObjectBuffer(doc.key);
-  } catch (err) {
-    console.error("[re-extract] R2 download failed:", err);
-    return res.status(404).json({ error: "הקובץ לא נמצא באחסון" });
-  }
-
-  try {
-    const data = await extractFromBuffer(buffer, doc.mimetype ?? "application/pdf");
-    const updated = await setExtraction(clientId, docId, data);
-    console.log(`[re-extract] completed for doc ${docId}`);
-    res.json(updated);
-  } catch (err) {
-    const reason = err instanceof Error ? err.message : String(err);
-    console.error(`[re-extract] failed for doc ${docId}:`, reason);
-    const updated = await setExtraction(clientId, docId, { error: reason });
-    res.json(updated);
-  }
 }

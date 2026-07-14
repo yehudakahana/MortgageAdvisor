@@ -22,21 +22,21 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
   const secret = process.env.JWT_SECRET;
   if (!secret) {
     console.error("[CONFIG ERROR] JWT_SECRET is not set; cannot verify tokens.");
-    res.status(500).json({ error: "Server auth misconfigured" });
+    res.status(500).json({ error: "תקלה בהגדרות ההזדהות בשרת" });
     return;
   }
 
   const header = req.headers.authorization;
   const token = header?.startsWith("Bearer ") ? header.slice(7) : null;
   if (!token) {
-    res.status(401).json({ error: "Missing authentication token" });
+    res.status(401).json({ error: "חסר אסימון הזדהות" });
     return;
   }
 
   try {
     const payload = jwt.verify(token, secret);
     if (typeof payload === "string" || typeof payload.username !== "string") {
-      res.status(401).json({ error: "Invalid token payload" });
+      res.status(401).json({ error: "אסימון ההזדהות אינו תקין" });
       return;
     }
     req.user = { username: payload.username };
@@ -46,6 +46,6 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
     next();
   } catch {
     // Do not leak verification internals to the client.
-    res.status(401).json({ error: "Invalid or expired token" });
+    res.status(401).json({ error: "אסימון ההזדהות אינו תקין או שפג תוקפו" });
   }
 }

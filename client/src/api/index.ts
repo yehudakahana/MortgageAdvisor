@@ -101,7 +101,7 @@ export async function deleteDocument(clientId: string, docId: string) {
   return res.json();
 }
 
-export async function createClient(data: { name: string; phone: string; email?: string; notes?: string }) {
+export async function createClient(data: { name: string; phone: string; email?: string }) {
   const res = await authFetch(`${BASE}/clients`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },

@@ -19,16 +19,7 @@ export interface ChatRequest {
   userMessage: string;
 }
 
-export interface DocumentGenerationRequest {
-  taskType: "DOCUMENT_GENERATION";
-  clientData: ClientData;
-  // Defaults to a contract when omitted.
-  documentType?: string;
-  // Optional extra instructions for the generated document.
-  instructions?: string;
-}
-
-export type LLMRequest = ExtractionRequest | ChatRequest | DocumentGenerationRequest;
+export type LLMRequest = ExtractionRequest | ChatRequest;
 
 export interface LLMResponse {
   content: string;

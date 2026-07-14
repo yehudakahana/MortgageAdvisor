@@ -10,7 +10,7 @@ import ClientDocuments from "./ClientDocuments";
 
 export default function ClientPanel() {
   const {
-    clients, filteredClients, isLoading, selectedId, selectClient,
+    clients, filteredClients, isLoading, loadError, loadClients, selectedId, selectClient,
     isCreatingClient, setIsCreatingClient,
     name, setName, phone, setPhone, email, setEmail,
     saving, formError, setFormError, handleCreate,
@@ -67,6 +67,13 @@ export default function ClientPanel() {
             <Loader2 className="w-4 h-4 animate-spin" />
             <p className="text-sm">טוען לקוחות...</p>
           </div>
+        ) : loadError ? (
+          <div className="flex flex-col items-center justify-center py-16 gap-3 text-center px-6">
+            <p className="text-sm text-muted-foreground">טעינת הלקוחות נכשלה. נסו לרענן.</p>
+            <Button size="sm" variant="outline" onClick={() => loadClients()}>
+              נסו שוב
+            </Button>
+          </div>
         ) : clients.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3 text-center px-6">
             <div className="w-14 h-14 rounded-2xl bg-secondary/70 flex items-center justify-center">
@@ -85,8 +92,16 @@ export default function ClientPanel() {
             {filteredClients.map((c) => (
               <Fragment key={c.id}>
                 <div
+                  role="button"
+                  tabIndex={0}
                   onClick={() => selectClient(c.id)}
-                  className={cn("px-4 py-3.5 cursor-pointer transition-all hover:bg-accent/40 flex items-center gap-3 border-b border-border/50", c.id === selectedId && "bg-indigo-50/70 border-s-2 border-s-indigo-600")}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      selectClient(c.id);
+                    }
+                  }}
+                  className={cn("px-4 py-3.5 cursor-pointer transition-all hover:bg-accent/40 flex items-center gap-3 border-b border-border/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-inset", c.id === selectedId && "bg-indigo-50/70 border-s-2 border-s-indigo-600")}
                 >
                   <ClientAvatar name={c.name} />
                   <div className="flex-1 min-w-0">

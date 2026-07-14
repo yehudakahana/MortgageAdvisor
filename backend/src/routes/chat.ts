@@ -3,6 +3,7 @@ import { ClientModel } from "../models/Client";
 import { routeToLLM } from "../services/llm/router";
 import { ClientData } from "../services/llm/types";
 import { ChatMessage, Client } from "../types";
+import { isNonEmptyString, isOptionalString } from "../validation/validators";
 
 const router = Router();
 
@@ -11,6 +12,16 @@ const router = Router();
 // the full history is never persisted server-side, so nothing is lost.
 const CHAT_HISTORY_LIMIT = 15;
 
+// Token-cost control: cap the raw document text sent to the LLM, both per
+// document and across the whole aggregated payload.
+const MAX_RAW_TEXT_CHARS_PER_DOC = 8000;
+const MAX_TOTAL_RAW_TEXT_CHARS = 60000;
+const TRUNCATION_MARKER = "…[קטוע]";
+
+function truncate(text: string, max: number): string {
+  return text.length <= max ? text : text.slice(0, max) + TRUNCATION_MARKER;
+}
+
 // Aggregate one or more clients (profile + successfully-extracted documents)
 // into a single static ClientData blob. Failed extractions ({ error }) are
 // skipped. Passing all clients powers the global chat; a single client scopes
@@ -18,6 +29,7 @@ const CHAT_HISTORY_LIMIT = 15;
 function buildClientData(clients: Client[]): ClientData {
   const structuredFields: Record<string, unknown> = {};
   const rawTextParts: string[] = [];
+  let totalRawChars = 0;
 
   for (const client of clients) {
     const documents: Record<string, unknown> = {};
@@ -27,10 +39,12 @@ function buildClientData(clients: Client[]): ClientData {
       if (data.structuredFields) {
         documents[`${doc.type}:${doc.filename}`] = data.structuredFields;
       }
-      if (data.rawText) {
-        rawTextParts.push(
-          `# לקוח: ${client.name} — מסמך: ${doc.type} (${doc.filename})\n${data.rawText}`
-        );
+      if (data.rawText && totalRawChars < MAX_TOTAL_RAW_TEXT_CHARS) {
+        const header = `# לקוח: ${client.name} — מסמך: ${doc.type} (${doc.filename})`;
+        const body = truncate(data.rawText, MAX_RAW_TEXT_CHARS_PER_DOC);
+        const part = truncate(`${header}\n${body}`, MAX_TOTAL_RAW_TEXT_CHARS - totalRawChars);
+        rawTextParts.push(part);
+        totalRawChars += part.length;
       }
     }
 
@@ -58,27 +72,24 @@ function isChatMessage(value: unknown): value is ChatMessage {
 }
 
 router.post("/", async (req: Request, res: Response) => {
-  const { clientId, message, chatHistory } = req.body as {
-    clientId?: string;
-    message?: string;
-    chatHistory?: unknown;
-  };
+  const { clientId, message, chatHistory } = (req.body ?? {}) as Record<string, unknown>;
 
-  if (!message) return res.status(400).json({ error: "message is required" });
+  if (!isNonEmptyString(message)) return res.status(400).json({ error: "חסרה הודעה" });
+  if (!isOptionalString(clientId)) return res.status(400).json({ error: "מזהה הלקוח אינו תקין" });
 
   // Optional clientId scopes the chat to one client; otherwise query all clients.
   let clients: Client[];
   try {
     if (clientId) {
       const client = await ClientModel.findOne({ id: clientId });
-      if (!client) return res.status(404).json({ error: "Client not found" });
+      if (!client) return res.status(404).json({ error: "הלקוח לא נמצא" });
       clients = [client];
     } else {
       clients = await ClientModel.find();
     }
   } catch (err) {
     console.error("[chat] failed to load clients:", err);
-    return res.status(500).json({ error: "Failed to load client data" });
+    return res.status(500).json({ error: "טעינת נתוני הלקוח נכשלה" });
   }
 
   const history: ChatMessage[] = Array.isArray(chatHistory)
@@ -101,19 +112,17 @@ router.post("/", async (req: Request, res: Response) => {
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
     console.error("[chat] LLM request failed:", reason);
-    res.status(502).json({ error: "Chat request failed" });
+    res.status(502).json({ error: "בקשת הצ'אט נכשלה" });
   }
 });
 
-// Clear Chat / New Topic: start a fresh conversation for the given scope.
-// The backend holds no per-client chat state (history lives in the request
-// payload), so "resetting" means handing the client a clean, empty history to
-// continue with. Static client data (extractedData) is never touched here, so
-// it stays intact as the baseline context — letting prompt caching kick in
-// fresh against an empty history. Older messages, if logged elsewhere, are
-// untouched: this is a non-destructive acknowledgment, not a deletion.
+// Clear Chat / New Topic: the backend holds no per-client chat state (history
+// lives in the request payload), so "resetting" means handing the client a
+// clean, empty history to continue with. Static client data (extractedData) is
+// never touched here — a non-destructive acknowledgment, not a deletion.
 router.post("/reset", async (req: Request, res: Response) => {
-  const { clientId } = req.body as { clientId?: string };
+  const { clientId } = (req.body ?? {}) as Record<string, unknown>;
+  if (!isOptionalString(clientId)) return res.status(400).json({ error: "מזהה הלקוח אינו תקין" });
 
   let scopedClient: Client | null = null;
   if (clientId) {
@@ -121,9 +130,9 @@ router.post("/reset", async (req: Request, res: Response) => {
       scopedClient = await ClientModel.findOne({ id: clientId });
     } catch (err) {
       console.error("[chat] reset failed to load client:", err);
-      return res.status(500).json({ error: "Failed to load client data" });
+      return res.status(500).json({ error: "טעינת נתוני הלקוח נכשלה" });
     }
-    if (!scopedClient) return res.status(404).json({ error: "Client not found" });
+    if (!scopedClient) return res.status(404).json({ error: "הלקוח לא נמצא" });
   }
 
   const greeting = scopedClient

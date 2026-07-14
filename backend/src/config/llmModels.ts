@@ -1,4 +1,4 @@
-export type TaskType = "EXTRACTION" | "DOCUMENT_GENERATION" | "CHAT";
+export type TaskType = "EXTRACTION" | "CHAT";
 export type Provider = "claude" | "gemini";
 
 export interface ModelConfig {
@@ -12,8 +12,7 @@ const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
 export const TASK_MODEL_MAP: Record<TaskType, ModelConfig> = {
   // Extraction runs on Gemini Flash (fast + cheap for PDF/image parsing).
   EXTRACTION: { provider: "gemini", model: GEMINI_MODEL },
-  // Chat and document generation stay on Claude.
-  DOCUMENT_GENERATION: { provider: "claude", model: CLAUDE_MODEL },
+  // Chat stays on Claude.
   CHAT: { provider: "claude", model: CLAUDE_MODEL },
 };
 

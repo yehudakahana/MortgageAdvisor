@@ -1,8 +1,9 @@
 import { Router, Request, Response } from "express";
-import { v4 as uuidv4 } from "uuid";
+import { randomUUID } from "crypto";
 import { ClientModel } from "../models/Client";
-import { deleteObject } from "../services/storageService";
+import { safeDeleteObject } from "../services/storageService";
 import { Client } from "../types";
+import { isNonEmptyString, isOptionalString } from "../validation/validators";
 
 const router = Router();
 
@@ -28,13 +29,16 @@ router.get("/:id", async (req: Request, res: Response) => {
 });
 
 router.post("/", async (req: Request, res: Response) => {
-  const { name, phone, email, notes } = req.body as Partial<Client>;
-  if (!name || !phone) {
-    return res.status(400).json({ error: "name and phone are required" });
+  const { name, phone, email, notes } = (req.body ?? {}) as Record<string, unknown>;
+  if (!isNonEmptyString(name) || !isNonEmptyString(phone)) {
+    return res.status(400).json({ error: "שם וטלפון הם שדות חובה" });
+  }
+  if (!isOptionalString(email) || !isOptionalString(notes)) {
+    return res.status(400).json({ error: "שדות הלקוח חייבים להיות מחרוזות" });
   }
   try {
     const client = await ClientModel.create({
-      id: uuidv4(),
+      id: randomUUID(),
       name,
       phone,
       email: email ?? "",
@@ -54,7 +58,11 @@ router.patch("/:id", async (req: Request, res: Response) => {
   const body = (req.body ?? {}) as Record<string, unknown>;
   const update: Partial<Pick<Client, (typeof UPDATABLE_FIELDS)[number]>> = {};
   for (const field of UPDATABLE_FIELDS) {
-    if (typeof body[field] === "string") update[field] = body[field] as string;
+    const value = body[field];
+    if (!isOptionalString(value)) {
+      return res.status(400).json({ error: "שדות העדכון חייבים להיות מחרוזות" });
+    }
+    if (value !== undefined) update[field] = value;
   }
   if (Object.keys(update).length === 0) {
     return res.status(400).json({ error: "אין שדות תקינים לעדכון" });
@@ -79,7 +87,7 @@ router.delete("/:id", async (req: Request, res: Response) => {
     if (!deleted) return res.status(404).json({ error: "Client not found" });
     // Best-effort R2 cleanup — never fail the response over storage errors.
     for (const doc of deleted.documents) {
-      if (doc.key) await deleteObject(doc.key).catch(() => undefined);
+      if (doc.key) await safeDeleteObject(doc.key);
     }
     res.json({ success: true });
   } catch (err) {

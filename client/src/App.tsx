@@ -3,6 +3,7 @@ import Chat from "./components/Chat";
 import ClientPanel from "./components/ClientPanel";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "./auth/AuthContext";
+import { ClientsProvider } from "./context/ClientsContext";
 
 export default function App() {
   const { username, logout } = useAuth();
@@ -16,10 +17,7 @@ export default function App() {
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight leading-none">שרה</h1>
-              <div className="flex items-center gap-1.5 mt-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <p className="text-xs text-white/70">עוזרת יועץ משכנתאות · מחובר</p>
-              </div>
+              <p className="text-xs text-white/70 mt-1">עוזרת יועץ משכנתאות</p>
             </div>
           </div>
           <div className="flex items-center gap-3">
@@ -37,8 +35,10 @@ export default function App() {
         </div>
       </header>
       <main className="flex flex-1 overflow-hidden">
-        <Chat />
-        <ClientPanel />
+        <ClientsProvider>
+          <Chat />
+          <ClientPanel />
+        </ClientsProvider>
       </main>
     </div>
   );

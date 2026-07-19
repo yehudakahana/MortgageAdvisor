@@ -1,0 +1,20 @@
+{
+  "name": "mortgage-advisor",
+  "private": true,
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "npm run test:fe && npm run test:be",
+    "test:fe": "npm --prefix client run test",
+    "test:be": "npm --prefix backend run test",
+    "test:watch:fe": "npm --prefix client run test:watch",
+    "test:watch:be": "npm --prefix backend run test:watch",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:offline": "playwright test --config playwright.offline.config.ts"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1"
+  }
+}

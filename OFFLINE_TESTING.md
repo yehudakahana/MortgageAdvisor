@@ -29,13 +29,14 @@ and mongodb-memory-server's binary cache). After that, everything runs offline.
 
 There is no db.json — persistence is MongoDB via Mongoose. E2E never touches
 the real database: `backend/src/test/e2eServer.ts` boots an **in-memory
-MongoDB** (mongodb-memory-server), seeds one client, and serves the real app on
-port 3001 with dummy secrets from `backend/src/test/testEnv.ts`. The real
-`.env` / `MONGO_URI` is never read, and the database dies with the process.
+MongoDB** (mongodb-memory-server), seeds one client, and serves the real app
+with dummy secrets from `backend/src/test/testEnv.ts`. The real `.env` /
+`MONGO_URI` is never read, and the database dies with the process.
 
-**Caveat:** `reuseExistingServer: true` means a dev backend already running on
-port 3001 would be reused — including its real Atlas connection. Stop the dev
-backend before running E2E. (A running vite dev server on 5173 is fine.)
+E2E runs on dedicated ports — backend **3002** and its own vite instance on
+**5174** (proxying `/api` to 3002 via `API_PROXY_TARGET`). The dev servers on
+3001/5173 can keep running; `reuseExistingServer: true` only ever matches a
+previous E2E run, never the dev environment.
 
 ## No-external-calls enforcement
 

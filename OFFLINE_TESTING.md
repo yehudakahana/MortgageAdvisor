@@ -57,6 +57,12 @@ The proxy only covers browser traffic; backend-originated calls (Anthropic,
 Gemini, R2) get dummy keys and are not exercised by the login flow. Final
 sign-off is therefore **one manual run of the full suite with WiFi off**:
 
+```powershell
+# PowerShell
+npm test; if ($?) { npm run test:e2e }
+```
+
 ```sh
+# cmd / bash
 npm test && npm run test:e2e
 ```

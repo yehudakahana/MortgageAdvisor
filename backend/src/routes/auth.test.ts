@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import request from "supertest";
 import { app } from "../app";
 
-// Credentials must match ALLOWED_USERS from src/test/setup.ts.
+// Credentials must match ALLOWED_USERS from src/test/testEnv.ts.
 describe("POST /api/login", () => {
   it("returns a signed JWT for valid credentials", async () => {
     const res = await request(app)

@@ -5,8 +5,9 @@ import { MongoMemoryServer } from "mongodb-memory-server";
 import { app } from "../app";
 import { ClientModel } from "../models/Client";
 
-// Dedicated E2E port — never collides with the dev backend on 3001.
-const PORT = 3002;
+// Dedicated E2E port (never collides with the dev backend on 3001) — supplied
+// by playwright.config.ts, which is the single source of truth for E2E ports.
+const PORT = Number(process.env.E2E_BACKEND_PORT ?? 3002);
 
 // E2E backend: boots a throwaway in-memory MongoDB, seeds one client, and
 // serves the real app on the real port. The database lives only inside this

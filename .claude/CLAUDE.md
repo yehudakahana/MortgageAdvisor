@@ -27,6 +27,29 @@ Welcome, Claude! You are an autonomous senior developer and AI engineer working 
 
 ---
 
+##  Testing (Vitest + Playwright — fully offline)
+
+See `OFFLINE_TESTING.md` for full details. The rules that must never be broken:
+
+- **Scripts (repo root):** `npm test` (FE+BE unit), `npm run test:fe` / `test:be`,
+  `test:watch:fe` / `test:watch:be`, `npm run test:e2e` (+ `test:e2e:ui`), `npm run test:offline`.
+- **Layout:** unit tests are colocated (`*.test.ts` / `*.test.tsx` next to the source);
+  E2E specs live in `e2e/`. Client vitest config merges `vite.config.ts` — never duplicate
+  the `@` alias. Backend app is imported from `backend/src/app.ts` (side-effect free);
+  `index.ts` is bootstrap only — keep it that way.
+- **No external calls — never relax:** client MSW uses `onUnhandledRequest: "error"`;
+  backend MSW guard throws on any non-loopback request; E2E specs must import
+  `test`/`expect` from `e2e/fixtures.ts` (network guard), never from `@playwright/test` directly.
+- **Test env:** dummy secrets live in `backend/src/test/testEnv.ts` (credentials:
+  `testuser`/`testpass`). Tests never read the real `.env`.
+- **E2E isolation:** dedicated ports (backend 3002, vite 5174, single-sourced in
+  `playwright.config.ts`) with an in-memory MongoDB seeded by `backend/src/test/e2eServer.ts`.
+  E2E must never connect to the real database or ports 3001/5173.
+- When adding a feature that makes API calls, add/extend MSW handlers in the test —
+  an unmocked request fails the suite by design.
+
+---
+
 ##  Security & Privacy Guardrails
 
 - **Sensitive Data:** This app handles highly confidential financial data (ID cards, bank statements, salaries). 

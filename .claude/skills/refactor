@@ -50,9 +50,11 @@ unless the user explicitly approved a finding that names them:
 - `package.json`, lockfiles, and any dependency changes (add/remove/upgrade)
 - Deployment & infra: Railway config, Dockerfiles, CI/CD files, proxy/trust settings
 - Build & tooling configs: `tsconfig.json` (and variants), `vite.config.*` /
-  `webpack.config.*` / equivalent bundler configs, test-runner configs
-  (`jest.config.*`, `vitest.config.*`), and linter/formatter configs
-  (`.eslintrc*`, `.prettierrc*`)
+  `webpack.config.*` / equivalent bundler configs, test-runner configs
+  (`jest.config.*`, `vitest.config.*`, `playwright*.config.ts`), test infrastructure
+  (`client/src/test/`, `backend/src/test/`, `e2e/fixtures.ts` — the no-external-calls
+  guards live here and must never be relaxed), and linter/formatter configs
+  (`.eslintrc*`, `.prettierrc*`)
 - `CLAUDE.md` and everything under `.claude/`
 
 A blanket `all` approval does **not** cover critical files — they require item-level,
@@ -89,12 +91,15 @@ Goal: build a complete mental model of the project. This phase is **strictly rea
    These must be cheap and safe — anything bigger belongs in the regular findings.
 6. **Note what is healthy** too — don't propose refactors for their own sake. Working,
    clear code that follows conventions should be left alone.
-7. **Establish a baseline.** Run the project's build (and tests/lint if they exist)
-   once, before proposing anything. Record the result in the findings report under
-   a "Baseline" header — and state explicitly if NO test suite exists, since that
-   changes how rewrites can be verified. If the build is already broken, say so
-   explicitly — Phase 4 verification compares against this baseline, not against
-   an assumed green state.
+7. **Establish a baseline.** Run the project's build and test suite once, before
+   proposing anything. For this repo that means: `npm test` (FE+BE unit suites from
+   the repo root), `npm --prefix backend run build`, and `npx tsc --noEmit` in
+   `client/`. Run `npm run test:e2e` too when the refactor touches routes, auth, or
+   client flows (note: E2E uses dedicated ports 3002/5174 and an in-memory DB — safe
+   to run alongside dev servers). Record the result in the findings report under a
+   "Baseline" header. If the build or a suite is already broken, say so explicitly —
+   Phase 4 verification compares against this baseline, not against an assumed green
+   state.
 8. **Ignore any existing `REFACTOR_REPORT.md`** during the scan (main agent and scan
    subagents alike) — it is the output of a previous run, possibly stale or already
    fixed, never a source of truth about the current code.
@@ -328,7 +333,9 @@ agent? If yes, that is a dependency.
 4. **Blocked findings are never re-dispatched automatically.** Present to the user:
    what was blocked, which file was needed and why, and the options — approve that
    file by name, adjust the finding, or drop it. The user decides.
-5. Run the project's build (and tests/lint if they exist) once to verify the combined result.
+5. Run the project's build and tests once to verify the combined result: `npm test`,
+   the builds from the Phase 1 baseline, and `npm run test:e2e` if it was part of
+   the baseline.
 6. Show the user a final diff-level summary grouped by finding ID, and flag any follow-ups.
 7. Do **not** commit. Let the user review and commit (or use their commit slash command).
 

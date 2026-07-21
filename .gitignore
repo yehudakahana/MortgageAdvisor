@@ -10,6 +10,10 @@ REFACTOR_REPORT.md
 backend/db.json
 db.json
 
+# playwright output
+playwright-report/
+test-results/
+
 # wrangler files
 .wrangler
 .dev.vars*

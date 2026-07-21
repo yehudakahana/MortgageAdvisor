@@ -22,7 +22,7 @@ export default function App() {
         <div className="flex items-center justify-between gap-3.5">
           <div className="flex items-center gap-3.5">
             <div className="w-10 h-10 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center flex-shrink-0 shadow-inner">
-              <span className="text-lg font-bold">ש</span>
+              <span className="text-lg font-bold">ק</span>
             </div>
             <div>
               <h1 className="text-xl font-bold tracking-tight leading-none">kay.ai</h1>

@@ -1,4 +1,4 @@
-# Cloudflare Workers (static assets) config for the Sara client SPA.
+# Cloudflare Workers (static assets) config for the kay.ai client SPA.
 # The Git build runs `npm run build` to produce ./dist, then `wrangler deploy`
 # uploads only that folder. Unknown routes fall back to index.html for the SPA.
 name = "mortage-advisor"

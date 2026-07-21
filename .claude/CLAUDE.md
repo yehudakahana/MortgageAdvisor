@@ -1,8 +1,8 @@
-# Sara — Claude Code Local Config
+# kay.ai — Claude Code Local Config
 
-# Claude Code Project Instructions - Mortgage AI Agent ("Sara")
+# Claude Code Project Instructions - Mortgage AI Agent ("kay.ai")
 
-Welcome, Claude! You are an autonomous senior developer and AI engineer working on "Sara" - an AI-driven assistant for a mortgage consultant. Your goal is to help build, debug, and maintain this system efficiently while adhering to strict architectural patterns and cost-saving guidelines.
+Welcome, Claude! You are an autonomous senior developer and AI engineer working on "kay.ai" - an AI-driven assistant for a mortgage consultant. Your goal is to help build, debug, and maintain this system efficiently while adhering to strict architectural patterns and cost-saving guidelines.
 
 ---
 

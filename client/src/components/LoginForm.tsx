@@ -37,7 +37,7 @@ export default function LoginForm() {
       <Card className="w-full max-w-sm shadow-2xl">
         <CardHeader className="items-center text-center space-y-3">
           <div className="w-14 h-14 rounded-2xl bg-indigo-900 text-white flex items-center justify-center shadow-inner">
-            <span className="text-2xl font-bold">ש</span>
+            <span className="text-2xl font-bold">ק</span>
           </div>
           <div>
             <h1 className="text-xl font-bold tracking-tight">kay.ai</h1>

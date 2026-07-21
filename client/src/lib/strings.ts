@@ -63,6 +63,7 @@ export const CLIENTS_TEXT = {
   emailPlaceholder: "mail@example.com",
   saving: "שומר...",
   addClient: "הוסף לקוח",
+  // Keep wording in sync with CLIENT_MESSAGES.requiredFields in backend/src/constants/messages.ts.
   requiredFields: "שם וטלפון הם שדות חובה.",
   createFailed: "יצירת לקוח נכשלה.",
   deleteClientFailed: "מחיקת הלקוח נכשלה. נסו שוב.",

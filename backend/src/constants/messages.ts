@@ -15,6 +15,7 @@ export const CLIENT_MESSAGES = {
   listFailed: "טעינת הלקוחות נכשלה",
   fetchFailed: "טעינת נתוני הלקוח נכשלה",
   notFound: "הלקוח לא נמצא",
+  // Keep wording in sync with CLIENTS_TEXT.requiredFields in client/src/lib/strings.ts.
   requiredFields: "שם וטלפון הם שדות חובה",
   fieldsMustBeStrings: "שדות הלקוח חייבים להיות מחרוזות",
   updateFieldsMustBeStrings: "שדות העדכון חייבים להיות מחרוזות",

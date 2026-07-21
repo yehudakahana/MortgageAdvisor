@@ -65,6 +65,17 @@ export function useChat() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientsLoading, clients]);
 
+  // If the scoped client disappears from the list (e.g. deleted in the panel),
+  // fall back to global chat so sends don't target a nonexistent client.
+  useEffect(() => {
+    if (!initializedRef.current || clientsLoading) return;
+    if (scopeId && !clients.some((c) => c.id === scopeId)) {
+      setScopeId("");
+      startFresh("");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [clients, clientsLoading, scopeId]);
+
   // Switching scope starts a fresh conversation so contexts don't mix.
   function changeScope(id: string) {
     setScopeId(id);

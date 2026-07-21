@@ -11,8 +11,8 @@ backend/db.json
 db.json
 
 # playwright artifacts
-test-results/
 playwright-report/
+test-results/
 
 # wrangler files
 .wrangler

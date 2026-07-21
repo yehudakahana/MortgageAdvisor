@@ -2,6 +2,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { FileUp, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { DOCUMENTS_TEXT } from "@/lib/strings";
+import { DOC_TYPE_LABELS } from "../types/client";
 import type { Document } from "../types/client";
 import DocumentRow from "./DocumentRow";
 
@@ -26,9 +28,9 @@ export default function ClientDocuments({ clientId, documents, uploadType, setUp
     <TooltipProvider delayDuration={150}>
     <div className="bg-indigo-50/40 border-b border-border/50 border-s-2 border-s-indigo-600 px-4 py-4 space-y-4">
       <div>
-        <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">מסמכים</p>
+        <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2.5">{DOCUMENTS_TEXT.title}</p>
         {documents.length === 0 ? (
-          <p className="text-sm text-muted-foreground/60">לא הועלו מסמכים עדיין.</p>
+          <p className="text-sm text-muted-foreground/60">{DOCUMENTS_TEXT.empty}</p>
         ) : (
           <ul className="space-y-2.5">
             {documents.map((d) => (
@@ -48,14 +50,13 @@ export default function ClientDocuments({ clientId, documents, uploadType, setUp
       </div>
 
       <div className="space-y-2 pt-1 border-t border-border/40">
-        <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider pt-1">העלאת מסמך</p>
+        <p className="text-sm font-semibold text-muted-foreground uppercase tracking-wider pt-1">{DOCUMENTS_TEXT.uploadTitle}</p>
         <Select value={uploadType} onValueChange={setUploadType}>
           <SelectTrigger className="w-full h-10 max-md:h-11 text-base"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="paystub">תלוש שכר</SelectItem>
-            <SelectItem value="bank_statement">דף חשבון</SelectItem>
-            <SelectItem value="id_card">תעודת זהות</SelectItem>
-            <SelectItem value="other">אחר</SelectItem>
+            {Object.entries(DOC_TYPE_LABELS).map(([value, label]) => (
+              <SelectItem key={value} value={value}>{label}</SelectItem>
+            ))}
           </SelectContent>
         </Select>
 
@@ -67,7 +68,7 @@ export default function ClientDocuments({ clientId, documents, uploadType, setUp
             ? <Loader2 className="w-4 h-4 text-indigo-500 animate-spin shrink-0" />
             : <FileUp className="w-4 h-4 text-muted-foreground/60 group-hover:text-indigo-600 transition-colors shrink-0" />}
           <span className="text-base text-muted-foreground truncate flex-1">
-            {isUploading ? "מעלה..." : "בחר קובץ PDF להעלאה..."}
+            {isUploading ? DOCUMENTS_TEXT.uploading : DOCUMENTS_TEXT.choosePdf}
           </span>
           <input type="file" accept=".pdf" ref={fileInputRef} className="sr-only" onChange={onFileSelect} disabled={isUploading} />
         </label>

@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { CHAT_TEXT } from "@/lib/strings";
 
 const PROVIDER_LABELS: Record<string, string> = { claude: "Claude", gemini: "Gemini" };
 
@@ -16,7 +17,7 @@ export default function LLMSourceNote({ source, className }: { source: LLMSource
       <span dir="ltr">
         {PROVIDER_LABELS[source.provider] ?? source.provider} · {source.model}
       </span>
-      {source.usedFallback && <span className="text-amber-600 font-medium">(מודל גיבוי)</span>}
+      {source.usedFallback && <span className="text-amber-600 font-medium">{CHAT_TEXT.fallbackModelNote}</span>}
     </span>
   );
 }

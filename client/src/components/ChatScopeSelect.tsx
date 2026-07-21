@@ -7,6 +7,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
+import { CHAT_TEXT } from "@/lib/strings";
 import type { Client } from "../types/client";
 
 const ALL = "all";
@@ -41,10 +42,10 @@ export default function ChatScopeSelect({ clients, value, onChange, disabled }: 
 
       <div className="flex flex-col max-md:hidden">
         <span className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-          מצב שיחה
+          {CHAT_TEXT.scopeLabel}
         </span>
         <span className={cn("text-xs", isScoped ? "text-indigo-700 font-semibold" : "text-muted-foreground")}>
-          {isScoped ? "ממוקד בלקוח אחד" : "כל הלקוחות"}
+          {isScoped ? CHAT_TEXT.scopeFocused : CHAT_TEXT.scopeAll}
         </span>
       </div>
 
@@ -64,7 +65,7 @@ export default function ChatScopeSelect({ clients, value, onChange, disabled }: 
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={ALL}>כל הלקוחות</SelectItem>
+          <SelectItem value={ALL}>{CHAT_TEXT.scopeAll}</SelectItem>
           {clients.map((c) => (
             <SelectItem key={c.id} value={c.id}>
               {c.name}

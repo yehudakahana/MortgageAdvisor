@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { getDocumentUrl } from "../api";
 import { toast } from "../lib/toast";
+import { DOCUMENTS_TEXT } from "@/lib/strings";
 
 type Action = "view" | "download";
 
@@ -23,9 +24,9 @@ export function useDocumentFile(clientId: string, docId: string) {
       // opener manually instead (best-effort) to avoid reverse tabnabbing.
       const win = window.open(url, "_blank");
       if (win) win.opener = null;
-      else toast("הדפדפן חסם את פתיחת הקובץ. אפשרו חלונות קופצים ונסו שוב.");
+      else toast(DOCUMENTS_TEXT.popupBlocked);
     } catch {
-      toast("לא ניתן לפתוח את הקובץ. ייתכן שהוא לא נשמר במערכת.");
+      toast(DOCUMENTS_TEXT.openFailed);
     } finally {
       setLoading(null);
     }
@@ -49,9 +50,9 @@ export function useDocumentFile(clientId: string, docId: string) {
       window.document.body.appendChild(iframe);
       // Give the browser time to start the download before removing the iframe.
       window.setTimeout(() => iframe.remove(), 60_000);
-      toast("ההורדה החלה — בדקו את הורדות הדפדפן.", "success");
+      toast(DOCUMENTS_TEXT.downloadStarted, "success");
     } catch {
-      toast("לא ניתן להוריד את הקובץ. ייתכן שהוא לא נשמר במערכת.");
+      toast(DOCUMENTS_TEXT.downloadFailed);
     } finally {
       setLoading(null);
     }

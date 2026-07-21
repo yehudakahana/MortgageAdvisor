@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import multer from "multer";
 import path from "path";
 import { fromBuffer } from "file-type";
+import { UPLOAD_MESSAGES } from "../constants/messages";
 
 // The resolved (mime, ext) is attached here so the upload handler derives the R2
 // key extension and ContentType from validated bytes — never from the client
@@ -32,13 +33,13 @@ export function uploadSingle(field: string) {
       if (err instanceof multer.MulterError) {
         const message =
           err.code === "LIMIT_FILE_SIZE"
-            ? "הקובץ גדול מדי (מקסימום 10MB)"
-            : "העלאת הקובץ נכשלה";
+            ? UPLOAD_MESSAGES.fileTooLarge
+            : UPLOAD_MESSAGES.uploadFailed;
         res.status(400).json({ error: message });
         return;
       }
       if (err) {
-        res.status(400).json({ error: "העלאת הקובץ נכשלה" });
+        res.status(400).json({ error: UPLOAD_MESSAGES.uploadFailed });
         return;
       }
       next();
@@ -103,19 +104,19 @@ export async function validateBuffer(
   next: NextFunction
 ): Promise<void> {
   if (!req.file) {
-    res.status(400).json({ error: "לא הועלה קובץ" });
+    res.status(400).json({ error: UPLOAD_MESSAGES.noFile });
     return;
   }
   try {
     const resolved = await resolveType(req.file.buffer, req.file.originalname);
     if (!resolved) {
-      res.status(400).json({ error: "סוג קובץ לא נתמך" });
+      res.status(400).json({ error: UPLOAD_MESSAGES.unsupportedType });
       return;
     }
     req.resolvedFile = resolved;
     next();
   } catch (err) {
     console.error("[upload] buffer validation failed:", err);
-    res.status(400).json({ error: "אימות הקובץ נכשל" });
+    res.status(400).json({ error: UPLOAD_MESSAGES.validationFailed });
   }
 }

@@ -15,7 +15,7 @@ const PORT = Number(process.env.E2E_BACKEND_PORT ?? 3002);
 // discarded when Playwright shuts the server down.
 async function main(): Promise<void> {
   const mongod = await MongoMemoryServer.create();
-  await mongoose.connect(mongod.getUri("sara-e2e"));
+  await mongoose.connect(mongod.getUri("kay-e2e"));
 
   await ClientModel.create({
     id: randomUUID(),

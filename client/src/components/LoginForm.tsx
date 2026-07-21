@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { APP_TEXT, LOGIN_TEXT } from "@/lib/strings";
 
 export default function LoginForm() {
   const { login } = useAuth();
@@ -18,7 +19,7 @@ export default function LoginForm() {
     e.preventDefault();
     setError("");
     if (!username.trim() || !password) {
-      setError("יש להזין שם משתמש וסיסמה.");
+      setError(LOGIN_TEXT.missingFields);
       return;
     }
     setLoading(true);
@@ -26,7 +27,7 @@ export default function LoginForm() {
       const data = await loginRequest(username.trim(), password);
       login(data.token, data.username);
     } catch {
-      setError("שם משתמש או סיסמה שגויים.");
+      setError(LOGIN_TEXT.badCredentials);
     } finally {
       setLoading(false);
     }
@@ -37,17 +38,17 @@ export default function LoginForm() {
       <Card className="w-full max-w-sm shadow-2xl">
         <CardHeader className="items-center text-center space-y-3">
           <div className="w-14 h-14 rounded-2xl bg-indigo-900 text-white flex items-center justify-center shadow-inner">
-            <span className="text-2xl font-bold">ש</span>
+            <span className="text-2xl font-bold">{APP_TEXT.initial}</span>
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight">שרה</h1>
-            <p className="text-sm text-muted-foreground mt-1">עוזרת יועץ משכנתאות · התחברות</p>
+            <h1 className="text-xl font-bold tracking-tight">{APP_TEXT.title}</h1>
+            <p className="text-sm text-muted-foreground mt-1">{LOGIN_TEXT.tagline}</p>
           </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
-              <Label htmlFor="username">שם משתמש</Label>
+              <Label htmlFor="username">{LOGIN_TEXT.usernameLabel}</Label>
               <Input
                 id="username"
                 value={username}
@@ -62,7 +63,7 @@ export default function LoginForm() {
               />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="password">סיסמה</Label>
+              <Label htmlFor="password">{LOGIN_TEXT.passwordLabel}</Label>
               <Input
                 id="password"
                 type="password"
@@ -78,7 +79,7 @@ export default function LoginForm() {
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="submit" className="w-full max-md:h-11 max-md:text-base" disabled={loading}>
-              {loading ? "מתחבר..." : "התחברות"}
+              {loading ? LOGIN_TEXT.submitting : LOGIN_TEXT.submit}
             </Button>
           </form>
         </CardContent>

@@ -1,6 +1,7 @@
 import { Component, type ReactNode } from "react";
 import { RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ERROR_BOUNDARY_TEXT } from "@/lib/strings";
 
 interface Props {
   children: ReactNode;
@@ -23,11 +24,11 @@ export default class ErrorBoundary extends Component<Props, State> {
     if (!this.state.hasError) return this.props.children;
     return (
       <div className="flex h-screen flex-col items-center justify-center gap-4 bg-background px-6 text-center">
-        <h1 className="text-lg font-semibold text-foreground">משהו השתבש.</h1>
-        <p className="text-sm text-muted-foreground">נסו לרענן את הדף.</p>
+        <h1 className="text-lg font-semibold text-foreground">{ERROR_BOUNDARY_TEXT.title}</h1>
+        <p className="text-sm text-muted-foreground">{ERROR_BOUNDARY_TEXT.hint}</p>
         <Button onClick={() => window.location.reload()} className="gap-2">
           <RotateCcw className="h-4 w-4" />
-          רענון הדף
+          {ERROR_BOUNDARY_TEXT.reload}
         </Button>
       </div>
     );

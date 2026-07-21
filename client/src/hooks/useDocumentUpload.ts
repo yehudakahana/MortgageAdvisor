@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { getClient, reExtractDocument, uploadDocument } from "../api";
 import type { Client } from "../types/client";
 import { useClients } from "../context/ClientsContext";
+import { DOCUMENTS_TEXT } from "@/lib/strings";
 
 // Document upload, extraction polling, and re-extract logic for the selected
 // client. Composed by useClientPanel; merges updates into the shared list.
@@ -62,7 +63,7 @@ export function useDocumentUpload(selectedId: string | null) {
       const newDoc = updated.documents[updated.documents.length - 1];
       if (newDoc) void pollExtraction(updated.id, newDoc.id);
     } catch {
-      setUploadError("העלאה נכשלה. PDF בלבד, מקסימום 10 מגה.");
+      setUploadError(DOCUMENTS_TEXT.uploadFailed);
     } finally {
       setIsUploading(false);
     }

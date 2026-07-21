@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Loader2, Search, Trash2, UserPlus, Users } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CLIENTS_TEXT, COMMON_TEXT } from "@/lib/strings";
 import { useClientPanel } from "../hooks/useClientPanel";
 import ClientAvatar from "./ClientAvatar";
 import NewClientForm from "./NewClientForm";
@@ -37,7 +38,7 @@ export default function ClientPanel({ variant = "static" }: { variant?: "static"
       <div className={cn("flex items-center justify-between px-4 py-4 border-b border-border/70 bg-gradient-to-b from-slate-50 to-card", variant === "drawer" && "pe-12")}>
         <div className="flex items-center gap-2">
           <Users className="w-5 h-5 text-muted-foreground/70" />
-          <h2 className="font-semibold text-base">לקוחות</h2>
+          <h2 className="font-semibold text-base">{CLIENTS_TEXT.title}</h2>
           {clients.length > 0 && (
             <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-indigo-100 text-indigo-700 text-sm font-bold">
               {clients.length}
@@ -50,7 +51,7 @@ export default function ClientPanel({ variant = "static" }: { variant?: "static"
           className={cn("h-9 gap-1 text-sm max-md:h-10", !isCreatingClient && "bg-gradient-to-br from-indigo-600 to-indigo-900 hover:from-indigo-700 hover:to-indigo-950 shadow-sm border-0")}
           onClick={() => { setIsCreatingClient((v) => !v); setFormError(""); }}
         >
-          {isCreatingClient ? "ביטול" : <><UserPlus className="w-3 h-3" /><span>לקוח חדש</span></>}
+          {isCreatingClient ? COMMON_TEXT.cancel : <><UserPlus className="w-3 h-3" /><span>{CLIENTS_TEXT.newClient}</span></>}
         </Button>
       </div>
 
@@ -59,7 +60,7 @@ export default function ClientPanel({ variant = "static" }: { variant?: "static"
         <div className="px-3 py-2 border-b border-border/70">
           <div className="relative">
             <Search className="absolute start-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground/50 pointer-events-none" />
-            <Input placeholder="חיפוש לקוח..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-10 max-md:h-11 ps-8 text-base" />
+            <Input placeholder={CLIENTS_TEXT.searchPlaceholder} value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="h-10 max-md:h-11 ps-8 text-base" />
           </div>
         </div>
       )}
@@ -76,13 +77,13 @@ export default function ClientPanel({ variant = "static" }: { variant?: "static"
         {isLoading ? (
           <div className="flex items-center justify-center gap-2 py-16 text-muted-foreground">
             <Loader2 className="w-5 h-5 animate-spin" />
-            <p className="text-base">טוען לקוחות...</p>
+            <p className="text-base">{CLIENTS_TEXT.loading}</p>
           </div>
         ) : loadError ? (
           <div className="flex flex-col items-center justify-center py-16 gap-3 text-center px-6">
-            <p className="text-base text-muted-foreground">טעינת הלקוחות נכשלה. נסו לרענן.</p>
+            <p className="text-base text-muted-foreground">{CLIENTS_TEXT.loadFailed}</p>
             <Button size="sm" variant="outline" onClick={() => loadClients()}>
-              נסו שוב
+              {COMMON_TEXT.retry}
             </Button>
           </div>
         ) : clients.length === 0 ? (
@@ -90,13 +91,13 @@ export default function ClientPanel({ variant = "static" }: { variant?: "static"
             <div className="w-14 h-14 rounded-2xl bg-secondary/70 flex items-center justify-center">
               <Users className="w-7 h-7 text-muted-foreground/50" />
             </div>
-            <p className="text-base text-muted-foreground">אין לקוחות עדיין.</p>
-            <p className="text-sm text-muted-foreground/60">לחץ "לקוח חדש" להוספת הלקוח הראשון.</p>
+            <p className="text-base text-muted-foreground">{CLIENTS_TEXT.emptyList}</p>
+            <p className="text-sm text-muted-foreground/60">{CLIENTS_TEXT.emptyListHint}</p>
           </div>
         ) : filteredClients.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-10 gap-2 text-center px-6">
             <Search className="w-6 h-6 text-muted-foreground/30" />
-            <p className="text-base text-muted-foreground">לא נמצאו לקוחות.</p>
+            <p className="text-base text-muted-foreground">{CLIENTS_TEXT.noSearchResults}</p>
           </div>
         ) : (
           <div>
@@ -125,7 +126,7 @@ export default function ClientPanel({ variant = "static" }: { variant?: "static"
                     </span>
                   )}
                   <Button
-                    size="sm" variant="ghost" aria-label="מחק לקוח"
+                    size="sm" variant="ghost" aria-label={CLIENTS_TEXT.deleteClient}
                     className="h-8 w-8 p-0 shrink-0 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10"
                     disabled={deletingClientId === c.id}
                     onClick={(e) => { e.stopPropagation(); handleDeleteClient(c.id); }}

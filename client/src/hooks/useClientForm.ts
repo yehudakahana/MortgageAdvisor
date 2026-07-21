@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { createClient } from "../api";
 import type { Client } from "../types/client";
+import { CLIENTS_TEXT } from "@/lib/strings";
 
 // Client-creation form state and submit logic. Composed by useClientPanel,
 // which handles list-level side effects via the onCreated callback.
@@ -16,7 +17,7 @@ export function useClientForm(onCreated: (client: Client) => void) {
     e.preventDefault();
     setFormError("");
     if (!name.trim() || !phone.trim()) {
-      setFormError("שם וטלפון הם שדות חובה.");
+      setFormError(CLIENTS_TEXT.requiredFields);
       return;
     }
     setSaving(true);
@@ -26,7 +27,7 @@ export function useClientForm(onCreated: (client: Client) => void) {
       setIsCreatingClient(false);
       setName(""); setPhone(""); setEmail("");
     } catch {
-      setFormError("יצירת לקוח נכשלה.");
+      setFormError(CLIENTS_TEXT.createFailed);
     } finally {
       setSaving(false);
     }

@@ -1,6 +1,6 @@
 ---
 allowed-tools: Bash(git add:*), Bash(git status:*), Bash(git diff:*), Bash(git log:*), Bash(git commit:*)
-description: Stage all changes and create a conventional commit for the Sara mortgage project
+description: Stage all changes and create a conventional commit for the kay.ai mortgage project
 ---
 
 ## Context

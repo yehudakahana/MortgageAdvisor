@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { deleteClient, deleteDocument } from "../api";
+import { CLIENTS_TEXT } from "@/lib/strings";
 import type { Client } from "../types/client";
 import { useClientForm } from "./useClientForm";
 import { useClients } from "../context/ClientsContext";
@@ -57,7 +58,7 @@ export function useClientPanel() {
       setClients((prev) => prev.filter((c) => c.id !== id));
       setSelectedId((prev) => (prev === id ? null : prev));
     } catch {
-      setDeleteError("מחיקת הלקוח נכשלה. נסו שוב.");
+      setDeleteError(CLIENTS_TEXT.deleteClientFailed);
     } finally {
       setDeletingClientId(null);
     }
@@ -70,7 +71,7 @@ export function useClientPanel() {
       setClients((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
       upload.clearDocTimeout(docId);
     } catch {
-      setDeleteError("מחיקת המסמך נכשלה. נסו שוב.");
+      setDeleteError(CLIENTS_TEXT.deleteDocumentFailed);
     } finally {
       setDeletingDocId(null);
     }
@@ -78,8 +79,8 @@ export function useClientPanel() {
 
   const deleteConfirmMessage =
     pendingDelete?.kind === "client"
-      ? "למחוק את הלקוח וכל המסמכים שלו? פעולה זו אינה הפיכה."
-      : "למחוק את המסמך? פעולה זו אינה הפיכה.";
+      ? CLIENTS_TEXT.confirmDeleteClient
+      : CLIENTS_TEXT.confirmDeleteDocument;
 
   function selectClient(id: string) {
     setSelectedId((prev) => (prev === id ? null : id));

@@ -7,6 +7,7 @@ import {
   getViewUrl,
 } from "../services/storageService";
 import { formatExtractionError, setExtraction } from "./uploadController";
+import { CLIENT_MESSAGES, DOCUMENT_MESSAGES } from "../constants/messages";
 
 // Delete a single document: remove the R2 object (best-effort, same pattern as
 // client deletion) and pull the embedded metadata. Returns the updated client.
@@ -18,12 +19,12 @@ export async function deleteDocument(req: Request, res: Response) {
     client = await ClientModel.findOne({ id: clientId });
   } catch (err) {
     console.error("[delete-doc] lookup failed:", err);
-    return res.status(500).json({ error: "טעינת הלקוח נכשלה" });
+    return res.status(500).json({ error: CLIENT_MESSAGES.fetchFailed });
   }
-  if (!client) return res.status(404).json({ error: "הלקוח לא נמצא" });
+  if (!client) return res.status(404).json({ error: CLIENT_MESSAGES.notFound });
 
   const doc = client.documents.find((d) => d.id === docId);
-  if (!doc) return res.status(404).json({ error: "המסמך לא נמצא" });
+  if (!doc) return res.status(404).json({ error: DOCUMENT_MESSAGES.notFound });
 
   if (doc.key) await safeDeleteObject(doc.key);
 
@@ -34,11 +35,11 @@ export async function deleteDocument(req: Request, res: Response) {
       { returnDocument: "after" }
     );
     // The client may have been deleted between the lookup and the update.
-    if (!updated) return res.status(404).json({ error: "הלקוח לא נמצא" });
+    if (!updated) return res.status(404).json({ error: CLIENT_MESSAGES.notFound });
     res.json(updated);
   } catch (err) {
     console.error("[delete-doc] failed to remove document:", err);
-    res.status(500).json({ error: "מחיקת המסמך נכשלה" });
+    res.status(500).json({ error: DOCUMENT_MESSAGES.deleteFailed });
   }
 }
 
@@ -55,10 +56,10 @@ export async function viewDocument(req: Request, res: Response) {
     client = await ClientModel.findOne({ id: clientId });
   } catch (err) {
     console.error("[view] lookup failed:", err);
-    return res.status(500).json({ error: "טעינת הלקוח נכשלה" });
+    return res.status(500).json({ error: CLIENT_MESSAGES.fetchFailed });
   }
   const doc = client?.documents.find((d) => d.id === docId);
-  if (!doc || !doc.key) return res.status(404).json({ error: "המסמך לא נמצא" });
+  if (!doc || !doc.key) return res.status(404).json({ error: DOCUMENT_MESSAGES.notFound });
 
   const canPreviewInline =
     doc.mimetype === "application/pdf" || doc.mimetype?.startsWith("image/");
@@ -69,7 +70,7 @@ export async function viewDocument(req: Request, res: Response) {
     res.json({ url });
   } catch (err) {
     console.error("[view] presign failed:", err);
-    res.status(500).json({ error: "יצירת קישור הצפייה נכשלה" });
+    res.status(500).json({ error: DOCUMENT_MESSAGES.viewLinkFailed });
   }
 }
 
@@ -83,19 +84,19 @@ export async function reExtractDocument(req: Request, res: Response) {
     client = await ClientModel.findOne({ id: clientId });
   } catch (err) {
     console.error("[re-extract] lookup failed:", err);
-    return res.status(500).json({ error: "טעינת הלקוח נכשלה" });
+    return res.status(500).json({ error: CLIENT_MESSAGES.fetchFailed });
   }
-  if (!client) return res.status(404).json({ error: "הלקוח לא נמצא" });
+  if (!client) return res.status(404).json({ error: CLIENT_MESSAGES.notFound });
 
   const doc = client.documents.find((d) => d.id === docId);
-  if (!doc || !doc.key) return res.status(404).json({ error: "המסמך לא נמצא" });
+  if (!doc || !doc.key) return res.status(404).json({ error: DOCUMENT_MESSAGES.notFound });
 
   let buffer: Buffer;
   try {
     buffer = await getObjectBuffer(doc.key);
   } catch (err) {
     console.error("[re-extract] R2 download failed:", err);
-    return res.status(404).json({ error: "הקובץ לא נמצא באחסון" });
+    return res.status(404).json({ error: DOCUMENT_MESSAGES.fileNotInStorage });
   }
 
   try {

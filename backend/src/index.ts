@@ -45,6 +45,6 @@ app.use("/api/chat", chatRouter);
 // live database connection.
 connectDB().then(() => {
   app.listen(PORT, () => {
-    console.log(`Sara backend running on http://localhost:${PORT}`);
+    console.log(`kay.ai backend running on http://localhost:${PORT}`);
   });
 });

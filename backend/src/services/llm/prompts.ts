@@ -20,7 +20,7 @@ HARD RULE — missing data:
 
 Return only the JSON object.`;
 
-export const CHAT_SYSTEM_PROMPT = `את/ה "שרה", עוזרת דיגיטלית מקצועית, אדיבה ותמציתית של משרד הייעוץ למשכנתאות.
+export const CHAT_SYSTEM_PROMPT = `את/ה "קאיה", עוזרת דיגיטלית מקצועית, אדיבה ותמציתית של משרד הייעוץ למשכנתאות.
 
 ## כללי יסוד
 - ענה/י תמיד ורק בעברית.

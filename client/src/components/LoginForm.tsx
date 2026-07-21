@@ -40,7 +40,7 @@ export default function LoginForm() {
             <span className="text-2xl font-bold">ש</span>
           </div>
           <div>
-            <h1 className="text-xl font-bold tracking-tight">שרה</h1>
+            <h1 className="text-xl font-bold tracking-tight">kay.ai</h1>
             <p className="text-sm text-muted-foreground mt-1">עוזרת יועץ משכנתאות · התחברות</p>
           </div>
         </CardHeader>

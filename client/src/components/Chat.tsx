@@ -57,7 +57,7 @@ export default function Chat() {
             <div className="flex items-center gap-1.5">
               {msg.role === "assistant" && <AssistantAvatar />}
               <span className="text-xs text-muted-foreground font-medium tracking-wide">
-                {msg.role === "assistant" ? "שרה" : "אתה"}
+                {msg.role === "assistant" ? "קאיה" : "אתה"}
               </span>
               {msg.role === "user" && (
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">
@@ -85,7 +85,7 @@ export default function Chat() {
           <div className="flex flex-col gap-1.5 self-start items-start max-w-[76%] max-md:max-w-[88%]">
             <div className="flex items-center gap-1.5">
               <AssistantAvatar />
-              <span className="text-xs text-muted-foreground font-medium tracking-wide">שרה</span>
+              <span className="text-xs text-muted-foreground font-medium tracking-wide">קאיה</span>
             </div>
             <div className="bg-card border border-border/70 rounded-2xl px-4 py-3 shadow-sm">
               <TypingDots />
@@ -114,7 +114,7 @@ export default function Chat() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="שאל את שרה משהו..."
+          placeholder="שאל את קאיה משהו..."
           disabled={loading}
           className="resize-none min-h-[48px] max-h-[120px] flex-1 bg-secondary/50 border-border/60 focus-visible:ring-1 rounded-xl text-base"
         />

@@ -136,8 +136,8 @@ router.post("/reset", async (req: Request, res: Response) => {
   }
 
   const greeting = scopedClient
-    ? `שלום! אני שרה. אני כעת מתמקדת בלקוח ${scopedClient.name}. במה אוכל לעזור?`
-    : "שלום! אני שרה, עוזרת יועץ המשכנתאות שלך. במה אוכל לעזור?";
+    ? `שלום! אני קאיה. אני כעת מתמקדת בלקוח ${scopedClient.name}. במה אוכל לעזור?`
+    : "שלום! אני קאיה, עוזרת יועץ המשכנתאות שלך. במה אוכל לעזור?";
 
   console.log(`[chat] session reset for scope: ${clientId ?? "global"}`);
 

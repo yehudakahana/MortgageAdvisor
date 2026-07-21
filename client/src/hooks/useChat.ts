@@ -5,8 +5,8 @@ import { useClients } from "../context/ClientsContext";
 
 function greeting(client?: Client): ChatMessage {
   const content = client
-    ? `שלום! אני שרה. אני כעת מתמקדת בלקוח ${client.name}. במה אוכל לעזור?`
-    : "שלום! אני שרה, עוזרת יועץ המשכנתאות שלך. במה אוכל לעזור?";
+    ? `שלום! אני קאיה. אני כעת מתמקדת בלקוח ${client.name}. במה אוכל לעזור?`
+    : "שלום! אני קאיה, עוזרת יועץ המשכנתאות שלך. במה אוכל לעזור?";
   return { role: "assistant", content };
 }
 
@@ -70,7 +70,7 @@ export function useChat() {
       const content =
         err instanceof TypeError
           ? "בעיה בחיבור לשרת. בדקו את החיבור ונסו שוב."
-          : "שרה לא הצליחה לענות כרגע. נסו שוב בעוד רגע.";
+          : "קאיה לא הצליחה לענות כרגע. נסו שוב בעוד רגע.";
       setMessages((prev) => [...prev, { role: "assistant", content }]);
     } finally {
       setLoading(false);

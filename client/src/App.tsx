@@ -25,7 +25,7 @@ export default function App() {
               <span className="text-lg font-bold">ש</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight leading-none">שרה</h1>
+              <h1 className="text-xl font-bold tracking-tight leading-none">kay.ai</h1>
               <p className="text-xs text-white/70 mt-1 max-md:text-[11px]">עוזרת יועץ משכנתאות</p>
             </div>
           </div>

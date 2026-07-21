@@ -11,11 +11,13 @@ const FALLBACK_GREETING: ChatMessage = {
 };
 
 export function useChat() {
-  const { clients } = useClients();
+  const { clients, isLoading: clientsLoading } = useClients();
   const [scopeId, setScopeId] = useState(""); // "" = all clients (global chat)
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
+  // Starts true so sends stay blocked until the initial scope is resolved and
+  // its greeting arrives (startFresh clears it).
+  const [loading, setLoading] = useState(true);
   const bottomRef = useRef<HTMLDivElement>(null);
   // Committed history sent to the LLM: only successful user→assistant pairs.
   // Kept separate from `messages` so the greeting and failed turns (optimistic
@@ -24,6 +26,7 @@ export function useChat() {
   // Guards against out-of-order /reset responses when the scope changes while
   // a previous reset is still in flight.
   const resetSeqRef = useRef(0);
+  const initializedRef = useRef(false);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -49,11 +52,17 @@ export function useChat() {
     }
   }
 
-  // Initial greeting on mount (global scope).
+  // Initial scope: once the clients list finishes loading, default to the
+  // first client; fall back to global chat when the list is empty (or failed
+  // to load).
   useEffect(() => {
-    startFresh("");
+    if (initializedRef.current || clientsLoading) return;
+    initializedRef.current = true;
+    const firstId = clients[0]?.id ?? "";
+    setScopeId(firstId);
+    startFresh(firstId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [clientsLoading, clients]);
 
   // Switching scope starts a fresh conversation so contexts don't mix.
   function changeScope(id: string) {

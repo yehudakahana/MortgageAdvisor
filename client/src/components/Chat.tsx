@@ -23,7 +23,7 @@ function TypingDots() {
 function AssistantAvatar() {
   return (
     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-800 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">
-      ש
+      ק
     </div>
   );
 }
@@ -44,6 +44,10 @@ export default function Chat() {
   return (
     <div className="flex flex-col flex-1 overflow-hidden bg-gradient-to-b from-background via-secondary/30 to-background">
       <ChatScopeSelect clients={clients} value={scopeId} onChange={changeScope} disabled={loading} />
+
+      <p className="px-4 max-md:px-3 pt-2 text-xs text-muted-foreground">
+        טיפ: אפשר לשנות את מצב השיחה בכל שלב בבורר שלמעלה — לקוח ממוקד או כל הלקוחות.
+      </p>
 
       <div className="flex-1 overflow-y-auto px-5 py-5 max-md:px-3 max-md:py-4 flex flex-col gap-4">
         {messages.map((msg, i) => (

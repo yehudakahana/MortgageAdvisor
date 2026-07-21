@@ -15,7 +15,9 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      "/api": "http://localhost:3001",
+      // Overridable so the E2E run (playwright.config.ts) can point its own
+      // vite instance at the test backend on 3002 instead of the dev backend.
+      "/api": process.env.API_PROXY_TARGET ?? "http://localhost:3001",
     },
   },
 });

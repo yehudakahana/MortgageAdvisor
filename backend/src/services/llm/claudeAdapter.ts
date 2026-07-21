@@ -2,7 +2,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import { anthropic } from "./anthropicClient";
 import { ClientData, LLMAdapter, LLMRequest, LLMResponse } from "./types";
 import { extractWithClaude } from "./claudeExtraction";
-import { CHAT_SYSTEM_PROMPT, serializeClientData } from "./prompts";
+import { CHAT_SYSTEM_PROMPT, CLIENT_DATA_HEADER, serializeClientData } from "./prompts";
 
 // Build a cached system array: a frozen persona prompt followed by the static
 // client data. The cache breakpoint on the last block covers everything before
@@ -15,7 +15,7 @@ function buildCachedSystem(
     { type: "text", text: personaPrompt },
     {
       type: "text",
-      text: `נתוני הלקוח:\n${serializeClientData(clientData)}`,
+      text: `${CLIENT_DATA_HEADER}\n${serializeClientData(clientData)}`,
       cache_control: { type: "ephemeral" },
     },
   ];

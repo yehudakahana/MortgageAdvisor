@@ -4,6 +4,7 @@ import { routeToLLM } from "../services/llm/router";
 import { ClientData } from "../services/llm/types";
 import { ChatMessage, Client } from "../types";
 import { isNonEmptyString, isOptionalString } from "../validation/validators";
+import { CHAT_MESSAGES, CLIENT_MESSAGES } from "../constants/messages";
 
 const router = Router();
 
@@ -74,22 +75,22 @@ function isChatMessage(value: unknown): value is ChatMessage {
 router.post("/", async (req: Request, res: Response) => {
   const { clientId, message, chatHistory } = (req.body ?? {}) as Record<string, unknown>;
 
-  if (!isNonEmptyString(message)) return res.status(400).json({ error: "חסרה הודעה" });
-  if (!isOptionalString(clientId)) return res.status(400).json({ error: "מזהה הלקוח אינו תקין" });
+  if (!isNonEmptyString(message)) return res.status(400).json({ error: CHAT_MESSAGES.missingMessage });
+  if (!isOptionalString(clientId)) return res.status(400).json({ error: CHAT_MESSAGES.invalidClientId });
 
   // Optional clientId scopes the chat to one client; otherwise query all clients.
   let clients: Client[];
   try {
     if (clientId) {
       const client = await ClientModel.findOne({ id: clientId });
-      if (!client) return res.status(404).json({ error: "הלקוח לא נמצא" });
+      if (!client) return res.status(404).json({ error: CLIENT_MESSAGES.notFound });
       clients = [client];
     } else {
       clients = await ClientModel.find();
     }
   } catch (err) {
     console.error("[chat] failed to load clients:", err);
-    return res.status(500).json({ error: "טעינת נתוני הלקוח נכשלה" });
+    return res.status(500).json({ error: CLIENT_MESSAGES.fetchFailed });
   }
 
   const history: ChatMessage[] = Array.isArray(chatHistory)
@@ -112,7 +113,7 @@ router.post("/", async (req: Request, res: Response) => {
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
     console.error("[chat] LLM request failed:", reason);
-    res.status(502).json({ error: "בקשת הצ'אט נכשלה" });
+    res.status(502).json({ error: CHAT_MESSAGES.requestFailed });
   }
 });
 
@@ -122,7 +123,7 @@ router.post("/", async (req: Request, res: Response) => {
 // never touched here — a non-destructive acknowledgment, not a deletion.
 router.post("/reset", async (req: Request, res: Response) => {
   const { clientId } = (req.body ?? {}) as Record<string, unknown>;
-  if (!isOptionalString(clientId)) return res.status(400).json({ error: "מזהה הלקוח אינו תקין" });
+  if (!isOptionalString(clientId)) return res.status(400).json({ error: CHAT_MESSAGES.invalidClientId });
 
   let scopedClient: Client | null = null;
   if (clientId) {
@@ -130,14 +131,14 @@ router.post("/reset", async (req: Request, res: Response) => {
       scopedClient = await ClientModel.findOne({ id: clientId });
     } catch (err) {
       console.error("[chat] reset failed to load client:", err);
-      return res.status(500).json({ error: "טעינת נתוני הלקוח נכשלה" });
+      return res.status(500).json({ error: CLIENT_MESSAGES.fetchFailed });
     }
-    if (!scopedClient) return res.status(404).json({ error: "הלקוח לא נמצא" });
+    if (!scopedClient) return res.status(404).json({ error: CLIENT_MESSAGES.notFound });
   }
 
   const greeting = scopedClient
-    ? `שלום! אני קאיה. אני כעת מתמקדת בלקוח ${scopedClient.name}. במה אוכל לעזור?`
-    : "שלום! אני קאיה, עוזרת יועץ המשכנתאות שלך. במה אוכל לעזור?";
+    ? CHAT_MESSAGES.greetingScoped(scopedClient.name)
+    : CHAT_MESSAGES.greetingGlobal;
 
   console.log(`[chat] session reset for scope: ${clientId ?? "global"}`);
 

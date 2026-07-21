@@ -5,6 +5,7 @@ import ClientPanel from "./components/ClientPanel";
 import Toaster from "./components/Toaster";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
+import { APP_TEXT, CLIENTS_TEXT } from "@/lib/strings";
 import { useAuth } from "./auth/AuthContext";
 import { ClientsProvider } from "./context/ClientsContext";
 import { useMediaQuery } from "./hooks/useMediaQuery";
@@ -22,11 +23,11 @@ export default function App() {
         <div className="flex items-center justify-between gap-3.5">
           <div className="flex items-center gap-3.5">
             <div className="w-10 h-10 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center flex-shrink-0 shadow-inner">
-              <span className="text-lg font-bold">ק</span>
+              <span className="text-lg font-bold">{APP_TEXT.initial}</span>
             </div>
             <div>
-              <h1 className="text-xl font-bold tracking-tight leading-none">kay.ai</h1>
-              <p className="text-xs text-white/70 mt-1 max-md:text-[11px]">עוזרת יועץ משכנתאות</p>
+              <h1 className="text-xl font-bold tracking-tight leading-none">{APP_TEXT.title}</h1>
+              <p className="text-xs text-white/70 mt-1 max-md:text-[11px]">{APP_TEXT.tagline}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 max-md:gap-1.5">
@@ -38,14 +39,14 @@ export default function App() {
               className="text-white/80 hover:text-white hover:bg-white/10 gap-1.5 max-md:min-h-11 max-md:px-2.5"
             >
               <LogOut className="w-4 h-4" />
-              <span className="max-md:hidden">התנתקות</span>
+              <span className="max-md:hidden">{APP_TEXT.logout}</span>
             </Button>
             {!isDesktop && (
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setPanelOpen(true)}
-                aria-label="פתח רשימת לקוחות"
+                aria-label={APP_TEXT.openClientsPanel}
                 className="text-white/80 hover:text-white hover:bg-white/10 min-h-11 min-w-11"
               >
                 <Users className="w-5 h-5" />
@@ -62,7 +63,7 @@ export default function App() {
           ) : (
             <Sheet open={panelOpen} onOpenChange={setPanelOpen}>
               <SheetContent side="end" className="w-80 p-0">
-                <SheetTitle className="sr-only">לקוחות</SheetTitle>
+                <SheetTitle className="sr-only">{CLIENTS_TEXT.title}</SheetTitle>
                 <ClientPanel variant="drawer" />
               </SheetContent>
             </Sheet>

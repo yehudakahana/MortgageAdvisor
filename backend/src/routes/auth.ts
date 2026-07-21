@@ -2,6 +2,7 @@ import { Router } from "express";
 import jwt from "jsonwebtoken";
 import rateLimit from "express-rate-limit";
 import { timingSafeEqual } from "crypto";
+import { AUTH_MESSAGES } from "../constants/messages";
 
 const router = Router();
 
@@ -20,7 +21,7 @@ const loginLimiter = rateLimit({
   max: 10,
   standardHeaders: true,
   legacyHeaders: false,
-  message: { error: "יותר מדי ניסיונות התחברות, נסו שוב מאוחר יותר" },
+  message: { error: AUTH_MESSAGES.tooManyAttempts },
 });
 
 // POST /api/login — validates credentials against the ALLOWED_USERS env map and
@@ -29,7 +30,7 @@ router.post("/", loginLimiter, (req, res) => {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
     console.error("[CONFIG ERROR] JWT_SECRET is not set.");
-    return res.status(500).json({ error: "תקלה בהגדרות ההזדהות בשרת" });
+    return res.status(500).json({ error: AUTH_MESSAGES.serverConfigError });
   }
 
   let allowedUsers: Record<string, string>;
@@ -37,18 +38,18 @@ router.post("/", loginLimiter, (req, res) => {
     allowedUsers = JSON.parse(process.env.ALLOWED_USERS ?? "");
   } catch {
     console.error("[CONFIG ERROR] ALLOWED_USERS is missing or not valid JSON.");
-    return res.status(500).json({ error: "תקלה בהגדרות ההזדהות בשרת" });
+    return res.status(500).json({ error: AUTH_MESSAGES.serverConfigError });
   }
 
   const { username, password } = req.body ?? {};
   if (typeof username !== "string" || typeof password !== "string") {
-    return res.status(400).json({ error: "נדרשים שם משתמש וסיסמה" });
+    return res.status(400).json({ error: AUTH_MESSAGES.missingCredentials });
   }
 
   // typeof guard also avoids prototype-chain lookups (e.g. "__proto__").
   const expected = allowedUsers[username];
   if (typeof expected !== "string" || !safeEqual(expected, password)) {
-    return res.status(401).json({ error: "פרטי ההתחברות שגויים" });
+    return res.status(401).json({ error: AUTH_MESSAGES.badCredentials });
   }
 
   const token = jwt.sign({ username }, secret, { expiresIn: "30d" });

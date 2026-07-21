@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
+import { AUTH_MESSAGES } from "../constants/messages";
 
 // Shape of the data we sign into the JWT and expose on req.user.
 export interface AuthUser {
@@ -22,21 +23,21 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
   const secret = process.env.JWT_SECRET;
   if (!secret) {
     console.error("[CONFIG ERROR] JWT_SECRET is not set; cannot verify tokens.");
-    res.status(500).json({ error: "תקלה בהגדרות ההזדהות בשרת" });
+    res.status(500).json({ error: AUTH_MESSAGES.serverConfigError });
     return;
   }
 
   const header = req.headers.authorization;
   const token = header?.startsWith("Bearer ") ? header.slice(7) : null;
   if (!token) {
-    res.status(401).json({ error: "חסר אסימון הזדהות" });
+    res.status(401).json({ error: AUTH_MESSAGES.missingToken });
     return;
   }
 
   try {
     const payload = jwt.verify(token, secret);
     if (typeof payload === "string" || typeof payload.username !== "string") {
-      res.status(401).json({ error: "אסימון ההזדהות אינו תקין" });
+      res.status(401).json({ error: AUTH_MESSAGES.invalidToken });
       return;
     }
     req.user = { username: payload.username };
@@ -46,6 +47,6 @@ export function authenticateToken(req: Request, res: Response, next: NextFunctio
     next();
   } catch {
     // Do not leak verification internals to the client.
-    res.status(401).json({ error: "אסימון ההזדהות אינו תקין או שפג תוקפו" });
+    res.status(401).json({ error: AUTH_MESSAGES.invalidOrExpiredToken });
   }
 }

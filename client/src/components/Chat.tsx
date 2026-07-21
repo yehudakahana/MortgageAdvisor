@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SendHorizontal, MessageSquarePlus } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CHAT_TEXT } from "@/lib/strings";
 import { useChat } from "../hooks/useChat";
 import ChatScopeSelect from "./ChatScopeSelect";
 import LLMSourceNote from "./LLMSourceNote";
@@ -23,7 +24,7 @@ function TypingDots() {
 function AssistantAvatar() {
   return (
     <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-indigo-800 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">
-      ק
+      {CHAT_TEXT.assistantInitial}
     </div>
   );
 }
@@ -47,7 +48,7 @@ export default function Chat() {
 
       {messages.length <= 1 && (
         <p className="px-4 max-md:px-3 pt-2 text-xs text-muted-foreground">
-          טיפ: אפשר לשנות את מצב השיחה בכל שלב בבורר שלמעלה — לקוח ממוקד או כלל הלקוחות.
+          {CHAT_TEXT.scopeTip}
         </p>
       )}
 
@@ -63,11 +64,11 @@ export default function Chat() {
             <div className="flex items-center gap-1.5">
               {msg.role === "assistant" && <AssistantAvatar />}
               <span className="text-xs text-muted-foreground font-medium tracking-wide">
-                {msg.role === "assistant" ? "קאיה" : "אתה"}
+                {msg.role === "assistant" ? CHAT_TEXT.assistantName : CHAT_TEXT.userName}
               </span>
               {msg.role === "user" && (
                 <div className="w-8 h-8 rounded-full bg-gradient-to-br from-slate-400 to-slate-600 flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm">
-                  א
+                  {CHAT_TEXT.userInitial}
                 </div>
               )}
             </div>
@@ -91,7 +92,7 @@ export default function Chat() {
           <div className="flex flex-col gap-1.5 self-start items-start max-w-[76%] max-md:max-w-[88%]">
             <div className="flex items-center gap-1.5">
               <AssistantAvatar />
-              <span className="text-xs text-muted-foreground font-medium tracking-wide">קאיה</span>
+              <span className="text-xs text-muted-foreground font-medium tracking-wide">{CHAT_TEXT.assistantName}</span>
             </div>
             <div className="bg-card border border-border/70 rounded-2xl px-4 py-3 shadow-sm">
               <TypingDots />
@@ -106,11 +107,11 @@ export default function Chat() {
           onClick={clearChat}
           disabled={loading}
           variant="outline"
-          title="שיחה חדשה"
+          title={CHAT_TEXT.newConversation}
           className="h-10 gap-2 rounded-full border-indigo-200 bg-indigo-50/60 px-5 text-base font-bold text-indigo-700 shadow-sm transition-all hover:border-indigo-300 hover:bg-indigo-100 hover:text-indigo-900 hover:shadow-md disabled:opacity-40"
         >
           <MessageSquarePlus className="h-5 w-5" />
-          שיחה חדשה
+          {CHAT_TEXT.newConversation}
         </Button>
       </div>
 
@@ -120,7 +121,7 @@ export default function Chat() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="שאל את קאיה משהו..."
+          placeholder={CHAT_TEXT.inputPlaceholder}
           disabled={loading}
           className="resize-none min-h-[48px] max-h-[120px] flex-1 bg-secondary/50 border-border/60 focus-visible:ring-1 rounded-xl text-base"
         />

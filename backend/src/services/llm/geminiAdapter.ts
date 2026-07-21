@@ -4,6 +4,7 @@ import {
   EXTRACTION_SYSTEM,
   EXTRACTION_PROMPT,
   CHAT_SYSTEM_PROMPT,
+  CLIENT_DATA_HEADER,
   serializeClientData,
 } from "./prompts";
 
@@ -56,7 +57,7 @@ async function runChat(request: ChatRequest, model: string): Promise<LLMResponse
     model,
     contents,
     config: {
-      systemInstruction: `${CHAT_SYSTEM_PROMPT}\n\nנתוני הלקוח:\n${serializeClientData(request.clientData)}`,
+      systemInstruction: `${CHAT_SYSTEM_PROMPT}\n\n${CLIENT_DATA_HEADER}\n${serializeClientData(request.clientData)}`,
       // Matches the Claude chat max_tokens so reply length is provider-agnostic.
       maxOutputTokens: 2048,
     },

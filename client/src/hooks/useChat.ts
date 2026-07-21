@@ -1,13 +1,14 @@
 import { useState, useRef, useEffect } from "react";
 import { sendChatMessage, resetChat, type ChatMessage } from "../api";
 import { useClients } from "../context/ClientsContext";
+import { CHAT_TEXT } from "@/lib/strings";
 
 // Shown only when fetching the server greeting fails. Intentionally name-free:
 // the assistant's name and greeting text live in one place — the backend
 // /api/chat/reset endpoint.
 const FALLBACK_GREETING: ChatMessage = {
   role: "assistant",
-  content: "שלום! במה אוכל לעזור?",
+  content: CHAT_TEXT.fallbackGreeting,
 };
 
 export function useChat() {
@@ -92,9 +93,7 @@ export function useChat() {
       // fetch rejects with TypeError on network failure; the API client throws
       // a plain Error when the server responded with a non-OK status.
       const content =
-        err instanceof TypeError
-          ? "בעיה בחיבור לשרת. בדקו את החיבור ונסו שוב."
-          : "קאיה לא הצליחה לענות כרגע. נסו שוב בעוד רגע.";
+        err instanceof TypeError ? CHAT_TEXT.networkError : CHAT_TEXT.replyError;
       setMessages((prev) => [...prev, { role: "assistant", content }]);
     } finally {
       setLoading(false);

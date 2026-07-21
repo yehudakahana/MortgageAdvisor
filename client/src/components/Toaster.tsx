@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { AlertCircle, CheckCircle2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { subscribe, dismissToast, type Toast } from "@/lib/toast";
+import { COMMON_TEXT } from "@/lib/strings";
 
 // Renders the active toasts from the store. Mount once, near the app root.
 export default function Toaster() {
@@ -23,7 +24,7 @@ export default function Toaster() {
         >
           {t.variant === "error" ? <AlertCircle className="w-4 h-4 shrink-0" /> : <CheckCircle2 className="w-4 h-4 shrink-0" />}
           <span className="flex-1">{t.message}</span>
-          <button type="button" aria-label="סגור" onClick={() => dismissToast(t.id)} className="text-muted-foreground/50 hover:text-foreground transition-colors shrink-0">
+          <button type="button" aria-label={COMMON_TEXT.close} onClick={() => dismissToast(t.id)} className="text-muted-foreground/50 hover:text-foreground transition-colors shrink-0">
             <X className="w-3.5 h-3.5" />
           </button>
         </div>

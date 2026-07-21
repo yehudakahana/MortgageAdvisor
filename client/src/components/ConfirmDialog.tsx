@@ -1,6 +1,7 @@
 import { useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { COMMON_TEXT } from "@/lib/strings";
 
 interface ConfirmDialogProps {
   open: boolean;
@@ -15,8 +16,8 @@ interface ConfirmDialogProps {
 export default function ConfirmDialog({
   open,
   message,
-  confirmLabel = "מחיקה",
-  cancelLabel = "ביטול",
+  confirmLabel = COMMON_TEXT.delete,
+  cancelLabel = COMMON_TEXT.cancel,
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {

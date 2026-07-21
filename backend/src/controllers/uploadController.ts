@@ -9,6 +9,7 @@ import {
   buildContentDisposition,
 } from "../services/storageService";
 import { isDocumentType } from "../validation/validators";
+import { CLIENT_MESSAGES, DOCUMENT_MESSAGES, UPLOAD_MESSAGES } from "../constants/messages";
 
 // LLM/provider errors often arrive as a JSON blob (e.g. Gemini's
 // {"error":{"code":503,"message":"...high demand..."}}). Surface the human
@@ -49,14 +50,14 @@ export function setExtraction(clientId: string, docId: string, data: Document["e
 export async function uploadDocument(req: Request, res: Response) {
   const file = req.file;
   const resolved = req.resolvedFile;
-  if (!file || !resolved) return res.status(400).json({ error: "לא הועלה קובץ" });
+  if (!file || !resolved) return res.status(400).json({ error: UPLOAD_MESSAGES.noFile });
 
   const { clientId } = req.params;
   const rawType = (req.body as Record<string, unknown>).type;
   let docType: Document["type"] = "other";
   if (rawType !== undefined) {
     if (!isDocumentType(rawType)) {
-      return res.status(400).json({ error: "סוג המסמך אינו תקין" });
+      return res.status(400).json({ error: DOCUMENT_MESSAGES.invalidType });
     }
     docType = rawType;
   }
@@ -75,7 +76,7 @@ export async function uploadDocument(req: Request, res: Response) {
     });
   } catch (err) {
     console.error("[upload] R2 upload failed:", err);
-    return res.status(500).json({ error: "העלאת הקובץ נכשלה" });
+    return res.status(500).json({ error: UPLOAD_MESSAGES.uploadFailed });
   }
 
   const doc: Document = {
@@ -97,11 +98,11 @@ export async function uploadDocument(req: Request, res: Response) {
   } catch (err) {
     console.error("[upload] failed to attach document:", err);
     await safeDeleteObject(key); // avoid an orphaned R2 object
-    return res.status(500).json({ error: "שמירת המסמך נכשלה" });
+    return res.status(500).json({ error: UPLOAD_MESSAGES.saveFailed });
   }
   if (!updated) {
     await safeDeleteObject(key);
-    return res.status(404).json({ error: "הלקוח לא נמצא" });
+    return res.status(404).json({ error: CLIENT_MESSAGES.notFound });
   }
   res.status(201).json(updated);
 

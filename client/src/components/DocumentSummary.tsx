@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { fieldLabel, groupFields } from "@/lib/documentFields";
+import { DOCUMENTS_TEXT } from "@/lib/strings";
 import { FieldList, FieldTable, Label, Section } from "./DocumentSummaryFields";
 import type { Document } from "../types/client";
 import LLMSourceNote from "./LLMSourceNote";
@@ -17,7 +18,7 @@ export default function DocumentSummary({ doc }: { doc: Document }) {
   const hasFields = highlights.length + scalars.length + objects.length + tables.length > 0;
 
   if (!hasFields && !rawText) {
-    return <p className="text-sm text-muted-foreground/70 py-2">אין נתונים שחולצו מהמסמך.</p>;
+    return <p className="text-sm text-muted-foreground/70 py-2">{DOCUMENTS_TEXT.noExtractedData}</p>;
   }
 
   return (
@@ -38,7 +39,7 @@ export default function DocumentSummary({ doc }: { doc: Document }) {
       )}
 
       {scalars.length > 0 && (
-        <Section title="פרטי המסמך">
+        <Section title={DOCUMENTS_TEXT.detailsSection}>
           <FieldList entries={scalars} />
         </Section>
       )}
@@ -69,7 +70,7 @@ export default function DocumentSummary({ doc }: { doc: Document }) {
             onClick={() => setShowRaw((v) => !v)}
             className="text-xs text-muted-foreground hover:text-foreground transition-colors underline underline-offset-2"
           >
-            {showRaw ? "הסתר את הטקסט המלא" : "הצג את הטקסט המלא מהמסמך"}
+            {showRaw ? DOCUMENTS_TEXT.hideRawText : DOCUMENTS_TEXT.showRawText}
           </button>
           {showRaw && (
             <p className="mt-2 text-sm text-muted-foreground whitespace-pre-wrap break-words leading-relaxed">
@@ -81,7 +82,7 @@ export default function DocumentSummary({ doc }: { doc: Document }) {
 
       {ed?.extractedBy && (
         <p className="text-[11px] text-muted-foreground/60">
-          חולץ על ידי <LLMSourceNote source={ed.extractedBy} />
+          {DOCUMENTS_TEXT.extractedBy} <LLMSourceNote source={ed.extractedBy} />
         </p>
       )}
     </div>

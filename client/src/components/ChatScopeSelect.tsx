@@ -44,7 +44,7 @@ export default function ChatScopeSelect({ clients, value, onChange, disabled }: 
           מצב שיחה
         </span>
         <span className={cn("text-xs", isScoped ? "text-indigo-700 font-semibold" : "text-muted-foreground")}>
-          {isScoped ? "ממוקד בלקוח אחד" : "כל הלקוחות"}
+          {isScoped ? "ממוקד בלקוח אחד" : "כלל הלקוחות"}
         </span>
       </div>
 
@@ -64,7 +64,7 @@ export default function ChatScopeSelect({ clients, value, onChange, disabled }: 
           <SelectValue />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value={ALL}>כל הלקוחות</SelectItem>
+          <SelectItem value={ALL}>כלל הלקוחות</SelectItem>
           {clients.map((c) => (
             <SelectItem key={c.id} value={c.id}>
               {c.name}

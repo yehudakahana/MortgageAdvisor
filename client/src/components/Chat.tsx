@@ -46,7 +46,7 @@ export default function Chat() {
       <ChatScopeSelect clients={clients} value={scopeId} onChange={changeScope} disabled={loading} />
 
       <p className="px-4 max-md:px-3 pt-2 text-xs text-muted-foreground">
-        טיפ: אפשר לשנות את מצב השיחה בכל שלב בבורר שלמעלה — לקוח ממוקד או כל הלקוחות.
+        טיפ: אפשר לשנות את מצב השיחה בכל שלב בבורר שלמעלה — לקוח ממוקד או כלל הלקוחות.
       </p>
 
       <div className="flex-1 overflow-y-auto px-5 py-5 max-md:px-3 max-md:py-4 flex flex-col gap-4">

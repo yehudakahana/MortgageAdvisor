@@ -16,7 +16,8 @@ export default function ClientPanel({ variant = "static" }: { variant?: "static"
     isCreatingClient, setIsCreatingClient,
     name, setName, phone, setPhone, email, setEmail,
     saving, formError, setFormError, handleCreate,
-    uploadType, setUploadType, isUploading, uploadError,
+    uploadType, setUploadType, isUploading, uploadProgress,
+    batchResults, clearBatchResults,
     handleFileSelect, fileInputRef,
     handleReExtract, reExtractingId, timedOutDocIds,
     handleDeleteClient, deletingClientId,
@@ -139,7 +140,8 @@ export default function ClientPanel({ variant = "static" }: { variant?: "static"
                     clientId={c.id}
                     documents={c.documents}
                     uploadType={uploadType} setUploadType={setUploadType}
-                    isUploading={isUploading} uploadError={uploadError}
+                    isUploading={isUploading} uploadProgress={uploadProgress}
+                    batchResults={batchResults} clearBatchResults={clearBatchResults}
                     fileInputRef={fileInputRef} onFileSelect={handleFileSelect}
                     onReExtract={handleReExtract} reExtractingId={reExtractingId}
                     timedOutDocIds={timedOutDocIds}

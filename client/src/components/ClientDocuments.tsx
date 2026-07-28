@@ -5,7 +5,9 @@ import { cn } from "@/lib/utils";
 import { DOCUMENTS_TEXT } from "@/lib/strings";
 import { DOC_TYPE_LABELS } from "../types/client";
 import type { Document } from "../types/client";
+import type { UploadResult } from "../hooks/useDocumentUpload";
 import DocumentRow from "./DocumentRow";
+import UploadSummaryDialog from "./UploadSummaryDialog";
 
 interface Props {
   clientId: string;
@@ -13,7 +15,9 @@ interface Props {
   uploadType: string;
   setUploadType: (v: string) => void;
   isUploading: boolean;
-  uploadError: string;
+  uploadProgress: { current: number; total: number } | null;
+  batchResults: UploadResult[] | null;
+  clearBatchResults: () => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
   onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onReExtract: (docId: string) => void;
@@ -23,7 +27,7 @@ interface Props {
   deletingDocId: string | null;
 }
 
-export default function ClientDocuments({ clientId, documents, uploadType, setUploadType, isUploading, uploadError, fileInputRef, onFileSelect, onReExtract, reExtractingId, timedOutDocIds, onDeleteDocument, deletingDocId }: Props) {
+export default function ClientDocuments({ clientId, documents, uploadType, setUploadType, isUploading, uploadProgress, batchResults, clearBatchResults, fileInputRef, onFileSelect, onReExtract, reExtractingId, timedOutDocIds, onDeleteDocument, deletingDocId }: Props) {
   return (
     <TooltipProvider delayDuration={150}>
     <div className="bg-indigo-50/40 border-b border-border/50 border-s-2 border-s-indigo-600 px-4 py-4 space-y-4">
@@ -68,13 +72,17 @@ export default function ClientDocuments({ clientId, documents, uploadType, setUp
             ? <Loader2 className="w-4 h-4 text-indigo-500 animate-spin shrink-0" />
             : <FileUp className="w-4 h-4 text-muted-foreground/60 group-hover:text-indigo-600 transition-colors shrink-0" />}
           <span className="text-base text-muted-foreground truncate flex-1">
-            {isUploading ? DOCUMENTS_TEXT.uploading : DOCUMENTS_TEXT.choosePdf}
+            {uploadProgress
+              ? uploadProgress.total > 1
+                ? DOCUMENTS_TEXT.uploadingProgress(uploadProgress.current, uploadProgress.total)
+                : DOCUMENTS_TEXT.uploading
+              : DOCUMENTS_TEXT.choosePdf}
           </span>
-          <input type="file" accept=".pdf" ref={fileInputRef} className="sr-only" onChange={onFileSelect} disabled={isUploading} />
+          <input type="file" accept=".pdf" multiple ref={fileInputRef} className="sr-only" onChange={onFileSelect} disabled={isUploading} />
         </label>
-
-        {uploadError && <p className="text-destructive text-sm">{uploadError}</p>}
       </div>
+
+      <UploadSummaryDialog results={batchResults} onClose={clearBatchResults} />
     </div>
     </TooltipProvider>
   );

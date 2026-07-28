@@ -78,9 +78,20 @@ export async function getClient(id: string) {
 
 // Upload a document for a client. Routes through BASE so it reaches the backend
 // in production (a relative /api path would hit the static site and 405).
+// On failure, throws with the server's error message (Hebrew, from
+// UPLOAD_MESSAGES) so the UI can show the real reason per file.
 export async function uploadDocument(clientId: string, form: FormData) {
   const res = await authFetch(`${BASE}/upload/${clientId}`, { method: "POST", body: form });
-  if (!res.ok) throw new Error("Upload failed");
+  if (!res.ok) {
+    let message = "";
+    try {
+      const body = await res.json();
+      if (typeof body?.error === "string") message = body.error;
+    } catch {
+      // non-JSON body (proxy/HTML error page) — leave message empty
+    }
+    throw new Error(message);
+  }
   return res.json();
 }
 

@@ -42,6 +42,7 @@ export const CHAT_TEXT = {
   scopeLabel: "מצב שיחה",
   scopeFocused: "ממוקד בלקוח אחד",
   scopeAll: "כלל הלקוחות",
+  
   fallbackModelNote: "(מודל גיבוי)",
 };
 

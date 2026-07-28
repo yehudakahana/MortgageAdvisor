@@ -115,6 +115,24 @@ describe("/api/settings/knowledge", () => {
     expect(missing.body.error).toBe(SETTINGS_MESSAGES.ruleNotFound);
   });
 
+  it("rejects editing a rule into a duplicate of another rule, but allows re-saving its own text", async () => {
+    const first = await addRule("כלל ראשון");
+    const second = await addRule("כלל שני");
+
+    const dup = await request(app)
+      .put(`/api/settings/knowledge/${second.body.id}`)
+      .set(auth())
+      .send({ text: "כלל ראשון" });
+    expect(dup.status).toBe(400);
+    expect(dup.body.error).toBe(SETTINGS_MESSAGES.duplicateRule);
+
+    const same = await request(app)
+      .put(`/api/settings/knowledge/${first.body.id}`)
+      .set(auth())
+      .send({ text: "כלל ראשון" });
+    expect(same.status).toBe(200);
+  });
+
   it("deletes a rule by id", async () => {
     const created = await addRule("כלל למחיקה");
     const res = await request(app)

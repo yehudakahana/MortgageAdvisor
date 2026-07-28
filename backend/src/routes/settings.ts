@@ -5,6 +5,7 @@ import { SETTINGS_MESSAGES } from "../constants/messages";
 
 const router = Router();
 
+// Mirrored client-side in client/src/api/settings.ts — keep in sync.
 export const MAX_RULE_LENGTH = 200;
 export const MAX_RULES_PER_USER = 25;
 
@@ -27,6 +28,11 @@ function usernameOf(req: Request): string {
   return req.user?.username ?? "";
 }
 
+// Mongo unique-index violation (duplicate key).
+function isDuplicateKeyError(err: unknown): boolean {
+  return typeof err === "object" && err !== null && (err as { code?: unknown }).code === 11000;
+}
+
 router.get("/knowledge", async (req: Request, res: Response) => {
   try {
     const settings = await UserSettingsModel.findOne({ username: usernameOf(req) });
@@ -42,24 +48,33 @@ router.post("/knowledge", async (req: Request, res: Response) => {
   const invalid = ruleTextError(text);
   if (invalid) return res.status(400).json({ error: invalid });
 
+  const username = usernameOf(req);
+  const rule = { id: randomUUID(), text, createdAt: new Date() };
+
   try {
-    const username = usernameOf(req);
-    const settings =
-      (await UserSettingsModel.findOne({ username })) ??
-      new UserSettingsModel({ username, customKnowledge: [] });
-
-    if (settings.customKnowledge.length >= MAX_RULES_PER_USER) {
-      return res.status(400).json({ error: SETTINGS_MESSAGES.ruleLimitReached });
-    }
-    if (settings.customKnowledge.some((rule) => rule.text === text)) {
-      return res.status(400).json({ error: SETTINGS_MESSAGES.duplicateRule });
-    }
-
-    const rule = { id: randomUUID(), text, createdAt: new Date() };
-    settings.customKnowledge.push(rule);
-    await settings.save();
+    // Guarded atomic push: the filter only matches while the cap has room and
+    // no identical rule exists, so concurrent requests can't overshoot the cap
+    // or double-insert. When the doc exists but fails a guard, the upsert tries
+    // to insert a second doc for this username and the unique index rejects it
+    // (E11000) — that's the signal to report which guard failed.
+    await UserSettingsModel.findOneAndUpdate(
+      {
+        username,
+        [`customKnowledge.${MAX_RULES_PER_USER - 1}`]: { $exists: false },
+        "customKnowledge.text": { $ne: text },
+      },
+      { $push: { customKnowledge: rule } },
+      { upsert: true }
+    );
     res.status(201).json(rule);
   } catch (err) {
+    if (isDuplicateKeyError(err)) {
+      const settings = await UserSettingsModel.findOne({ username }).catch(() => null);
+      const atCap = (settings?.customKnowledge.length ?? 0) >= MAX_RULES_PER_USER;
+      return res.status(400).json({
+        error: atCap ? SETTINGS_MESSAGES.ruleLimitReached : SETTINGS_MESSAGES.duplicateRule,
+      });
+    }
     console.error("[settings] failed to add rule:", err);
     res.status(500).json({ error: SETTINGS_MESSAGES.saveFailed });
   }
@@ -76,6 +91,10 @@ router.put("/knowledge/:ruleId", async (req: Request, res: Response) => {
     const rule = settings?.customKnowledge.find((r) => r.id === req.params.ruleId);
     if (!settings || !rule) {
       return res.status(404).json({ error: SETTINGS_MESSAGES.ruleNotFound });
+    }
+    // Same duplicate invariant as create; the rule may keep its own text.
+    if (settings.customKnowledge.some((r) => r.id !== rule.id && r.text === text)) {
+      return res.status(400).json({ error: SETTINGS_MESSAGES.duplicateRule });
     }
 
     rule.text = text;

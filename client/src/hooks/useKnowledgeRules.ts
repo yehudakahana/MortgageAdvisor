@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import {
   KnowledgeRule,
+  MAX_RULES,
   addKnowledgeRule,
   deleteKnowledgeRule,
   getKnowledgeRules,
@@ -8,8 +9,6 @@ import {
 } from "@/api/settings";
 import { toast } from "@/lib/toast";
 import { SETTINGS_TEXT } from "@/lib/strings";
-
-export const MAX_RULES = 25;
 
 // Outcome of an add attempt, shown inline in the settings sheet: the Hebrew
 // success confirmation, or the failure reason (server message when available).

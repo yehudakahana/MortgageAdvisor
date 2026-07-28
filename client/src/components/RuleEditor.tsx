@@ -2,8 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { COMMON_TEXT, SETTINGS_TEXT } from "@/lib/strings";
-
-const MAX_LENGTH = 200;
+import { MAX_RULE_LENGTH } from "@/api/settings";
 
 interface RuleEditorProps {
   initialValue?: string;
@@ -30,7 +29,8 @@ export default function RuleEditor({
   const [submitting, setSubmitting] = useState(false);
 
   const trimmed = value.trim();
-  const canSubmit = !disabled && !submitting && trimmed.length > 0 && trimmed.length <= MAX_LENGTH;
+  const canSubmit =
+    !disabled && !submitting && trimmed.length > 0 && trimmed.length <= MAX_RULE_LENGTH;
 
   async function submit() {
     if (!canSubmit) return;
@@ -51,7 +51,7 @@ export default function RuleEditor({
             void submit();
           }
         }}
-        maxLength={MAX_LENGTH}
+        maxLength={MAX_RULE_LENGTH}
         rows={2}
         disabled={disabled || submitting}
         placeholder={placeholder}

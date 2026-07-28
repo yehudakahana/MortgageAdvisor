@@ -1,5 +1,10 @@
 import { authFetch, BASE } from "./index";
 
+// Client-side mirror of the server limits in backend/src/routes/settings.ts —
+// keep in sync.
+export const MAX_RULE_LENGTH = 200;
+export const MAX_RULES = 25;
+
 // A custom advisor rule as returned by /api/settings/knowledge.
 export interface KnowledgeRule {
   id: string;

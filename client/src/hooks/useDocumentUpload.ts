@@ -30,6 +30,10 @@ export function useDocumentUpload(selectedId: string | null) {
   const [reExtractingId, setReExtractingId] = useState<string | null>(null);
   const [timedOutDocIds, setTimedOutDocIds] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  // Live view of the selection for async code — the closure value goes stale
+  // when the user switches clients while a batch is still uploading.
+  const selectedIdRef = useRef(selectedId);
+  selectedIdRef.current = selectedId;
 
   // Refetch a single client and merge it into the shared list.
   async function refreshClient(clientId: string): Promise<Client | null> {
@@ -99,7 +103,9 @@ export function useDocumentUpload(selectedId: string | null) {
       }
     }
     setUploadProgress(null);
-    setBatchResults(results);
+    // Skip the summary if the user switched clients mid-batch — the dialog
+    // renders inside the selected client's panel and would pop under the wrong one.
+    if (selectedIdRef.current === clientId) setBatchResults(results);
   }
 
   // Retry extraction for a document whose previous attempt failed.

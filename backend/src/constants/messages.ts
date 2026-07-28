@@ -42,6 +42,17 @@ export const UPLOAD_MESSAGES = {
   saveFailed: "שמירת המסמך נכשלה",
 };
 
+export const SETTINGS_MESSAGES = {
+  fetchFailed: "טעינת הכללים נכשלה",
+  saveFailed: "שמירת הכלל נכשלה",
+  deleteFailed: "מחיקת הכלל נכשלה",
+  emptyRule: "לא ניתן לשמור כלל ריק",
+  ruleTooLong: "הכלל ארוך מדי (מקסימום 200 תווים)",
+  duplicateRule: "כלל זהה כבר קיים",
+  ruleLimitReached: "לא ניתן להוסיף יותר מ-25 כללים",
+  ruleNotFound: "הכלל לא נמצא",
+};
+
 export const CHAT_MESSAGES = {
   missingMessage: "חסרה הודעה",
   invalidClientId: "מזהה הלקוח אינו תקין",

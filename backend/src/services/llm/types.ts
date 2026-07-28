@@ -18,6 +18,9 @@ export interface ChatRequest {
   clientData: ClientData;
   chatHistory: ChatMessage[];
   userMessage: string;
+  // The advisor's custom knowledge rules, injected into the system prompt
+  // after the cached client-data block (so prompt caching stays intact).
+  advisorRules?: string[];
 }
 
 export type LLMRequest = ExtractionRequest | ChatRequest;

@@ -1,11 +1,12 @@
 import { useState } from "react";
-import { LogOut, Users } from "lucide-react";
+import { LogOut, Settings, Users } from "lucide-react";
 import Chat from "./components/Chat";
 import ClientPanel from "./components/ClientPanel";
+import SettingsSheet from "./components/SettingsSheet";
 import Toaster from "./components/Toaster";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { APP_TEXT, CLIENTS_TEXT } from "@/lib/strings";
+import { APP_TEXT, CLIENTS_TEXT, SETTINGS_TEXT } from "@/lib/strings";
 import { useAuth } from "./auth/AuthContext";
 import { ClientsProvider } from "./context/ClientsContext";
 import { useMediaQuery } from "./hooks/useMediaQuery";
@@ -16,6 +17,7 @@ export default function App() {
   // on desktop, or a drawer on mobile. Never both, to avoid a double mount.
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [panelOpen, setPanelOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
     <div className="flex flex-col h-dvh bg-background">
@@ -32,6 +34,15 @@ export default function App() {
           </div>
           <div className="flex items-center gap-3 max-md:gap-1.5">
             {username && <span className="text-sm text-white/70 max-md:hidden">{username}</span>}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSettingsOpen(true)}
+              aria-label={SETTINGS_TEXT.openSettings}
+              className="text-white/80 hover:text-white hover:bg-white/10 max-md:min-h-11 max-md:min-w-11"
+            >
+              <Settings className="w-5 h-5" />
+            </Button>
             <Button
               variant="ghost"
               size="sm"
@@ -70,6 +81,7 @@ export default function App() {
           )}
         </ClientsProvider>
       </main>
+      <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
       <Toaster />
     </div>
   );

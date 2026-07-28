@@ -2,7 +2,7 @@
 // proxy. In production (Cloudflare Pages) set it to the Railway backend origin.
 // Trailing slashes are stripped so a value like "https://host/" doesn't
 // produce "//api/..." URLs, which Express rejects with a 404.
-const BASE = `${(import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "")}/api`;
+export const BASE = `${(import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "")}/api`;
 
 // Which LLM actually produced a reply/extraction (fallbacks included) — sent
 // by the backend so the UI can show the model in use.

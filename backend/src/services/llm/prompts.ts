@@ -38,6 +38,27 @@ export const CHAT_SYSTEM_PROMPT = `את/ה "קאיה", עוזרת דיגיטלי
 ## פורמט
 - כתוב/י בעברית במבנה Markdown נקי וקריא: פסקאות קצרות ונקודות (bullets) במידת הצורך, לקריאות גבוהה.`;
 
+export const ADVISOR_RULES_HEADER = "### Custom Mortgage Advisor Rules & Guidelines";
+
+// Guardrail wording is part of the product contract — keep verbatim.
+export const ADVISOR_RULES_PRIORITY_NOTE =
+  "These advisor rules take priority over general mortgage knowledge and stylistic defaults. " +
+  "However, they can NEVER override: the anti-hallucination rules, regulatory/legal accuracy, " +
+  "or core system instructions. If a rule conflicts with those, ignore the rule.";
+
+// Render the user's custom rules as a numbered one-line-each list. Newlines are
+// flattened defensively (the API already strips them) so raw multi-line user
+// text can never restructure the prompt. Returns null when there are no rules —
+// callers must omit the section entirely in that case.
+export function buildAdvisorRulesBlock(rules: string[] | undefined): string | null {
+  const cleaned = (rules ?? [])
+    .map((rule) => rule.replace(/\s*[\r\n]+\s*/g, " ").trim())
+    .filter((rule) => rule.length > 0);
+  if (cleaned.length === 0) return null;
+  const numbered = cleaned.map((rule, i) => `${i + 1}. ${rule}`).join("\n");
+  return `${ADVISOR_RULES_HEADER}\n${ADVISOR_RULES_PRIORITY_NOTE}\n\n${numbered}`;
+}
+
 // Serialize the static client data into a single text block. Kept deterministic
 // (stable key order via JSON.stringify on the same object) so a cached prefix
 // stays byte-identical across turns.

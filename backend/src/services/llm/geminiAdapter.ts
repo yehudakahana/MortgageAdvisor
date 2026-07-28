@@ -5,6 +5,7 @@ import {
   EXTRACTION_PROMPT,
   CHAT_SYSTEM_PROMPT,
   CLIENT_DATA_HEADER,
+  buildAdvisorRulesBlock,
   serializeClientData,
 } from "./prompts";
 
@@ -53,11 +54,16 @@ async function runChat(request: ChatRequest, model: string): Promise<LLMResponse
     { role: "user" as const, parts: [{ text: request.userMessage }] },
   ];
 
+  // Advisor rules come last, matching the Claude adapter's system-block order.
+  let systemInstruction = `${CHAT_SYSTEM_PROMPT}\n\n${CLIENT_DATA_HEADER}\n${serializeClientData(request.clientData)}`;
+  const rulesBlock = buildAdvisorRulesBlock(request.advisorRules);
+  if (rulesBlock) systemInstruction += `\n\n${rulesBlock}`;
+
   const response = await ai.models.generateContent({
     model,
     contents,
     config: {
-      systemInstruction: `${CHAT_SYSTEM_PROMPT}\n\n${CLIENT_DATA_HEADER}\n${serializeClientData(request.clientData)}`,
+      systemInstruction,
       // Matches the Claude chat max_tokens so reply length is provider-agnostic.
       maxOutputTokens: 2048,
     },

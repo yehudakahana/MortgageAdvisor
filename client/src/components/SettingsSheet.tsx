@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { AlertCircle, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
 import ConfirmDialog from "./ConfirmDialog";
@@ -19,10 +20,20 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
   const { rules, loading, loadFailed, atLimit, load, addRule, updateRule, deleteRule } =
     useKnowledgeRules();
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  // Inline outcome of the last add attempt (success confirmation or the
+  // failure reason). Auto-clears so stale feedback never lingers.
+  const [addFeedback, setAddFeedback] = useState<{ ok: boolean; text: string } | null>(null);
 
   useEffect(() => {
     if (open) void load();
+    else setAddFeedback(null);
   }, [open, load]);
+
+  useEffect(() => {
+    if (!addFeedback) return;
+    const timer = setTimeout(() => setAddFeedback(null), 5000);
+    return () => clearTimeout(timer);
+  }, [addFeedback]);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -37,10 +48,29 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
           <div className="border-b px-5 py-4">
             <RuleEditor
               submitLabel={SETTINGS_TEXT.addRule}
-              onSubmit={addRule}
+              onSubmit={async (text) => {
+                const result = await addRule(text);
+                setAddFeedback({ ok: result.ok, text: result.message });
+                return result.ok;
+              }}
               disabled={atLimit || loading}
               placeholder={SETTINGS_TEXT.addPlaceholder}
             />
+            {addFeedback && (
+              <p
+                role="status"
+                className={`mt-2 flex items-center gap-1.5 text-xs ${
+                  addFeedback.ok ? "text-emerald-600" : "text-destructive"
+                }`}
+              >
+                {addFeedback.ok ? (
+                  <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+                ) : (
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                )}
+                {addFeedback.text}
+              </p>
+            )}
             {atLimit && (
               <p className="mt-2 text-xs text-destructive">{SETTINGS_TEXT.limitReached}</p>
             )}

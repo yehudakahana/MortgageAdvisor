@@ -31,18 +31,19 @@ export default function App() {
               <h1 className="text-xl font-bold tracking-tight leading-none">{APP_TEXT.title}</h1>
               <p className="text-xs text-white/70 mt-1 max-md:text-[11px]">{APP_TEXT.tagline}</p>
             </div>
-          </div>
-          <div className="flex items-center gap-3 max-md:gap-1.5">
-            {username && <span className="text-sm text-white/70 max-md:hidden">{username}</span>}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setSettingsOpen(true)}
               aria-label={SETTINGS_TEXT.openSettings}
-              className="text-white/80 hover:text-white hover:bg-white/10 max-md:min-h-11 max-md:min-w-11"
+              title={SETTINGS_TEXT.openSettings}
+              className="ms-2 h-10 w-10 rounded-xl bg-white/15 border border-white/25 text-white shadow-inner hover:bg-white/25 hover:text-white max-md:min-h-11 max-md:min-w-11"
             >
               <Settings className="w-5 h-5" />
             </Button>
+          </div>
+          <div className="flex items-center gap-3 max-md:gap-1.5">
+            {username && <span className="text-sm text-white/70 max-md:hidden">{username}</span>}
             <Button
               variant="ghost"
               size="sm"

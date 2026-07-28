@@ -11,6 +11,13 @@ import { SETTINGS_TEXT } from "@/lib/strings";
 
 export const MAX_RULES = 25;
 
+// Outcome of an add attempt, shown inline in the settings sheet: the Hebrew
+// success confirmation, or the failure reason (server message when available).
+export interface RuleActionResult {
+  ok: boolean;
+  message: string;
+}
+
 // Prefer the server's Hebrew error message; fall back to a generic one.
 // authFetch's "Unauthorized" is English-internal, never shown to the user.
 function messageOf(err: unknown, fallback: string): string {
@@ -40,15 +47,15 @@ export function useKnowledgeRules() {
     }
   }, []);
 
-  const addRule = useCallback(async (text: string): Promise<boolean> => {
+  // Reports the outcome (and the failure reason) instead of toasting — the
+  // settings sheet shows it inline, right next to the add form.
+  const addRule = useCallback(async (text: string): Promise<RuleActionResult> => {
     try {
       const rule = await addKnowledgeRule(text);
       setRules((prev) => [...prev, rule]);
-      toast(SETTINGS_TEXT.ruleAdded, "success");
-      return true;
+      return { ok: true, message: SETTINGS_TEXT.ruleAdded };
     } catch (err) {
-      toast(messageOf(err, SETTINGS_TEXT.addFailed));
-      return false;
+      return { ok: false, message: messageOf(err, SETTINGS_TEXT.addFailed) };
     }
   }, []);
 

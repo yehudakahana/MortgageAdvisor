@@ -2,16 +2,25 @@ import Anthropic from "@anthropic-ai/sdk";
 import { anthropic } from "./anthropicClient";
 import { ClientData, LLMAdapter, LLMRequest, LLMResponse } from "./types";
 import { extractWithClaude } from "./claudeExtraction";
-import { CHAT_SYSTEM_PROMPT, CLIENT_DATA_HEADER, serializeClientData } from "./prompts";
+import {
+  CHAT_SYSTEM_PROMPT,
+  CLIENT_DATA_HEADER,
+  buildAdvisorRulesBlock,
+  serializeClientData,
+} from "./prompts";
 
-// Build a cached system array: a frozen persona prompt followed by the static
-// client data. The cache breakpoint on the last block covers everything before
+// Build the system array: a frozen persona prompt followed by the static client
+// data. The cache breakpoint on the client-data block covers everything before
 // it (persona + client data), which is identical across the whole conversation.
-function buildCachedSystem(
+// The advisor's custom rules are volatile user content, so they go AFTER the
+// breakpoint — editing rules never invalidates the cached prefix.
+// Exported for prompt-assembly tests.
+export function buildCachedSystem(
   personaPrompt: string,
-  clientData: ClientData
+  clientData: ClientData,
+  advisorRules?: string[]
 ): Anthropic.TextBlockParam[] {
-  return [
+  const blocks: Anthropic.TextBlockParam[] = [
     { type: "text", text: personaPrompt },
     {
       type: "text",
@@ -19,6 +28,9 @@ function buildCachedSystem(
       cache_control: { type: "ephemeral" },
     },
   ];
+  const rulesBlock = buildAdvisorRulesBlock(advisorRules);
+  if (rulesBlock) blocks.push({ type: "text", text: rulesBlock });
+  return blocks;
 }
 
 function extractText(content: Anthropic.ContentBlock[]): string {
@@ -44,7 +56,7 @@ export const claudeAdapter: LLMAdapter = {
     const response = await anthropic.messages.create({
       model,
       max_tokens: 2048,
-      system: buildCachedSystem(CHAT_SYSTEM_PROMPT, request.clientData),
+      system: buildCachedSystem(CHAT_SYSTEM_PROMPT, request.clientData, request.advisorRules),
       messages,
     });
 

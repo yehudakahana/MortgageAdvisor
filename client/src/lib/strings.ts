@@ -106,6 +106,29 @@ export const DOCUMENTS_TEXT = {
   extractedBy: "חולץ על ידי",
 };
 
+export const SETTINGS_TEXT = {
+  openSettings: "הגדרות",
+  title: "כללים מותאמים אישית",
+  description: "כללים אלו ישפיעו על תשובות קאיה בצ'אט",
+  effectHint: "הכללים ייכנסו לתוקף מההודעה הבאה בצ'אט",
+  addPlaceholder: "לדוגמה: תמיד לציין את המסלול המומלץ בתחילת התשובה",
+  addRule: "הוסף כלל",
+  saveRule: "שמירה",
+  charCounter: (count: number) => `${count}/200`,
+  emptyState: "אין כללים עדיין. הוסיפו כלל ראשון כדי להתאים את תשובות קאיה.",
+  limitReached: "הגעתם למקסימום של 25 כללים. מחקו כלל קיים כדי להוסיף חדש.",
+  loadFailed: "טעינת הכללים נכשלה.",
+  addFailed: "הוספת הכלל נכשלה. נסו שוב.",
+  updateFailed: "עדכון הכלל נכשל. נסו שוב.",
+  deleteFailed: "מחיקת הכלל נכשלה. נסו שוב.",
+  ruleAdded: "הכלל נוסף בהצלחה",
+  ruleUpdated: "הכלל עודכן בהצלחה",
+  ruleDeleted: "הכלל נמחק",
+  confirmDeleteRule: "האם למחוק את הכלל?",
+  editRule: "עריכת כלל",
+  deleteRule: "מחיקת כלל",
+};
+
 export const ERROR_BOUNDARY_TEXT = {
   title: "משהו השתבש.",
   hint: "נסו לרענן את הדף.",

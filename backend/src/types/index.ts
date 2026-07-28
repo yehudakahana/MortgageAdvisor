@@ -50,3 +50,19 @@ export interface ChatMessage {
   role: "user" | "assistant";
   content: string;
 }
+
+// A single custom advisor rule injected into the chat system prompt.
+export interface KnowledgeRule {
+  id: string;
+  text: string;
+  createdAt: Date;
+  updatedAt?: Date;
+}
+
+// Per-advisor settings keyed by the JWT username. Users live in the
+// ALLOWED_USERS env map (not in the DB), so this document is created lazily on
+// the user's first write.
+export interface UserSettings {
+  username: string;
+  customKnowledge: KnowledgeRule[];
+}

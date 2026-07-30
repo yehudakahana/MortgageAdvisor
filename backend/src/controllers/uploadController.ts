@@ -14,8 +14,6 @@ import { CLIENT_MESSAGES, DOCUMENT_MESSAGES, UPLOAD_MESSAGES } from "../constant
 // LLM/provider errors often arrive as a JSON blob (e.g. Gemini's
 // {"error":{"code":503,"message":"...high demand..."}}). Surface the human
 
-//
-
 // message when present so the client can show something readable.
 // busboy (via multer) decodes multipart filenames as latin1, so UTF-8 names —
 // typically Hebrew here — arrive as mojibake ("×§×××¥ ..."). Re-encode the

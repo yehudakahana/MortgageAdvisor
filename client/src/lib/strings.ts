@@ -29,7 +29,7 @@ export const LOGIN_TEXT = {
 };
 
 export const GUEST_TEXT = {
-  loginButton: "כניסה מהירה למגייסים (אורח)",
+  loginButton:"כניסה כאורח",
   loggingIn: "יוצר חשבון אורח...",
   loginFailed: "כניסת האורח נכשלה. נסו שוב.",
   displayName: "אורח",

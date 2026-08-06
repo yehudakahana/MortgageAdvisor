@@ -16,7 +16,9 @@ export async function deleteDocument(req: Request, res: Response) {
 
   let client;
   try {
-    client = await ClientModel.findOne({ id: clientId });
+    // All lookups in this controller are tenant-scoped: another user's client
+    // (or document) is indistinguishable from a missing one.
+    client = await ClientModel.findOne({ id: clientId, userId: req.user?.id ?? "" });
   } catch (err) {
     console.error("[delete-doc] lookup failed:", err);
     return res.status(500).json({ error: CLIENT_MESSAGES.fetchFailed });
@@ -26,11 +28,12 @@ export async function deleteDocument(req: Request, res: Response) {
   const doc = client.documents.find((d) => d.id === docId);
   if (!doc) return res.status(404).json({ error: DOCUMENT_MESSAGES.notFound });
 
+  // Shared sample files (samples/*) survive this — guard inside safeDeleteObject.
   if (doc.key) await safeDeleteObject(doc.key);
 
   try {
     const updated = await ClientModel.findOneAndUpdate(
-      { id: clientId },
+      { id: clientId, userId: req.user?.id ?? "" },
       { $pull: { documents: { id: docId } } },
       { returnDocument: "after" }
     );
@@ -53,7 +56,9 @@ export async function viewDocument(req: Request, res: Response) {
 
   let client;
   try {
-    client = await ClientModel.findOne({ id: clientId });
+    // Ownership check before presigning: userId-scoped lookup is the IDOR
+    // guard for presigned URLs.
+    client = await ClientModel.findOne({ id: clientId, userId: req.user?.id ?? "" });
   } catch (err) {
     console.error("[view] lookup failed:", err);
     return res.status(500).json({ error: CLIENT_MESSAGES.fetchFailed });
@@ -81,7 +86,7 @@ export async function reExtractDocument(req: Request, res: Response) {
 
   let client;
   try {
-    client = await ClientModel.findOne({ id: clientId });
+    client = await ClientModel.findOne({ id: clientId, userId: req.user?.id ?? "" });
   } catch (err) {
     console.error("[re-extract] lookup failed:", err);
     return res.status(500).json({ error: CLIENT_MESSAGES.fetchFailed });

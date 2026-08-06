@@ -53,6 +53,16 @@ export const SETTINGS_MESSAGES = {
   ruleNotFound: "הכלל לא נמצא",
 };
 
+export const GUEST_MESSAGES = {
+  creationFailed: "יצירת חשבון אורח נכשלה, נסו שוב",
+  tooManyGuestAccounts: "נוצרו יותר מדי חשבונות אורח מכתובת זו, נסו שוב מחר",
+  clientCapReached: "במצב אורח ניתן ליצור עד 2 לקוחות נוספים",
+  uploadCapReached: "במצב אורח ניתן להעלות עד 5 קבצים",
+  fileTooLarge: "במצב אורח גודל קובץ מוגבל ל-5MB",
+  chatCapReached: "הגעתם למגבלת 10 ההודעות לשעה במצב אורח, נסו שוב מאוחר יותר",
+  promptTooLong: "במצב אורח אורך הודעה מוגבל ל-250 תווים",
+};
+
 export const CHAT_MESSAGES = {
   missingMessage: "חסרה הודעה",
   invalidClientId: "מזהה הלקוח אינו תקין",

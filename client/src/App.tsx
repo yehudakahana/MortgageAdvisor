@@ -2,6 +2,8 @@ import { useState } from "react";
 import { LogOut, Settings, Users } from "lucide-react";
 import Chat from "./components/Chat";
 import ClientPanel from "./components/ClientPanel";
+import GuestBadge from "./components/GuestBadge";
+import GuestWelcomeDialog from "./components/GuestWelcomeDialog";
 import SettingsSheet from "./components/SettingsSheet";
 import Toaster from "./components/Toaster";
 import { Button } from "@/components/ui/button";
@@ -9,6 +11,7 @@ import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { APP_TEXT, CLIENTS_TEXT, SETTINGS_TEXT } from "@/lib/strings";
 import { useAuth } from "./auth/AuthContext";
 import { ClientsProvider } from "./context/ClientsContext";
+import { GuestModeProvider } from "./context/GuestModeContext";
 import { useMediaQuery } from "./hooks/useMediaQuery";
 
 export default function App() {
@@ -20,6 +23,7 @@ export default function App() {
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   return (
+    <GuestModeProvider>
     <div className="flex flex-col h-dvh bg-background">
       <header className="bg-gradient-to-l from-indigo-950 via-indigo-900 to-slate-900 text-white px-6 py-4 max-md:px-4 shadow-xl flex-shrink-0">
         <div className="flex items-center justify-between gap-3.5">
@@ -43,6 +47,7 @@ export default function App() {
             </Button>
           </div>
           <div className="flex items-center gap-3 max-md:gap-1.5">
+            <GuestBadge />
             {username && <span className="text-sm text-white/70 max-md:hidden">{username}</span>}
             <Button
               variant="ghost"
@@ -83,7 +88,9 @@ export default function App() {
         </ClientsProvider>
       </main>
       <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <GuestWelcomeDialog />
       <Toaster />
     </div>
+    </GuestModeProvider>
   );
 }

@@ -55,7 +55,7 @@ export const claudeAdapter: LLMAdapter = {
 
     const response = await anthropic.messages.create({
       model,
-      max_tokens: 2048,
+      max_tokens: request.maxTokens ?? 2048,
       system: buildCachedSystem(CHAT_SYSTEM_PROMPT, request.clientData, request.advisorRules),
       messages,
     });

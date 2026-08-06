@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import { getClients } from "../api";
+import { stripDeletedDocs } from "@/lib/deletedDocs";
 import type { Client } from "../types/client";
 
 // Single source of truth for the clients list, shared by the client panel and
@@ -24,7 +25,9 @@ export function ClientsProvider({ children }: { children: React.ReactNode }) {
     setLoadError(false);
     try {
       const data: Client[] = await getClients();
-      setClients(data);
+      // Strip docs deleted this session — a reload racing a deletion must not
+      // bring their rows back.
+      setClients(data.map((c) => stripDeletedDocs(c)));
     } catch {
       setLoadError(true);
     } finally {

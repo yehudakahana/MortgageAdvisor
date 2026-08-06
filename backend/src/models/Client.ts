@@ -29,6 +29,11 @@ const ClientSchema = new Schema<Client>(
     // The uuid `id` is the public lookup key (not Mongo's _id), keeping the API
     // and frontend contract unchanged.
     id: { type: String, required: true, unique: true, index: true },
+    // Tenant key — every route query must scope by it. Indexed because all
+    // list/lookup queries filter on it.
+    userId: { type: String, required: true, index: true },
+    // Present (true) only on the system-owned demo template client.
+    isTemplate: { type: Boolean },
     name: { type: String, required: true },
     phone: { type: String, required: true },
     email: { type: String, default: "" },

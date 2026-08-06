@@ -2,6 +2,8 @@ import { Router, Request, Response } from "express";
 import { ClientModel } from "../models/Client";
 import { routeToLLM } from "../services/llm/router";
 import { buildClientData, loadAdvisorRules } from "../services/chatContext";
+import { guestChatLimiter, guestPromptCap } from "../middleware/guestLimits";
+import { GUEST_LIMITS } from "../constants/guest";
 import { ChatMessage, Client } from "../types";
 import { isNonEmptyString, isOptionalString } from "../validation/validators";
 import { CHAT_MESSAGES, CLIENT_MESSAGES } from "../constants/messages";
@@ -19,21 +21,26 @@ function isChatMessage(value: unknown): value is ChatMessage {
   return (m.role === "user" || m.role === "assistant") && typeof m.content === "string";
 }
 
-router.post("/", async (req: Request, res: Response) => {
+// guestChatLimiter (10/hour per guest id) and guestPromptCap (250 chars) are
+// no-ops for regular users.
+router.post("/", guestChatLimiter, guestPromptCap, async (req: Request, res: Response) => {
   const { clientId, message, chatHistory } = (req.body ?? {}) as Record<string, unknown>;
 
   if (!isNonEmptyString(message)) return res.status(400).json({ error: CHAT_MESSAGES.missingMessage });
   if (!isOptionalString(clientId)) return res.status(400).json({ error: CHAT_MESSAGES.invalidClientId });
 
-  // Optional clientId scopes the chat to one client; otherwise query all clients.
+  const userId = req.user?.id ?? "";
+
+  // Optional clientId scopes the chat to one client; otherwise query all of
+  // THIS USER's clients. Everything is tenant-scoped by userId.
   let clients: Client[];
   try {
     if (clientId) {
-      const client = await ClientModel.findOne({ id: clientId });
+      const client = await ClientModel.findOne({ id: clientId, userId });
       if (!client) return res.status(404).json({ error: CLIENT_MESSAGES.notFound });
       clients = [client];
     } else {
-      clients = await ClientModel.find();
+      clients = await ClientModel.find({ userId });
     }
   } catch (err) {
     console.error("[chat] failed to load clients:", err);
@@ -54,10 +61,19 @@ router.post("/", async (req: Request, res: Response) => {
       chatHistory: windowedHistory,
       userMessage: message,
       advisorRules: await loadAdvisorRules(req.user?.username),
+      // Output cap for guests — keeps demo replies (and cost) small.
+      maxTokens: req.user?.isGuest ? GUEST_LIMITS.maxTokens : undefined,
     });
 
     // `llm` tells the client which model actually answered (fallbacks included).
-    res.json({ role: "assistant", content, llm: { provider, model, usedFallback } });
+    // Guests also get their remaining hourly quota (set by guestChatLimiter) —
+    // the frontend badge's single source of truth.
+    res.json({
+      role: "assistant",
+      content,
+      llm: { provider, model, usedFallback },
+      ...(req.user?.isGuest ? { remainingMessages: req.rateLimit?.remaining ?? 0 } : {}),
+    });
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
     console.error("[chat] LLM request failed:", reason);
@@ -76,7 +92,7 @@ router.post("/reset", async (req: Request, res: Response) => {
   let scopedClient: Client | null = null;
   if (clientId) {
     try {
-      scopedClient = await ClientModel.findOne({ id: clientId });
+      scopedClient = await ClientModel.findOne({ id: clientId, userId: req.user?.id ?? "" });
     } catch (err) {
       console.error("[chat] reset failed to load client:", err);
       return res.status(500).json({ error: CLIENT_MESSAGES.fetchFailed });

@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { login as loginRequest } from "../api";
+import { login as loginRequest, loginAsGuest } from "../api";
 import { useAuth } from "../auth/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { APP_TEXT, LOGIN_TEXT } from "@/lib/strings";
+import { APP_TEXT, GUEST_TEXT, LOGIN_TEXT } from "@/lib/strings";
 
 export default function LoginForm() {
   const { login } = useAuth();
@@ -14,6 +14,7 @@ export default function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [guestLoading, setGuestLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -30,6 +31,23 @@ export default function LoginForm() {
       setError(LOGIN_TEXT.badCredentials);
     } finally {
       setLoading(false);
+    }
+  }
+
+  // Guest mode: one click creates a 24h demo account; the token flows through
+  // the same login() path. Rate-limit errors from the server surface as-is.
+  async function handleGuestLogin() {
+    setError("");
+    setGuestLoading(true);
+    try {
+      const data = await loginAsGuest();
+      login(data.token, GUEST_TEXT.displayName, true);
+    } catch (err) {
+      // Server messages (rate limit) are Hebrew; English ones are internal fallbacks.
+      const message = err instanceof Error && /[֐-׿]/.test(err.message) ? err.message : "";
+      setError(message || GUEST_TEXT.loginFailed);
+    } finally {
+      setGuestLoading(false);
     }
   }
 
@@ -82,6 +100,15 @@ export default function LoginForm() {
               {loading ? LOGIN_TEXT.submitting : LOGIN_TEXT.submit}
             </Button>
           </form>
+          <Button
+            type="button"
+            variant="outline"
+            className="w-full mt-3 max-md:h-11 max-md:text-base"
+            onClick={handleGuestLogin}
+            disabled={guestLoading || loading}
+          >
+            {guestLoading ? GUEST_TEXT.loggingIn : GUEST_TEXT.loginButton}
+          </Button>
         </CardContent>
       </Card>
     </div>

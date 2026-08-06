@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { deleteClient, deleteDocument } from "../api";
+import { markDocDeleted } from "@/lib/deletedDocs";
 import { CLIENTS_TEXT } from "@/lib/strings";
 import type { Client } from "../types/client";
 import { useClientForm } from "./useClientForm";
@@ -57,8 +58,15 @@ export function useClientPanel() {
       await deleteClient(id);
       setClients((prev) => prev.filter((c) => c.id !== id));
       setSelectedId((prev) => (prev === id ? null : prev));
-    } catch {
-      setDeleteError(CLIENTS_TEXT.deleteClientFailed);
+    } catch (err) {
+      // 404 = already gone server-side (stale row) — dropping it locally IS
+      // the deletion the user asked for.
+      if ((err as { status?: number }).status === 404) {
+        setClients((prev) => prev.filter((c) => c.id !== id));
+        setSelectedId((prev) => (prev === id ? null : prev));
+      } else {
+        setDeleteError(CLIENTS_TEXT.deleteClientFailed);
+      }
     } finally {
       setDeletingClientId(null);
     }
@@ -68,10 +76,27 @@ export function useClientPanel() {
     setDeletingDocId(docId);
     try {
       const updated: Client = await deleteDocument(clientId, docId);
+      // Tombstone first: any in-flight refetch that still carries this doc
+      // must not resurrect its row (delete vs extraction-poll race).
+      markDocDeleted(docId);
       setClients((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
       upload.clearDocTimeout(docId);
-    } catch {
-      setDeleteError(CLIENTS_TEXT.deleteDocumentFailed);
+    } catch (err) {
+      // 404 = the doc no longer exists server-side (ghost row kept alive by a
+      // stale refetch, or an orphaned AI summary) — remove the row locally.
+      if ((err as { status?: number }).status === 404) {
+        markDocDeleted(docId);
+        setClients((prev) =>
+          prev.map((c) =>
+            c.id === clientId
+              ? { ...c, documents: c.documents.filter((d) => d.id !== docId) }
+              : c
+          )
+        );
+        upload.clearDocTimeout(docId);
+      } else {
+        setDeleteError(CLIENTS_TEXT.deleteDocumentFailed);
+      }
     } finally {
       setDeletingDocId(null);
     }

@@ -65,7 +65,7 @@ async function runChat(request: ChatRequest, model: string): Promise<LLMResponse
     config: {
       systemInstruction,
       // Matches the Claude chat max_tokens so reply length is provider-agnostic.
-      maxOutputTokens: 2048,
+      maxOutputTokens: request.maxTokens ?? 2048,
     },
   });
   return { content: response.text ?? "" };

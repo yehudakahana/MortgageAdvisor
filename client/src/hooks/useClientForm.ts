@@ -26,8 +26,11 @@ export function useClientForm(onCreated: (client: Client) => void) {
       onCreated(client);
       setIsCreatingClient(false);
       setName(""); setPhone(""); setEmail("");
-    } catch {
-      setFormError(CLIENTS_TEXT.createFailed);
+    } catch (err) {
+      // Guest client-cap 403s carry a Hebrew explanation — show it verbatim.
+      // English messages are internal fallbacks, not user-facing.
+      const message = err instanceof Error && /[֐-׿]/.test(err.message) ? err.message : "";
+      setFormError(message || CLIENTS_TEXT.createFailed);
     } finally {
       setSaving(false);
     }

@@ -28,6 +28,25 @@ export const LOGIN_TEXT = {
   badCredentials: "שם משתמש או סיסמה שגויים.",
 };
 
+export const GUEST_TEXT = {
+  loginButton: "כניסה מהירה למגייסים (אורח)",
+  loggingIn: "יוצר חשבון אורח...",
+  loginFailed: "כניסת האורח נכשלה. נסו שוב.",
+  displayName: "אורח",
+  badge: "מצב אורח",
+  // Keep the total in sync with the backend guest chat limit (10/hour).
+  badgeQuota: (remaining: number) => `נותרו ${remaining}/10 הודעות`,
+  welcomeTitle: "ברוכים הבאים למצב אורח",
+  welcomeIntro:
+    "זוהי סביבת הדגמה של kay.ai עם לקוח לדוגמה ונתונים פיקטיביים בלבד.",
+  welcomeLimitChat: "עד 10 הודעות צ'אט בשעה",
+  welcomeLimitClients: "עד 2 לקוחות חדשים",
+  welcomeLimitUploads: "עד 5 העלאות קבצים (מקסימום 5MB לקובץ)",
+  welcomeLimitTtl: "כל הנתונים נמחקים אוטומטית לאחר 24 שעות",
+  welcomeConfirm: "הבנתי, בואו נתחיל",
+  sessionExpired: "פג תוקף מצב האורח",
+};
+
 export const CHAT_TEXT = {
   assistantName: "קאיה",
   assistantInitial: "ק",

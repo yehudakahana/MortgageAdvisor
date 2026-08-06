@@ -5,6 +5,7 @@ import {
 } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { r2, R2_BUCKET_NAME } from "../config/r2";
+import { SAMPLE_KEY_PREFIX } from "../constants/guest";
 
 const VIEW_URL_TTL_SECONDS = 15 * 60; // 15 minutes
 
@@ -46,8 +47,11 @@ export async function deleteObject(key: string): Promise<void> {
   await r2.send(new DeleteObjectCommand({ Bucket: R2_BUCKET_NAME, Key: key }));
 }
 
-// Best-effort deletion: swallows storage errors so cleanup never fails the caller.
+// Best-effort deletion: swallows storage errors so cleanup never fails the
+// caller. Shared demo files (samples/*) are cloned by reference into every
+// guest account, so they are never deletable through any flow.
 export function safeDeleteObject(key: string): Promise<void> {
+  if (key.startsWith(SAMPLE_KEY_PREFIX)) return Promise.resolve();
   return deleteObject(key).catch(() => undefined);
 }
 

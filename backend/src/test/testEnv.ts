@@ -2,7 +2,7 @@
 // auth routes construct without real secrets. Imported first by both the unit
 // setup and the E2E server; a local .env is never loaded in tests.
 process.env.JWT_SECRET = "test-secret";
-process.env.ALLOWED_USERS = JSON.stringify({ testuser: "testpass" });
+process.env.ALLOWED_USERS = JSON.stringify({ testuser: "testpass", otheruser: "otherpass" });
 process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
 process.env.GEMINI_API_KEY = "test-gemini-key";
 process.env.R2_ACCOUNT_ID = "test-account";

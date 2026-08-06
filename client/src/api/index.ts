@@ -2,6 +2,9 @@
 // proxy. In production (Cloudflare Pages) set it to the Railway backend origin.
 // Trailing slashes are stripped so a value like "https://host/" doesn't
 // produce "//api/..." URLs, which Express rejects with a 404.
+import { toast } from "@/lib/toast";
+import { GUEST_TEXT } from "@/lib/strings";
+
 export const BASE = `${(import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "")}/api`;
 
 // Which LLM actually produced a reply/extraction (fallbacks included) — sent
@@ -10,21 +13,48 @@ export type LLMSource = { provider: string; model: string; usedFallback?: boolea
 
 export type ChatMessage = { role: "user" | "assistant"; content: string; llm?: LLMSource };
 
+// Chat replies carry the guest's remaining hourly quota (absent for regular users).
+export type ChatReply = ChatMessage & { remainingMessages?: number };
+
+// Builds an Error carrying the server's Hebrew message (when present) and the
+// HTTP status, so callers can show the real reason (guest caps, quotas).
+async function apiError(res: Response, fallback: string): Promise<Error> {
+  let message = fallback;
+  try {
+    const body = await res.json();
+    if (typeof body?.error === "string" && body.error) message = body.error;
+  } catch {
+    // non-JSON body (proxy/HTML error page) — keep the fallback
+  }
+  return Object.assign(new Error(message), { status: res.status });
+}
+
 // Wraps fetch to inject the Bearer token and auto-logout on auth failure.
-// On 401/403 it clears the session and signals the app to return to login.
+// Only 401 clears the session — 403 now means a guest-mode cap, which the
+// caller shows in place. Guests get an expiry toast (cleaned-up account).
 export async function authFetch(input: string, init: RequestInit = {}) {
   const token = localStorage.getItem("user_token");
   const headers = new Headers(init.headers);
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
   const res = await fetch(input, { ...init, headers });
-  if (res.status === 401 || res.status === 403) {
+  if (res.status === 401) {
+    const wasGuest = localStorage.getItem("is_guest") === "1";
     localStorage.removeItem("user_token");
     localStorage.removeItem("username");
+    localStorage.removeItem("is_guest");
+    if (wasGuest) toast(GUEST_TEXT.sessionExpired);
     window.dispatchEvent(new Event("auth:logout"));
     throw new Error("Unauthorized");
   }
   return res;
+}
+
+// Creates a temporary 24h guest account with sample data and returns its JWT.
+export async function loginAsGuest() {
+  const res = await fetch(`${BASE}/auth/guest`, { method: "POST" });
+  if (!res.ok) throw await apiError(res, "Guest login failed");
+  return res.json() as Promise<{ token: string; username: string; isGuest: boolean }>;
 }
 
 export async function login(username: string, password: string) {
@@ -48,8 +78,10 @@ export async function sendChatMessage(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ message, chatHistory, clientId }),
   });
-  if (!res.ok) throw new Error("Chat request failed");
-  return res.json() as Promise<ChatMessage>;
+  // Carry the server's Hebrew message + status so the chat UI can show guest
+  // quota errors (429/400) verbatim.
+  if (!res.ok) throw await apiError(res, "Chat request failed");
+  return res.json() as Promise<ChatReply>;
 }
 
 // Clear Chat / New Topic: tell the backend to start a fresh session for the
@@ -137,6 +169,7 @@ export async function createClient(data: { name: string; phone: string; email?: 
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
-  if (!res.ok) throw new Error("Failed to create client");
+  // Server message matters here: guest client-cap 403s carry Hebrew text.
+  if (!res.ok) throw await apiError(res, "Failed to create client");
   return res.json();
 }

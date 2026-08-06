@@ -38,12 +38,25 @@ export interface Document {
 
 export interface Client {
   id: string;
+  // Tenant key: the owning user's id (ALLOWED_USERS username, guest id, or
+  // "system" for the shared demo template). Every query must scope by it.
+  userId: string;
+  // Marks the system-owned demo client cloned into each new guest account.
+  isTemplate?: boolean;
   name: string;
   phone: string;
   email: string;
   createdAt: Date;
   documents: Document[];
   notes: string;
+}
+
+// Temporary demo account. Existence in this collection is what keeps a guest
+// JWT valid — cleanup deletes the record and the token dies with it.
+export interface GuestUser {
+  id: string; // guest_<uuid>
+  createdAt: Date;
+  expiresAt: Date;
 }
 
 export interface ChatMessage {

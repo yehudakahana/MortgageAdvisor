@@ -2,7 +2,8 @@ import { createContext, useContext, useEffect, useState, ReactNode } from "react
 
 type AuthState = {
   username: string | null;
-  login: (token: string, username: string) => void;
+  isGuest: boolean;
+  login: (token: string, username: string, isGuest?: boolean) => void;
   logout: () => void;
 };
 
@@ -13,20 +14,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const token = localStorage.getItem("user_token");
     return token ? localStorage.getItem("username") : null;
   });
+  const [isGuest, setIsGuest] = useState(
+    () => localStorage.getItem("is_guest") === "1" && !!localStorage.getItem("user_token")
+  );
 
-  function login(token: string, name: string) {
+  function login(token: string, name: string, guest = false) {
     localStorage.setItem("user_token", token);
     localStorage.setItem("username", name);
+    if (guest) localStorage.setItem("is_guest", "1");
+    else localStorage.removeItem("is_guest");
     setUsername(name);
+    setIsGuest(guest);
   }
 
   function logout() {
     localStorage.removeItem("user_token");
     localStorage.removeItem("username");
+    localStorage.removeItem("is_guest");
     setUsername(null);
+    setIsGuest(false);
   }
 
-  // The fetch layer dispatches "auth:logout" on a 401/403 so an expired token
+  // The fetch layer dispatches "auth:logout" on a 401 so an expired token
   // anywhere in the app resets the UI back to the login screen.
   useEffect(() => {
     window.addEventListener("auth:logout", logout);
@@ -34,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ username, login, logout }}>
+    <AuthContext.Provider value={{ username, isGuest, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

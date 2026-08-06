@@ -21,6 +21,7 @@ async function main(): Promise<void> {
 
   await ClientModel.create({
     id: randomUUID(),
+    userId: "testuser",
     name: "ישראל ישראלי",
     phone: "050-1234567",
     email: "test@example.com",

@@ -4,6 +4,7 @@ import clientsRouter from "./routes/clients";
 import uploadRouter from "./routes/upload";
 import chatRouter from "./routes/chat";
 import authRouter from "./routes/auth";
+import guestAuthRouter from "./routes/guestAuth";
 import settingsRouter from "./routes/settings";
 import { authenticateToken } from "./middleware/authMiddleware";
 
@@ -28,6 +29,7 @@ app.use(express.json());
 
 // Public routes (no token required).
 app.use("/api/login", authRouter);
+app.use("/api/auth/guest", guestAuthRouter);
 app.get("/api/health", (_req, res) => {
   res.json({ status: "ok" });
 });

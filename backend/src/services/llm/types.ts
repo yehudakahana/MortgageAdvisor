@@ -21,6 +21,9 @@ export interface ChatRequest {
   // The advisor's custom knowledge rules, injected into the system prompt
   // after the cached client-data block (so prompt caching stays intact).
   advisorRules?: string[];
+  // Output-token cap override (guest mode). Adapters fall back to their
+  // standard limit when absent.
+  maxTokens?: number;
 }
 
 export type LLMRequest = ExtractionRequest | ChatRequest;

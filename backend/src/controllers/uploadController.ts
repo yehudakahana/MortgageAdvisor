@@ -91,8 +91,10 @@ export async function uploadDocument(req: Request, res: Response) {
 
   let updated;
   try {
+    // Scoped by userId: uploading to another user's client 404s like a
+    // missing client (no existence leak).
     updated = await ClientModel.findOneAndUpdate(
-      { id: clientId },
+      { id: clientId, userId: req.user?.id ?? "" },
       { $push: { documents: doc } },
       { returnDocument: "after" }
     );

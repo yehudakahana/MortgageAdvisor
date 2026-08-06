@@ -2,6 +2,7 @@ import { useState, useRef } from "react";
 import { getClient, reExtractDocument, uploadDocument } from "../api";
 import type { Client } from "../types/client";
 import { useClients } from "../context/ClientsContext";
+import { isDocDeleted, stripDeletedDocs } from "@/lib/deletedDocs";
 import { DOCUMENTS_TEXT } from "@/lib/strings";
 
 // Outcome of a single file within an upload batch, shown in the summary dialog.
@@ -12,8 +13,7 @@ export interface UploadResult {
 }
 
 // A fetch rejection (network down) is a TypeError; a server rejection carries
-// the backend's Hebrew message (thrown by the api layer). Empty message means
-// the server gave no readable reason — use the generic fallback.
+// the backend's Hebrew message (thrown by the api layer) — else generic fallback.
 function formatUploadError(err: unknown): string {
   if (err instanceof TypeError) return DOCUMENTS_TEXT.networkError;
   if (err instanceof Error && err.message) return err.message;
@@ -35,10 +35,11 @@ export function useDocumentUpload(selectedId: string | null) {
   const selectedIdRef = useRef(selectedId);
   selectedIdRef.current = selectedId;
 
-  // Refetch a single client and merge it into the shared list.
+  // Refetch a client and merge it in; deleted docs are stripped so a stale
+  // response can't resurrect their rows.
   async function refreshClient(clientId: string): Promise<Client | null> {
     try {
-      const client: Client = await getClient(clientId);
+      const client = stripDeletedDocs<Client>(await getClient(clientId));
       setClients((prev) => prev.map((c) => (c.id === client.id ? client : c)));
       return client;
     } catch {
@@ -55,6 +56,7 @@ export function useDocumentUpload(selectedId: string | null) {
     let doc: Client["documents"][number] | undefined;
     for (let i = 0; i < attempts; i++) {
       await new Promise((r) => setTimeout(r, 3000));
+      if (isDocDeleted(docId)) return; // deleted mid-poll — stop refetching
       const client = await refreshClient(clientId);
       doc = client?.documents.find((d) => d.id === docId);
       if (doc?.extractedData) {
@@ -128,9 +130,7 @@ export function useDocumentUpload(selectedId: string | null) {
     setTimedOutDocIds((prev) => prev.filter((id) => id !== docId));
   }
 
-  function clearBatchResults() {
-    setBatchResults(null);
-  }
+  function clearBatchResults() { setBatchResults(null); }
 
   // Reset transient upload UI state (used when switching clients).
   function resetUploadState() {

@@ -3,6 +3,7 @@
 // Trailing slashes are stripped so a value like "https://host/" doesn't
 // produce "//api/..." URLs, which Express rejects with a 404.
 import { toast } from "@/lib/toast";
+import { getDeviceId } from "@/lib/deviceId";
 import { GUEST_TEXT } from "@/lib/strings";
 
 export const BASE = `${(import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "")}/api`;
@@ -52,7 +53,14 @@ export async function authFetch(input: string, init: RequestInit = {}) {
 
 // Creates a temporary 24h guest account with sample data and returns its JWT.
 export async function loginAsGuest() {
-  const res = await fetch(`${BASE}/auth/guest`, { method: "POST" });
+  // deviceId lets the backend resume this browser's existing guest account
+  // (same data, same remaining TTL, same quota counters) rather than create a
+  // new one — without it the caps reset on every sign-in.
+  const res = await fetch(`${BASE}/auth/guest`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ deviceId: getDeviceId() }),
+  });
   if (!res.ok) throw await apiError(res, "Guest login failed");
   return res.json() as Promise<{ token: string; username: string; isGuest: boolean }>;
 }

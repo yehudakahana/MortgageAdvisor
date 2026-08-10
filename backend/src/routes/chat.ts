@@ -3,6 +3,7 @@ import { ClientModel } from "../models/Client";
 import { routeToLLM } from "../services/llm/router";
 import { buildClientData, loadAdvisorRules } from "../services/chatContext";
 import { guestChatCap, guestPromptCap } from "../middleware/guestLimits";
+import { refundGuestQuota } from "../services/guestQuotaService";
 import { GUEST_LIMITS } from "../constants/guest";
 import { ChatMessage, Client } from "../types";
 import { isNonEmptyString, isOptionalString } from "../validation/validators";
@@ -78,6 +79,14 @@ router.post("/", guestPromptCap, guestChatCap, async (req: Request, res: Respons
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
     console.error("[chat] LLM request failed:", reason);
+    // guestChatCap charged this message before the call. It produced no reply,
+    // so give it back rather than spending part of the guest's demo budget on
+    // our outage. Best-effort: a failed refund must not mask the 502.
+    if (req.user?.isGuest) {
+      await refundGuestQuota(req.user.id, "chat").catch((refundErr) =>
+        console.error("[chat] quota refund failed:", refundErr)
+      );
+    }
     res.status(502).json({ error: CHAT_MESSAGES.requestFailed });
   }
 });

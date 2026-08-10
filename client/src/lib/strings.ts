@@ -27,7 +27,7 @@ export const LOGIN_TEXT = {
   missingFields: "יש להזין שם משתמש וסיסמה.",
   badCredentials: "שם משתמש או סיסמה שגויים.",
 };
-222
+
 export const GUEST_TEXT = {
   loginButton:"כניסה כאורח",
   loggingIn: "יוצר חשבון אורח...",

@@ -8,7 +8,8 @@ import { app } from "../app";
 import { ClientModel } from "../models/Client";
 import { GuestUserModel } from "../models/GuestUser";
 import { GUEST_MESSAGES } from "../constants/messages";
-import { SYSTEM_USER_ID } from "../constants/guest";
+import { GUEST_LIMITS, SYSTEM_USER_ID } from "../constants/guest";
+import { consumeGuestQuota } from "../services/guestQuotaService";
 
 let mongod: MongoMemoryServer;
 
@@ -111,9 +112,11 @@ describe("user data isolation", () => {
 
 describe("guest caps", () => {
   it("allows 2 extra clients then 403s with the Hebrew cap message", async () => {
+    // Seed the template first so the guest gets a real clone: it carries
+    // isSample and must not count against the creation allowance.
+    await seedTemplate();
     const { body } = await request(app).post("/api/auth/guest");
     const guestAuth = { Authorization: `Bearer ${body.token}` };
-    await seedClient(body.username, "לקוח מדוגמה"); // stands in for the sample clone
 
     const payload = { name: "לקוח חדש", phone: "050-3333333" };
     expect((await request(app).post("/api/clients").set(guestAuth).send(payload)).status).toBe(201);
@@ -132,5 +135,20 @@ describe("guest caps", () => {
       .send({ message: "א".repeat(251) });
     expect(res.status).toBe(400);
     expect(res.body.error).toBe(GUEST_MESSAGES.promptTooLong);
+  });
+
+  it("caps document re-extractions per hour", async () => {
+    const { body } = await request(app).post("/api/auth/guest");
+    // Spend the quota directly: the cap must reject before the handler runs,
+    // so no real extraction (LLM/R2) is needed to prove it is wired up.
+    for (let i = 0; i < GUEST_LIMITS.reExtractsPerHour; i++) {
+      expect(await consumeGuestQuota(body.username, "reExtract", GUEST_LIMITS.reExtractsPerHour))
+        .not.toBeNull();
+    }
+    const res = await request(app)
+      .post(`/api/upload/${randomUUID()}/doc-1/re-extract`)
+      .set({ Authorization: `Bearer ${body.token}` });
+    expect(res.status).toBe(429);
+    expect(res.body.error).toBe(GUEST_MESSAGES.reExtractCapReached);
   });
 });

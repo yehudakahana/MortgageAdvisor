@@ -1,37 +1,62 @@
 import { Request, Response, NextFunction } from "express";
-import rateLimit, { RateLimitInfo } from "express-rate-limit";
 import { ClientModel } from "../models/Client";
+import { consumeGuestQuota, GuestQuotaName } from "../services/guestQuotaService";
 import { GUEST_LIMITS, SAMPLE_KEY_PREFIX } from "../constants/guest";
 import { GUEST_MESSAGES } from "../constants/messages";
 
-// express-rate-limit sets req.rateLimit but doesn't augment Express' Request
-// type itself — declared here so the chat route can echo `remaining`.
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace
   namespace Express {
     interface Request {
-      rateLimit?: RateLimitInfo;
+      // Units left in the guest's hourly chat quota after this request, set by
+      // consumeQuota and echoed back so the frontend badge stays honest.
+      guestRemaining?: number;
     }
   }
 }
 
 // All middleware here is a no-op for regular users — guests only.
 
-// Chat message cap: 10 LLM calls per hour PER GUEST (not per IP — several
-// guests can share a NAT, and one guest could rotate IPs). In-memory store,
-// resets on redeploy — acceptable for MVP. req.rateLimit.remaining is echoed
-// back in every chat response as the frontend badge's source of truth.
-export const guestChatLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000,
-  max: GUEST_LIMITS.chatPerHour,
-  keyGenerator: (req) => req.user?.id ?? "anonymous",
-  skip: (req) => !req.user?.isGuest,
-  standardHeaders: true,
-  legacyHeaders: false,
-  message: { error: GUEST_MESSAGES.chatCapReached },
-});
+// Spends one unit of a persisted hourly quota, or rejects with `message`.
+// Persisted (not in-memory) so the limit cannot be reset by signing out and
+// re-entering guest mode, nor by a redeploy.
+function consumeQuota(quota: GuestQuotaName, max: number, message: string) {
+  return async function (req: Request, res: Response, next: NextFunction): Promise<void> {
+    if (!req.user?.isGuest) return next();
+    try {
+      const remaining = await consumeGuestQuota(req.user.id, quota, max);
+      if (remaining === null) {
+        res.status(429).json({ error: message });
+        return;
+      }
+      req.guestRemaining = remaining;
+      next();
+    } catch (err) {
+      console.error(`[guest-limits] ${quota} quota check failed:`, err);
+      res.status(500).json({ error: GUEST_MESSAGES.creationFailed });
+    }
+  };
+}
 
-// Input cap: keep guest prompts (and therefore input tokens) small.
+// Chat message cap: 10 LLM calls per hour PER GUEST (not per IP — several
+// guests can share a NAT, and one guest could rotate IPs).
+export const guestChatCap = consumeQuota(
+  "chat",
+  GUEST_LIMITS.chatPerHour,
+  GUEST_MESSAGES.chatCapReached
+);
+
+// Re-extraction runs a full document extraction through the LLM, so it needs
+// its own cap — otherwise a guest could replay it on the sample document
+// indefinitely and bypass every other spending limit.
+export const guestReExtractCap = consumeQuota(
+  "reExtract",
+  GUEST_LIMITS.reExtractsPerHour,
+  GUEST_MESSAGES.reExtractCapReached
+);
+
+// Input cap: keep guest prompts (and therefore input tokens) small. Runs
+// before the chat quota so a rejected prompt doesn't spend a message.
 export function guestPromptCap(req: Request, res: Response, next: NextFunction): void {
   const { message } = (req.body ?? {}) as Record<string, unknown>;
   if (
@@ -45,7 +70,9 @@ export function guestPromptCap(req: Request, res: Response, next: NextFunction):
   next();
 }
 
-// Creation cap: the sample clone + up to `extraClients` self-created clients.
+// Creation cap: `extraClients` clients of the guest's own. The cloned sample
+// client carries isSample and is excluded, so a guest whose clone is missing
+// (no template seeded) still gets exactly the advertised allowance.
 export async function guestClientCap(
   req: Request,
   res: Response,
@@ -53,8 +80,11 @@ export async function guestClientCap(
 ): Promise<void> {
   if (!req.user?.isGuest) return next();
   try {
-    const count = await ClientModel.countDocuments({ userId: req.user.id });
-    if (count >= 1 + GUEST_LIMITS.extraClients) {
+    const count = await ClientModel.countDocuments({
+      userId: req.user.id,
+      isSample: { $ne: true },
+    });
+    if (count >= GUEST_LIMITS.extraClients) {
       res.status(403).json({ error: GUEST_MESSAGES.clientCapReached });
       return;
     }

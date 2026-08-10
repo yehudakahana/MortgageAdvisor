@@ -43,6 +43,9 @@ export interface Client {
   userId: string;
   // Marks the system-owned demo client cloned into each new guest account.
   isTemplate?: boolean;
+  // Marks a guest's copy of that demo client, so it can be excluded from the
+  // guest's own creation quota.
+  isSample?: boolean;
   name: string;
   phone: string;
   email: string;
@@ -51,12 +54,24 @@ export interface Client {
   notes: string;
 }
 
+// A rolling-window usage counter for one guest quota.
+export interface GuestQuota {
+  count: number;
+  windowStart: Date;
+}
+
 // Temporary demo account. Existence in this collection is what keeps a guest
 // JWT valid — cleanup deletes the record and the token dies with it.
 export interface GuestUser {
   id: string; // guest_<uuid>
+  deviceId?: string; // stable per-browser id, used to resume the account
+  ip?: string; // creating IP, used to cap accounts per origin
   createdAt: Date;
   expiresAt: Date;
+  usage: {
+    chat: GuestQuota;
+    reExtract: GuestQuota;
+  };
 }
 
 export interface ChatMessage {

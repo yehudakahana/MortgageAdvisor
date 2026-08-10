@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { uploadSingle, validateBuffer } from "../middleware/upload";
-import { guestUploadCap } from "../middleware/guestLimits";
+import { guestReExtractCap, guestUploadCap } from "../middleware/guestLimits";
 import { uploadDocument } from "../controllers/uploadController";
 import {
   deleteDocument,
@@ -14,7 +14,8 @@ const router = Router();
 // no-op for regular users) → handler.
 router.post("/:clientId", uploadSingle("file"), validateBuffer, guestUploadCap, uploadDocument);
 router.get("/:clientId/:docId/view", viewDocument);
-router.post("/:clientId/:docId/re-extract", reExtractDocument);
+// Re-extraction is a full LLM extraction, so guests get their own hourly cap.
+router.post("/:clientId/:docId/re-extract", guestReExtractCap, reExtractDocument);
 router.delete("/:clientId/:docId", deleteDocument);
 
 export default router;

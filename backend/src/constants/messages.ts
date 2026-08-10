@@ -61,6 +61,7 @@ export const GUEST_MESSAGES = {
   fileTooLarge: "במצב אורח גודל קובץ מוגבל ל-5MB",
   chatCapReached: "הגעתם למגבלת 10 ההודעות לשעה במצב אורח, נסו שוב מאוחר יותר",
   promptTooLong: "במצב אורח אורך הודעה מוגבל ל-250 תווים",
+  reExtractCapReached: "הגעתם למגבלת ניתוחי המסמכים לשעה במצב אורח, נסו שוב מאוחר יותר",
 };
 
 export const CHAT_MESSAGES = {

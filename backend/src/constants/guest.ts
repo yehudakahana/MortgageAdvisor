@@ -14,9 +14,12 @@ export const GUEST_LIMITS = {
   extraClients: 2, // clients a guest may create beyond the sample clone
   uploads: 5, // total file uploads per guest
   fileSizeBytes: 5 * 1024 * 1024,
-  chatPerHour: 10,
-  reExtractsPerHour: 3, // re-extraction is an LLM call too, so it needs a cap
-  quotaWindowMs: 60 * 60 * 1000, // rolling window for both hourly quotas
+  chatPerWindow: 20,
+  reExtractsPerWindow: 3, // re-extraction is an LLM call too, so it needs a cap
+  // Rolling window shared by both quotas above. It matches `ttlMs`, so in
+  // practice these are per-account lifetime caps: the window can only roll
+  // over after the account itself has expired.
+  quotaWindowMs: 24 * 60 * 60 * 1000,
   promptChars: 250,
   maxTokens: 400, // forced LLM output cap for guest chats
   // Distinct guest accounts one IP may hold at once. Accounts live `ttlMs`, so

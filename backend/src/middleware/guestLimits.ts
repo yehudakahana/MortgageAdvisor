@@ -49,11 +49,12 @@ function consumeQuota(
   };
 }
 
-// Chat message cap: 10 LLM calls per hour PER GUEST (not per IP — several
-// guests can share a NAT, and one guest could rotate IPs).
+// Chat message cap, PER GUEST (not per IP — several guests can share a NAT,
+// and one guest could rotate IPs). The window matches the account TTL, so this
+// is effectively the account's lifetime message budget.
 export const guestChatCap = consumeQuota(
   "chat",
-  GUEST_LIMITS.chatPerHour,
+  GUEST_LIMITS.chatPerWindow,
   GUEST_MESSAGES.chatCapReached
 );
 
@@ -62,7 +63,7 @@ export const guestChatCap = consumeQuota(
 // indefinitely and bypass every other spending limit.
 export const guestReExtractCap = consumeQuota(
   "reExtract",
-  GUEST_LIMITS.reExtractsPerHour,
+  GUEST_LIMITS.reExtractsPerWindow,
   GUEST_MESSAGES.reExtractCapReached
 );
 

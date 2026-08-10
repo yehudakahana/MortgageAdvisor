@@ -137,30 +137,33 @@ describe("guest caps", () => {
     expect(res.body.error).toBe(GUEST_MESSAGES.promptTooLong);
   });
 
-  it("tells the guest when the next batch of messages opens", async () => {
+  it("tells the guest when the message quota renews", async () => {
     const { body } = await request(app).post("/api/auth/guest");
-    for (let i = 0; i < GUEST_LIMITS.chatPerHour; i++) {
-      await consumeGuestQuota(body.username, "chat", GUEST_LIMITS.chatPerHour);
+    for (let i = 0; i < GUEST_LIMITS.chatPerWindow; i++) {
+      await consumeGuestQuota(body.username, "chat", GUEST_LIMITS.chatPerWindow);
     }
     const res = await request(app)
       .post("/api/chat")
       .set({ Authorization: `Bearer ${body.token}` })
       .send({ message: "שלום" });
     expect(res.status).toBe(429);
-    expect(res.body.retryAfterMinutes).toBe(60);
-    expect(res.body.error).toContain("בעוד 60 דקות");
-    expect(res.headers["retry-after"]).toBe("3600");
+    // The window just opened, so the wait is the full window (24h).
+    const windowMinutes = GUEST_LIMITS.quotaWindowMs / 60_000;
+    expect(res.body.retryAfterMinutes).toBe(windowMinutes);
+    expect(res.headers["retry-after"]).toBe(String(windowMinutes * 60));
+    // Long waits read as hours, never as "1440 minutes".
+    expect(res.body.error).toContain("בעוד 24 שעות");
   });
 
-  it("caps document re-extractions per hour", async () => {
+  it("caps document re-extractions per window", async () => {
     const { body } = await request(app).post("/api/auth/guest");
     // Spend the quota directly: the cap must reject before the handler runs,
     // so no real extraction (LLM/R2) is needed to prove it is wired up.
-    for (let i = 0; i < GUEST_LIMITS.reExtractsPerHour; i++) {
+    for (let i = 0; i < GUEST_LIMITS.reExtractsPerWindow; i++) {
       const result = await consumeGuestQuota(
         body.username,
         "reExtract",
-        GUEST_LIMITS.reExtractsPerHour
+        GUEST_LIMITS.reExtractsPerWindow
       );
       expect(result.allowed).toBe(true);
     }
@@ -168,8 +171,9 @@ describe("guest caps", () => {
       .post(`/api/upload/${randomUUID()}/doc-1/re-extract`)
       .set({ Authorization: `Bearer ${body.token}` });
     expect(res.status).toBe(429);
-    // The window just opened, so the wait is reported as the full hour.
-    expect(res.body.retryAfterMinutes).toBe(60);
-    expect(res.body.error).toBe(GUEST_MESSAGES.reExtractCapReached(60));
+    // The window just opened, so the wait is the full window.
+    const windowMinutes = GUEST_LIMITS.quotaWindowMs / 60_000;
+    expect(res.body.retryAfterMinutes).toBe(windowMinutes);
+    expect(res.body.error).toBe(GUEST_MESSAGES.reExtractCapReached(windowMinutes));
   });
 });

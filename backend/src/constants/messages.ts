@@ -3,9 +3,18 @@
 
 import { GUEST_LIMITS } from "./guest";
 
-// "בעוד דקה" / "בעוד 43 דקות" — the singular drops the numeral in Hebrew.
-const inMinutes = (minutes: number) =>
-  minutes <= 1 ? "בעוד דקה" : `בעוד ${minutes} דקות`;
+// Humanised wait: "בעוד דקה" / "בעוד 43 דקות" / "בעוד שעתיים" / "בעוד 23 שעות".
+// Hebrew drops the numeral in the singular and has a dedicated dual form for
+// two. Quota windows are up to a day, so minutes alone would read as "בעוד
+// 1440 דקות".
+function inTime(minutes: number): string {
+  if (minutes <= 1) return "בעוד דקה";
+  if (minutes < 60) return `בעוד ${minutes} דקות`;
+  const hours = Math.max(1, Math.round(minutes / 60));
+  if (hours === 1) return "בעוד שעה";
+  if (hours === 2) return "בעוד שעתיים";
+  return `בעוד ${hours} שעות`;
+}
 
 export const AUTH_MESSAGES = {
   tooManyAttempts: "יותר מדי ניסיונות התחברות, נסו שוב מאוחר יותר",
@@ -61,19 +70,22 @@ export const SETTINGS_MESSAGES = {
 
 export const GUEST_MESSAGES = {
   creationFailed: "יצירת חשבון אורח נכשלה, נסו שוב",
+  // Shown when a limit check itself fails (DB error) — not when a limit is hit.
+  limitCheckFailed: "בדיקת מגבלות מצב האורח נכשלה, נסו שוב",
   tooManyGuestAccounts: "נוצרו יותר מדי חשבונות אורח מכתובת זו, נסו שוב מחר",
   clientCapReached: "במצב אורח ניתן ליצור עד 2 לקוחות נוספים",
   uploadCapReached: "במצב אורח ניתן להעלות עד 5 קבצים",
   fileTooLarge: "במצב אורח גודל קובץ מוגבל ל-5MB",
-  // Both hourly caps tell the guest exactly when the next window opens, so
-  // "try again later" is never a dead end.
+  // Both quota caps tell the guest when the window renews, so "try again
+  // later" is never a dead end. No time unit is baked into the wording — the
+  // window length is a constant and the wait is formatted from it.
   chatCapReached: (resetInMinutes: number) =>
-    `הגעתם למגבלת ${GUEST_LIMITS.chatPerHour} ההודעות לשעה במצב אורח. ` +
-    `${GUEST_LIMITS.chatPerHour} הודעות חדשות ייפתחו ${inMinutes(resetInMinutes)}.`,
+    `הגעתם למגבלת ${GUEST_LIMITS.chatPerWindow} ההודעות במצב אורח. ` +
+    `המגבלה מתחדשת ${inTime(resetInMinutes)}.`,
   promptTooLong: "במצב אורח אורך הודעה מוגבל ל-250 תווים",
   reExtractCapReached: (resetInMinutes: number) =>
-    `הגעתם למגבלת ${GUEST_LIMITS.reExtractsPerHour} ניתוחי המסמכים לשעה במצב אורח. ` +
-    `ניתן יהיה לנתח שוב ${inMinutes(resetInMinutes)}.`,
+    `הגעתם למגבלת ${GUEST_LIMITS.reExtractsPerWindow} ניתוחי המסמכים במצב אורח. ` +
+    `ניתן יהיה לנתח שוב ${inTime(resetInMinutes)}.`,
 };
 
 export const CHAT_MESSAGES = {

@@ -137,18 +137,39 @@ describe("guest caps", () => {
     expect(res.body.error).toBe(GUEST_MESSAGES.promptTooLong);
   });
 
+  it("tells the guest when the next batch of messages opens", async () => {
+    const { body } = await request(app).post("/api/auth/guest");
+    for (let i = 0; i < GUEST_LIMITS.chatPerHour; i++) {
+      await consumeGuestQuota(body.username, "chat", GUEST_LIMITS.chatPerHour);
+    }
+    const res = await request(app)
+      .post("/api/chat")
+      .set({ Authorization: `Bearer ${body.token}` })
+      .send({ message: "שלום" });
+    expect(res.status).toBe(429);
+    expect(res.body.retryAfterMinutes).toBe(60);
+    expect(res.body.error).toContain("בעוד 60 דקות");
+    expect(res.headers["retry-after"]).toBe("3600");
+  });
+
   it("caps document re-extractions per hour", async () => {
     const { body } = await request(app).post("/api/auth/guest");
     // Spend the quota directly: the cap must reject before the handler runs,
     // so no real extraction (LLM/R2) is needed to prove it is wired up.
     for (let i = 0; i < GUEST_LIMITS.reExtractsPerHour; i++) {
-      expect(await consumeGuestQuota(body.username, "reExtract", GUEST_LIMITS.reExtractsPerHour))
-        .not.toBeNull();
+      const result = await consumeGuestQuota(
+        body.username,
+        "reExtract",
+        GUEST_LIMITS.reExtractsPerHour
+      );
+      expect(result.allowed).toBe(true);
     }
     const res = await request(app)
       .post(`/api/upload/${randomUUID()}/doc-1/re-extract`)
       .set({ Authorization: `Bearer ${body.token}` });
     expect(res.status).toBe(429);
-    expect(res.body.error).toBe(GUEST_MESSAGES.reExtractCapReached);
+    // The window just opened, so the wait is reported as the full hour.
+    expect(res.body.retryAfterMinutes).toBe(60);
+    expect(res.body.error).toBe(GUEST_MESSAGES.reExtractCapReached(60));
   });
 });

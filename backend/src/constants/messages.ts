@@ -1,6 +1,12 @@
 // Single source of truth for user-facing (Hebrew) API response messages.
 // LLM prompt text lives in services/llm/prompts.ts, not here.
 
+import { GUEST_LIMITS } from "./guest";
+
+// "בעוד דקה" / "בעוד 43 דקות" — the singular drops the numeral in Hebrew.
+const inMinutes = (minutes: number) =>
+  minutes <= 1 ? "בעוד דקה" : `בעוד ${minutes} דקות`;
+
 export const AUTH_MESSAGES = {
   tooManyAttempts: "יותר מדי ניסיונות התחברות, נסו שוב מאוחר יותר",
   serverConfigError: "תקלה בהגדרות ההזדהות בשרת",
@@ -59,9 +65,15 @@ export const GUEST_MESSAGES = {
   clientCapReached: "במצב אורח ניתן ליצור עד 2 לקוחות נוספים",
   uploadCapReached: "במצב אורח ניתן להעלות עד 5 קבצים",
   fileTooLarge: "במצב אורח גודל קובץ מוגבל ל-5MB",
-  chatCapReached: "הגעתם למגבלת 10 ההודעות לשעה במצב אורח, נסו שוב מאוחר יותר",
+  // Both hourly caps tell the guest exactly when the next window opens, so
+  // "try again later" is never a dead end.
+  chatCapReached: (resetInMinutes: number) =>
+    `הגעתם למגבלת ${GUEST_LIMITS.chatPerHour} ההודעות לשעה במצב אורח. ` +
+    `${GUEST_LIMITS.chatPerHour} הודעות חדשות ייפתחו ${inMinutes(resetInMinutes)}.`,
   promptTooLong: "במצב אורח אורך הודעה מוגבל ל-250 תווים",
-  reExtractCapReached: "הגעתם למגבלת ניתוחי המסמכים לשעה במצב אורח, נסו שוב מאוחר יותר",
+  reExtractCapReached: (resetInMinutes: number) =>
+    `הגעתם למגבלת ${GUEST_LIMITS.reExtractsPerHour} ניתוחי המסמכים לשעה במצב אורח. ` +
+    `ניתן יהיה לנתח שוב ${inMinutes(resetInMinutes)}.`,
 };
 
 export const CHAT_MESSAGES = {

@@ -17,19 +17,30 @@ declare global {
 
 // All middleware here is a no-op for regular users — guests only.
 
-// Spends one unit of a persisted hourly quota, or rejects with `message`.
-// Persisted (not in-memory) so the limit cannot be reset by signing out and
-// re-entering guest mode, nor by a redeploy.
-function consumeQuota(quota: GuestQuotaName, max: number, message: string) {
+// Spends one unit of a persisted hourly quota, or rejects with `message` —
+// which is built from the minutes left in the window, so the guest is told
+// when the next batch opens. Persisted (not in-memory) so the limit cannot be
+// reset by signing out and re-entering guest mode, nor by a redeploy.
+function consumeQuota(
+  quota: GuestQuotaName,
+  max: number,
+  message: (resetInMinutes: number) => string
+) {
   return async function (req: Request, res: Response, next: NextFunction): Promise<void> {
     if (!req.user?.isGuest) return next();
     try {
-      const remaining = await consumeGuestQuota(req.user.id, quota, max);
-      if (remaining === null) {
-        res.status(429).json({ error: message });
+      const result = await consumeGuestQuota(req.user.id, quota, max);
+      if (!result.allowed) {
+        // Retry-After (seconds) for correctness; retryAfterMinutes so the UI
+        // can render a countdown without re-parsing the Hebrew sentence.
+        res.set("Retry-After", String(result.resetInMinutes * 60));
+        res.status(429).json({
+          error: message(result.resetInMinutes),
+          retryAfterMinutes: result.resetInMinutes,
+        });
         return;
       }
-      req.guestRemaining = remaining;
+      req.guestRemaining = result.remaining;
       next();
     } catch (err) {
       console.error(`[guest-limits] ${quota} quota check failed:`, err);

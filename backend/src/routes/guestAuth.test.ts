@@ -8,7 +8,8 @@ import { app } from "../app";
 import { ClientModel } from "../models/Client";
 import { GuestUserModel } from "../models/GuestUser";
 import { GUEST_MESSAGES } from "../constants/messages";
-import { SYSTEM_USER_ID } from "../constants/guest";
+import { GUEST_LIMITS, SYSTEM_USER_ID } from "../constants/guest";
+import { consumeGuestQuota } from "../services/guestQuotaService";
 
 let mongod: MongoMemoryServer;
 
@@ -111,9 +112,11 @@ describe("user data isolation", () => {
 
 describe("guest caps", () => {
   it("allows 2 extra clients then 403s with the Hebrew cap message", async () => {
+    // Seed the template first so the guest gets a real clone: it carries
+    // isSample and must not count against the creation allowance.
+    await seedTemplate();
     const { body } = await request(app).post("/api/auth/guest");
     const guestAuth = { Authorization: `Bearer ${body.token}` };
-    await seedClient(body.username, "לקוח מדוגמה"); // stands in for the sample clone
 
     const payload = { name: "לקוח חדש", phone: "050-3333333" };
     expect((await request(app).post("/api/clients").set(guestAuth).send(payload)).status).toBe(201);
@@ -132,5 +135,45 @@ describe("guest caps", () => {
       .send({ message: "א".repeat(251) });
     expect(res.status).toBe(400);
     expect(res.body.error).toBe(GUEST_MESSAGES.promptTooLong);
+  });
+
+  it("tells the guest when the message quota renews", async () => {
+    const { body } = await request(app).post("/api/auth/guest");
+    for (let i = 0; i < GUEST_LIMITS.chatPerWindow; i++) {
+      await consumeGuestQuota(body.username, "chat", GUEST_LIMITS.chatPerWindow);
+    }
+    const res = await request(app)
+      .post("/api/chat")
+      .set({ Authorization: `Bearer ${body.token}` })
+      .send({ message: "שלום" });
+    expect(res.status).toBe(429);
+    // The window just opened, so the wait is the full window (24h).
+    const windowMinutes = GUEST_LIMITS.quotaWindowMs / 60_000;
+    expect(res.body.retryAfterMinutes).toBe(windowMinutes);
+    expect(res.headers["retry-after"]).toBe(String(windowMinutes * 60));
+    // Long waits read as hours, never as "1440 minutes".
+    expect(res.body.error).toContain("בעוד 24 שעות");
+  });
+
+  it("caps document re-extractions per window", async () => {
+    const { body } = await request(app).post("/api/auth/guest");
+    // Spend the quota directly: the cap must reject before the handler runs,
+    // so no real extraction (LLM/R2) is needed to prove it is wired up.
+    for (let i = 0; i < GUEST_LIMITS.reExtractsPerWindow; i++) {
+      const result = await consumeGuestQuota(
+        body.username,
+        "reExtract",
+        GUEST_LIMITS.reExtractsPerWindow
+      );
+      expect(result.allowed).toBe(true);
+    }
+    const res = await request(app)
+      .post(`/api/upload/${randomUUID()}/doc-1/re-extract`)
+      .set({ Authorization: `Bearer ${body.token}` });
+    expect(res.status).toBe(429);
+    // The window just opened, so the wait is the full window.
+    const windowMinutes = GUEST_LIMITS.quotaWindowMs / 60_000;
+    expect(res.body.retryAfterMinutes).toBe(windowMinutes);
+    expect(res.body.error).toBe(GUEST_MESSAGES.reExtractCapReached(windowMinutes));
   });
 });

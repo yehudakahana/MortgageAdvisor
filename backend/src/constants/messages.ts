@@ -1,6 +1,21 @@
 // Single source of truth for user-facing (Hebrew) API response messages.
 // LLM prompt text lives in services/llm/prompts.ts, not here.
 
+import { GUEST_LIMITS } from "./guest";
+
+// Humanised wait: "בעוד דקה" / "בעוד 43 דקות" / "בעוד שעתיים" / "בעוד 23 שעות".
+// Hebrew drops the numeral in the singular and has a dedicated dual form for
+// two. Quota windows are up to a day, so minutes alone would read as "בעוד
+// 1440 דקות".
+function inTime(minutes: number): string {
+  if (minutes <= 1) return "בעוד דקה";
+  if (minutes < 60) return `בעוד ${minutes} דקות`;
+  const hours = Math.max(1, Math.round(minutes / 60));
+  if (hours === 1) return "בעוד שעה";
+  if (hours === 2) return "בעוד שעתיים";
+  return `בעוד ${hours} שעות`;
+}
+
 export const AUTH_MESSAGES = {
   tooManyAttempts: "יותר מדי ניסיונות התחברות, נסו שוב מאוחר יותר",
   serverConfigError: "תקלה בהגדרות ההזדהות בשרת",
@@ -55,12 +70,22 @@ export const SETTINGS_MESSAGES = {
 
 export const GUEST_MESSAGES = {
   creationFailed: "יצירת חשבון אורח נכשלה, נסו שוב",
+  // Shown when a limit check itself fails (DB error) — not when a limit is hit.
+  limitCheckFailed: "בדיקת מגבלות מצב האורח נכשלה, נסו שוב",
   tooManyGuestAccounts: "נוצרו יותר מדי חשבונות אורח מכתובת זו, נסו שוב מחר",
   clientCapReached: "במצב אורח ניתן ליצור עד 2 לקוחות נוספים",
   uploadCapReached: "במצב אורח ניתן להעלות עד 5 קבצים",
   fileTooLarge: "במצב אורח גודל קובץ מוגבל ל-5MB",
-  chatCapReached: "הגעתם למגבלת 10 ההודעות לשעה במצב אורח, נסו שוב מאוחר יותר",
+  // Both quota caps tell the guest when the window renews, so "try again
+  // later" is never a dead end. No time unit is baked into the wording — the
+  // window length is a constant and the wait is formatted from it.
+  chatCapReached: (resetInMinutes: number) =>
+    `הגעתם למגבלת ${GUEST_LIMITS.chatPerWindow} ההודעות במצב אורח. ` +
+    `המגבלה מתחדשת ${inTime(resetInMinutes)}.`,
   promptTooLong: "במצב אורח אורך הודעה מוגבל ל-250 תווים",
+  reExtractCapReached: (resetInMinutes: number) =>
+    `הגעתם למגבלת ${GUEST_LIMITS.reExtractsPerWindow} ניתוחי המסמכים במצב אורח. ` +
+    `ניתן יהיה לנתח שוב ${inTime(resetInMinutes)}.`,
 };
 
 export const CHAT_MESSAGES = {

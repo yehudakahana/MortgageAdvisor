@@ -7,14 +7,15 @@ import { ClientModel } from "../models/Client";
 import { cleanupExpiredGuests } from "../services/guestCleanupService";
 import { GUEST_ID_PREFIX, GUEST_LIMITS, SYSTEM_USER_ID } from "../constants/guest";
 import { AUTH_MESSAGES, GUEST_MESSAGES } from "../constants/messages";
+import { GuestUser } from "../types";
 
 const router = Router();
 
-// IP-based cap on guest-account creation: prevents quota-bypass by minting
-// fresh guests and DB bloat. Per-IP is correct here (there is no user yet).
+// Burst guard only. The real policy cap is activeGuestsPerIp below, which is
+// enforced against MongoDB so it survives a redeploy.
 const guestCreationLimiter = rateLimit({
-  windowMs: 24 * 60 * 60 * 1000,
-  max: GUEST_LIMITS.creationsPerIpPerDay,
+  windowMs: 60 * 60 * 1000,
+  limit: GUEST_LIMITS.creationRequestsPerHour,
   standardHeaders: true,
   legacyHeaders: false,
   message: { error: GUEST_MESSAGES.tooManyGuestAccounts },
@@ -34,6 +35,7 @@ async function cloneSampleClient(guestId: string): Promise<void> {
   await ClientModel.create({
     id: randomUUID(),
     userId: guestId,
+    isSample: true,
     name: source.name,
     phone: source.phone,
     email: source.email,
@@ -43,8 +45,19 @@ async function cloneSampleClient(guestId: string): Promise<void> {
   });
 }
 
-// POST /api/auth/guest — public. Creates a 24h temporary guest account with
-// cloned sample data and returns a matching 24h JWT.
+// Signs a token that dies exactly when the guest record expires, so resuming
+// an account never extends its 24h life.
+function signGuestToken(guest: GuestUser, secret: string): string {
+  const secondsLeft = Math.floor((guest.expiresAt.getTime() - Date.now()) / 1000);
+  return jwt.sign({ username: guest.id, isGuest: true }, secret, { expiresIn: secondsLeft });
+}
+
+// POST /api/auth/guest — public. Returns a token for the caller's guest
+// account, creating one only if they don't already have a live one.
+//
+// `deviceId` is a stable per-browser id kept in localStorage. Presenting it
+// resumes the existing account: same data, same remaining TTL, and same usage
+// counters — so signing out and re-entering cannot reset the message quota.
 router.post("/", guestCreationLimiter, async (req, res) => {
   const secret = process.env.JWT_SECRET;
   if (!secret) {
@@ -52,25 +65,56 @@ router.post("/", guestCreationLimiter, async (req, res) => {
     return res.status(500).json({ error: AUTH_MESSAGES.serverConfigError });
   }
 
-  // Opportunistic GC (no cron on Railway) — never blocks guest creation.
-  try {
-    await cleanupExpiredGuests();
-  } catch (err) {
-    console.error("[guest-auth] cleanup failed:", err);
-  }
+  const { deviceId } = (req.body ?? {}) as Record<string, unknown>;
+  // undefined (not null) so it matches the optional `deviceId` on GuestUser.
+  const device = typeof deviceId === "string" && deviceId ? deviceId.slice(0, 100) : undefined;
+  const ip = req.ip ?? "unknown";
+
+  // Opportunistic GC (no cron on Railway). Fire-and-forget and batched, so a
+  // backlog of expired guests never delays the caller.
+  void cleanupExpiredGuests().catch((err) =>
+    console.error("[guest-auth] cleanup failed:", err)
+  );
 
   try {
-    const guestId = `${GUEST_ID_PREFIX}${randomUUID()}`;
-    await GuestUserModel.create({
-      id: guestId,
+    if (device) {
+      const existing = await GuestUserModel.findOne({
+        deviceId: device,
+        expiresAt: { $gt: new Date() },
+      });
+      if (existing) {
+        console.log(`[guest-auth] resumed guest ${existing.id} for known device`);
+        return res.json({
+          token: signGuestToken(existing, secret),
+          username: existing.id,
+          isGuest: true,
+        });
+      }
+    }
+
+    // No live account for this browser: a fresh one counts against the IP cap,
+    // which is what stops someone clearing localStorage to mint new quotas.
+    const activeForIp = await GuestUserModel.countDocuments({
+      ip,
+      expiresAt: { $gt: new Date() },
+    });
+    if (activeForIp >= GUEST_LIMITS.activeGuestsPerIp) {
+      return res.status(429).json({ error: GUEST_MESSAGES.tooManyGuestAccounts });
+    }
+
+    const guest = await GuestUserModel.create({
+      id: `${GUEST_ID_PREFIX}${randomUUID()}`,
+      deviceId: device,
+      ip,
       expiresAt: new Date(Date.now() + GUEST_LIMITS.ttlMs),
     });
-    await cloneSampleClient(guestId);
+    await cloneSampleClient(guest.id);
 
-    const token = jwt.sign({ username: guestId, isGuest: true }, secret, {
-      expiresIn: "24h",
+    return res.json({
+      token: signGuestToken(guest, secret),
+      username: guest.id,
+      isGuest: true,
     });
-    return res.json({ token, username: guestId, isGuest: true });
   } catch (err) {
     console.error("[guest-auth] guest creation failed:", err);
     return res.status(500).json({ error: GUEST_MESSAGES.creationFailed });

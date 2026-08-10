@@ -2,7 +2,7 @@ import { Router, Request, Response } from "express";
 import { ClientModel } from "../models/Client";
 import { routeToLLM } from "../services/llm/router";
 import { buildClientData, loadAdvisorRules } from "../services/chatContext";
-import { guestChatLimiter, guestPromptCap } from "../middleware/guestLimits";
+import { guestChatCap, guestPromptCap } from "../middleware/guestLimits";
 import { GUEST_LIMITS } from "../constants/guest";
 import { ChatMessage, Client } from "../types";
 import { isNonEmptyString, isOptionalString } from "../validation/validators";
@@ -21,9 +21,10 @@ function isChatMessage(value: unknown): value is ChatMessage {
   return (m.role === "user" || m.role === "assistant") && typeof m.content === "string";
 }
 
-// guestChatLimiter (10/hour per guest id) and guestPromptCap (250 chars) are
-// no-ops for regular users.
-router.post("/", guestChatLimiter, guestPromptCap, async (req: Request, res: Response) => {
+// guestPromptCap (250 chars) runs first so an over-long prompt is rejected
+// without spending one of the guest's 10 hourly messages. Both are no-ops for
+// regular users.
+router.post("/", guestPromptCap, guestChatCap, async (req: Request, res: Response) => {
   const { clientId, message, chatHistory } = (req.body ?? {}) as Record<string, unknown>;
 
   if (!isNonEmptyString(message)) return res.status(400).json({ error: CHAT_MESSAGES.missingMessage });
@@ -66,13 +67,13 @@ router.post("/", guestChatLimiter, guestPromptCap, async (req: Request, res: Res
     });
 
     // `llm` tells the client which model actually answered (fallbacks included).
-    // Guests also get their remaining hourly quota (set by guestChatLimiter) —
+    // Guests also get their remaining hourly quota (set by guestChatCap) —
     // the frontend badge's single source of truth.
     res.json({
       role: "assistant",
       content,
       llm: { provider, model, usedFallback },
-      ...(req.user?.isGuest ? { remainingMessages: req.rateLimit?.remaining ?? 0 } : {}),
+      ...(req.user?.isGuest ? { remainingMessages: req.guestRemaining ?? 0 } : {}),
     });
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);

@@ -34,6 +34,9 @@ const ClientSchema = new Schema<Client>(
     userId: { type: String, required: true, index: true },
     // Present (true) only on the system-owned demo template client.
     isTemplate: { type: Boolean },
+    // Present (true) on a guest's clone of that template — excluded from the
+    // guest's client-creation quota.
+    isSample: { type: Boolean },
     name: { type: String, required: true },
     phone: { type: String, required: true },
     email: { type: String, default: "" },

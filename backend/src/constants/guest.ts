@@ -14,8 +14,22 @@ export const GUEST_LIMITS = {
   extraClients: 2, // clients a guest may create beyond the sample clone
   uploads: 5, // total file uploads per guest
   fileSizeBytes: 5 * 1024 * 1024,
-  chatPerHour: 10,
+  chatPerWindow: 20,
+  reExtractsPerWindow: 3, // re-extraction is an LLM call too, so it needs a cap
+  // Rolling window shared by both quotas above. It matches `ttlMs`, so in
+  // practice these are per-account lifetime caps: the window can only roll
+  // over after the account itself has expired.
+  quotaWindowMs: 24 * 60 * 60 * 1000,
   promptChars: 250,
   maxTokens: 400, // forced LLM output cap for guest chats
-  creationsPerIpPerDay: 5,
+  // Distinct guest accounts one IP may hold at once. Accounts live `ttlMs`, so
+  // this is also the per-IP ceiling on fresh quotas per day.
+  activeGuestsPerIp: 3,
+  // Burst guard on the public endpoint itself: re-entering guest mode is cheap
+  // (it resumes an account), but a script hammering the route is not.
+  creationRequestsPerHour: 30,
 };
+
+// The cleanup sweep runs inside a public request, so it must never grow with
+// the backlog — it deletes at most this many expired guests per call.
+export const GUEST_CLEANUP_BATCH = 20;

@@ -59,3 +59,14 @@ export async function consumeGuestQuota(
   await GuestUserModel.updateOne({ id: guestId }, { $inc: { [`usage.${quota}.count`]: 1 } });
   return { allowed: true, remaining: max - (current.count + 1) };
 }
+
+// Gives a spent unit back, for work that was charged up front and then failed
+// (an LLM outage, say). Guests get a small lifetime budget, so they must not
+// pay for our failures. The `$gt: 0` filter keeps the counter from going
+// negative if this is ever called twice for one request.
+export async function refundGuestQuota(guestId: string, quota: GuestQuotaName): Promise<void> {
+  await GuestUserModel.updateOne(
+    { id: guestId, [`usage.${quota}.count`]: { $gt: 0 } },
+    { $inc: { [`usage.${quota}.count`]: -1 } }
+  );
+}

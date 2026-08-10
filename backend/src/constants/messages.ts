@@ -3,19 +3,6 @@
 
 import { GUEST_LIMITS } from "./guest";
 
-// Humanised wait: "בעוד דקה" / "בעוד 43 דקות" / "בעוד שעתיים" / "בעוד 23 שעות".
-// Hebrew drops the numeral in the singular and has a dedicated dual form for
-// two. Quota windows are up to a day, so minutes alone would read as "בעוד
-// 1440 דקות".
-function inTime(minutes: number): string {
-  if (minutes <= 1) return "בעוד דקה";
-  if (minutes < 60) return `בעוד ${minutes} דקות`;
-  const hours = Math.max(1, Math.round(minutes / 60));
-  if (hours === 1) return "בעוד שעה";
-  if (hours === 2) return "בעוד שעתיים";
-  return `בעוד ${hours} שעות`;
-}
-
 export const AUTH_MESSAGES = {
   tooManyAttempts: "יותר מדי ניסיונות התחברות, נסו שוב מאוחר יותר",
   serverConfigError: "תקלה בהגדרות ההזדהות בשרת",
@@ -76,16 +63,16 @@ export const GUEST_MESSAGES = {
   clientCapReached: "במצב אורח ניתן ליצור עד 2 לקוחות נוספים",
   uploadCapReached: "במצב אורח ניתן להעלות עד 5 קבצים",
   fileTooLarge: "במצב אורח גודל קובץ מוגבל ל-5MB",
-  // Both quota caps tell the guest when the window renews, so "try again
-  // later" is never a dead end. No time unit is baked into the wording — the
-  // window length is a constant and the wait is formatted from it.
-  chatCapReached: (resetInMinutes: number) =>
-    `הגעתם למגבלת ${GUEST_LIMITS.chatPerWindow} ההודעות במצב אורח. ` +
-    `המגבלה מתחדשת ${inTime(resetInMinutes)}.`,
+  // The quota window matches the account TTL, so these are the demo's totals,
+  // not a countdown: a guest who exhausts them has no renewal to wait for —
+  // the account expires first. The exact wait still goes out as Retry-After.
+  chatCapReached:
+    `הגעתם למגבלת ${GUEST_LIMITS.chatPerWindow} ההודעות של ההדגמה. ` +
+    `להמשך שימוש ללא הגבלה יש להתחבר עם חשבון.`,
   promptTooLong: "במצב אורח אורך הודעה מוגבל ל-250 תווים",
-  reExtractCapReached: (resetInMinutes: number) =>
-    `הגעתם למגבלת ${GUEST_LIMITS.reExtractsPerWindow} ניתוחי המסמכים במצב אורח. ` +
-    `ניתן יהיה לנתח שוב ${inTime(resetInMinutes)}.`,
+  reExtractCapReached:
+    `הגעתם למגבלת ${GUEST_LIMITS.reExtractsPerWindow} ניתוחי המסמכים של ההדגמה. ` +
+    `להמשך שימוש ללא הגבלה יש להתחבר עם חשבון.`,
 };
 
 export const CHAT_MESSAGES = {

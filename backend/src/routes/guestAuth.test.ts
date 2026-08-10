@@ -9,7 +9,7 @@ import { ClientModel } from "../models/Client";
 import { GuestUserModel } from "../models/GuestUser";
 import { GUEST_MESSAGES } from "../constants/messages";
 import { GUEST_LIMITS, SYSTEM_USER_ID } from "../constants/guest";
-import { consumeGuestQuota } from "../services/guestQuotaService";
+import { consumeGuestQuota, refundGuestQuota } from "../services/guestQuotaService";
 
 let mongod: MongoMemoryServer;
 
@@ -61,6 +61,13 @@ describe("POST /api/auth/guest", () => {
     expect(list.body[0].name).toBe("ישראל ישראלי (דוגמה)");
     expect(list.body[0].isTemplate).toBeUndefined();
     expect(list.body[0].documents[0].key).toBe("samples/sample.pdf");
+  });
+
+  it("resumes the same account for a known device instead of minting a new one", async () => {
+    const first = await request(app).post("/api/auth/guest").send({ deviceId: "device-abc" });
+    const second = await request(app).post("/api/auth/guest").send({ deviceId: "device-abc" });
+    expect(second.body.username).toBe(first.body.username);
+    expect(await GuestUserModel.countDocuments({})).toBe(1);
   });
 
   it("rejects a valid guest JWT after the guest record is cleaned up", async () => {
@@ -137,7 +144,7 @@ describe("guest caps", () => {
     expect(res.body.error).toBe(GUEST_MESSAGES.promptTooLong);
   });
 
-  it("tells the guest when the message quota renews", async () => {
+  it("blocks chat once the message quota is spent, with Retry-After", async () => {
     const { body } = await request(app).post("/api/auth/guest");
     for (let i = 0; i < GUEST_LIMITS.chatPerWindow; i++) {
       await consumeGuestQuota(body.username, "chat", GUEST_LIMITS.chatPerWindow);
@@ -147,12 +154,29 @@ describe("guest caps", () => {
       .set({ Authorization: `Bearer ${body.token}` })
       .send({ message: "שלום" });
     expect(res.status).toBe(429);
-    // The window just opened, so the wait is the full window (24h).
-    const windowMinutes = GUEST_LIMITS.quotaWindowMs / 60_000;
-    expect(res.body.retryAfterMinutes).toBe(windowMinutes);
-    expect(res.headers["retry-after"]).toBe(String(windowMinutes * 60));
-    // Long waits read as hours, never as "1440 minutes".
-    expect(res.body.error).toContain("בעוד 24 שעות");
+    expect(res.body.error).toBe(GUEST_MESSAGES.chatCapReached);
+    // The window just opened, so the wait is the full window.
+    expect(res.headers["retry-after"]).toBe(String(GUEST_LIMITS.quotaWindowMs / 1000));
+  });
+
+  it("refunds a spent message so a failed reply costs the guest nothing", async () => {
+    const { body } = await request(app).post("/api/auth/guest");
+    const spend = () =>
+      consumeGuestQuota(body.username, "chat", GUEST_LIMITS.chatPerWindow);
+
+    const first = await spend();
+    expect(first).toEqual({ allowed: true, remaining: GUEST_LIMITS.chatPerWindow - 1 });
+
+    await refundGuestQuota(body.username, "chat");
+    const afterRefund = await spend();
+    expect(afterRefund).toEqual({ allowed: true, remaining: GUEST_LIMITS.chatPerWindow - 1 });
+  });
+
+  it("never refunds below zero", async () => {
+    const { body } = await request(app).post("/api/auth/guest");
+    await refundGuestQuota(body.username, "chat");
+    const result = await consumeGuestQuota(body.username, "chat", GUEST_LIMITS.chatPerWindow);
+    expect(result).toEqual({ allowed: true, remaining: GUEST_LIMITS.chatPerWindow - 1 });
   });
 
   it("caps document re-extractions per window", async () => {
@@ -171,9 +195,6 @@ describe("guest caps", () => {
       .post(`/api/upload/${randomUUID()}/doc-1/re-extract`)
       .set({ Authorization: `Bearer ${body.token}` });
     expect(res.status).toBe(429);
-    // The window just opened, so the wait is the full window.
-    const windowMinutes = GUEST_LIMITS.quotaWindowMs / 60_000;
-    expect(res.body.retryAfterMinutes).toBe(windowMinutes);
-    expect(res.body.error).toBe(GUEST_MESSAGES.reExtractCapReached(windowMinutes));
+    expect(res.body.error).toBe(GUEST_MESSAGES.reExtractCapReached);
   });
 });

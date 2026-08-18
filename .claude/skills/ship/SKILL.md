@@ -68,6 +68,10 @@ subject ≤72 chars, correct type + scope, never stage `.env`, `node_modules/`,
 
 ## Phase 6 — PR
 
+  - If `gh` is not installed (`gh not found`), skip the API calls: print the
+    compare URL `https://github.com/yehudakahana/MortageAdvisor/compare/<branch>?expand=1`
+    and the full PR body in the report so it can be pasted into the browser.
+    Report the PR as "not created" — do not treat this as a failure of the branch.
   - If a PR already exists for this branch (`gh pr view --json number,url`), do not
     create a new one — update its body instead with `gh pr edit --body`.
   - Otherwise `gh pr create --base main`.

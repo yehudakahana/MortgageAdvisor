@@ -30,8 +30,13 @@ app.use(express.json());
 // Public routes (no token required).
 app.use("/api/login", authRouter);
 app.use("/api/auth/guest", guestAuthRouter);
+// Railway injects RAILWAY_GIT_COMMIT_SHA at build time, so the deployed commit
+// is reported here — this is how we tell a stale deploy from a real bug.
+const COMMIT_SHA = (process.env.RAILWAY_GIT_COMMIT_SHA ?? "unknown").slice(0, 7);
+const STARTED_AT = new Date().toISOString();
+
 app.get("/api/health", (_req, res) => {
-  res.json({ status: "ok" });
+  res.json({ status: "ok", commit: COMMIT_SHA, startedAt: STARTED_AT });
 });
 
 // Everything below this line requires a valid JWT.

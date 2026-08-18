@@ -70,4 +70,13 @@ See [`.claude/skills/`](./skills/) for all skills.
 
 | Folder | Trigger | Description |
 |--------|---------|-------------|
+| [`ship/`](./skills/ship/SKILL.md) | `ship`, `ready for pr`, `fix all and commit` | Full chain: review → fix all → tsc+tests → commit → push → PR |
 | [`cr/`](./skills/cr/SKILL.md) | `cr`, `code review`, `review PR/commit` | Code review on commits or PRs |
+| [`deployed/`](./skills/deployed/SKILL.md) | `is it deployed`, `why didn't railway deploy` | Compares live Railway/Cloudflare builds against `origin/main` |
+
+## Hooks
+See [`.claude/settings.json`](./settings.json).
+
+| Hook | Event | Description |
+|------|-------|-------------|
+| [`hebrew-literal-guard.js`](./hooks/hebrew-literal-guard.js) | `PostToolUse` on `Write`/`Edit` | Warns when Hebrew UI text is hardcoded outside `client/src/lib/strings.ts` / `backend/src/constants/messages.ts` (rule 6) |

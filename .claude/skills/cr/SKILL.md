@@ -51,7 +51,7 @@ Once you have the diff, perform the following checks:
 
 ### 1. CLAUDE.md Compliance
 - Read `CLAUDE.md` (already in context).
-- Flag any violations: custom CSS outside `index.css`, direct `fs` usage in routes instead of `dbService.ts`, hardcoded API keys, UI text not in Hebrew, code identifiers not in English, missing Tailwind/shadcn usage where UI was changed.
+- Flag any violations: custom CSS outside `index.css`, direct `fs` usage in routes instead of the Mongoose models in `backend/src/models/`, hardcoded API keys, UI text not in Hebrew, code identifiers not in English, missing Tailwind/shadcn usage where UI was changed.
 
 ### 2. Bug Hunt
 - Scan for obvious bugs: null/undefined access, wrong async handling, missing error handling at system boundaries (user input, external APIs), type mismatches.

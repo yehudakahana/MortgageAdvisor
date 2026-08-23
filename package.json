@@ -12,6 +12,8 @@
     "test:watch:be": "npm --prefix backend run test:watch",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "eval": "npm --prefix backend run eval --",
+    "audit:secrets": "node scripts/audit-secrets.js",
     "test:offline": "playwright test --config playwright.offline.config.ts"
   },
   "devDependencies": {

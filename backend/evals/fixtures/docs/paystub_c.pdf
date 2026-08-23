@@ -1,0 +1,40 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 500 >>
+stream
+BT /F1 12 Tf 60 760 Td (PAYSLIP - DEMO DATA ONLY) Tj ET
+BT /F1 12 Tf 60 738 Td (Employee: Yosef Mizrahi) Tj ET
+BT /F1 12 Tf 60 716 Td (Employer: Demo Logistics) Tj ET
+BT /F1 12 Tf 60 694 Td (Period: 04/2026) Tj ET
+BT /F1 12 Tf 60 672 Td (Payment Date: 10/05/2026) Tj ET
+BT /F1 12 Tf 60 650 Td (Hourly Rate: 62 ILS) Tj ET
+BT /F1 12 Tf 60 628 Td (Hours Worked: 173) Tj ET
+BT /F1 12 Tf 60 606 Td (Gross Salary: 10,726 ILS) Tj ET
+BT /F1 12 Tf 60 584 Td (Note: net salary is illegible on this copy.) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000792 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+862
+%%EOF

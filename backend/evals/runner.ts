@@ -72,19 +72,28 @@ async function main(): Promise<void> {
     ].join("\n")
   );
 
+  // Progress lines end with the Hebrew question / filename and pad nothing after
+  // it — RTL text inside a padded column scrambles alignment in most terminals.
   const extraction: ExtractionCaseResult[] = [];
-  for (const c of extractionCases) {
-    process.stdout.write(`  extraction ${c.id} ... `);
+  if (extractionCases.length) console.log(`\nEXTRACTION — ${extractionCases.length} documents`);
+  for (const [i, c] of extractionCases.entries()) {
+    process.stdout.write(`  ${String(i + 1).padStart(2)}/${extractionCases.length}  ${c.id}  `);
     const result = await runExtractionCase(c, DOCS_DIR, repeats);
-    console.log(result.error ? `ERROR (${result.error})` : "done");
+    const total = c.fields.length;
+    const hits = Object.values(result.fields).filter((f) => f.outcome === "hit").length;
+    const verdict = result.error ? "ERROR" : `${hits}/${total} fields`;
+    console.log(`${verdict.padEnd(14)}  ${c.doc}${result.error ? ` — ${result.error}` : ""}`);
     extraction.push(result);
   }
 
   const chat: ChatCaseResult[] = [];
-  for (const c of chatCases) {
-    process.stdout.write(`  chat ${c.id} ... `);
+  if (chatCases.length) console.log(`\nCHAT — ${chatCases.length} cases`);
+  for (const [i, c] of chatCases.entries()) {
+    process.stdout.write(`  ${String(i + 1).padStart(2)}/${chatCases.length}  ${c.id}  `);
     const result = await runChatCase(c, repeats);
-    console.log(`${result.outcome}${result.inconsistent ? " (inconsistent)" : ""}`);
+    const verdict = result.outcome === "pass" ? "pass" : result.outcome.toUpperCase();
+    const shaky = result.inconsistent ? " (unstable)" : "";
+    console.log(`${(verdict + shaky).padEnd(14)}  ${c.category.padEnd(12)}  ${c.input.split("\n")[0]}`);
     chat.push(result);
   }
 

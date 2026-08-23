@@ -1,0 +1,45 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 756 >>
+stream
+BT /F1 12 Tf 60 760 Td (MORTGAGE OFFER - DEMO DATA ONLY) Tj ET
+BT /F1 12 Tf 60 738 Td (Bank: Demo Bank Ltd.) Tj ET
+BT /F1 12 Tf 60 716 Td (Borrower: Israel Israeli) Tj ET
+BT /F1 12 Tf 60 694 Td (Offer Date: 15/06/2026) Tj ET
+BT /F1 12 Tf 60 672 Td (Valid Until: 15/07/2026) Tj ET
+BT /F1 12 Tf 60 650 Td (Total Loan Amount: 850,000 ILS) Tj ET
+BT /F1 12 Tf 60 628 Td (Track 1: Prime) Tj ET
+BT /F1 12 Tf 60 606 Td (  Amount: 400,000 ILS) Tj ET
+BT /F1 12 Tf 60 584 Td (  Interest Rate: 5.25%) Tj ET
+BT /F1 12 Tf 60 562 Td (  Term: 240 months) Tj ET
+BT /F1 12 Tf 60 540 Td (Track 2: Fixed Unlinked) Tj ET
+BT /F1 12 Tf 60 518 Td (  Amount: 450,000 ILS) Tj ET
+BT /F1 12 Tf 60 496 Td (  Interest Rate: 4.90%) Tj ET
+BT /F1 12 Tf 60 474 Td (  Term: 300 months) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000001048 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1118
+%%EOF

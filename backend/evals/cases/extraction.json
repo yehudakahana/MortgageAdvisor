@@ -1,0 +1,134 @@
+[
+  {
+    "id": "ext-01",
+    "category": "extraction",
+    "doc": "mortgage_offer_a.pdf",
+    "mimeType": "application/pdf",
+    "note": "Full mortgage offer with two tracks - the densest document in the suite.",
+    "fields": [
+      { "field": "name", "type": "string", "expected": "Israel Israeli", "aliases": ["borrowerName", "borrower", "clientName", "fullName"] },
+      { "field": "amount", "type": "number", "expected": 850000, "aliases": ["totalLoanAmount", "loanAmount", "totalAmount", "total"] },
+      { "field": "interestRate", "type": "number", "expected": 5.25, "aliases": ["rate", "interest", "annualInterestRate"] },
+      { "field": "trackType", "type": "string", "expected": "Prime", "aliases": ["track", "trackName", "loanTrack", "type"] },
+      { "field": "date", "type": "date", "expected": "15/06/2026", "aliases": ["offerDate", "issueDate", "documentDate"] }
+    ]
+  },
+  {
+    "id": "ext-02",
+    "category": "extraction",
+    "doc": "mortgage_offer_b.pdf",
+    "mimeType": "application/pdf",
+    "note": "Offer with NO expiry date stated. absentField is the do-not-guess check: inventing a date is the failure.",
+    "fields": [
+      { "field": "name", "type": "string", "expected": "Miriam Cohen", "aliases": ["borrowerName", "borrower", "clientName", "fullName"] },
+      { "field": "amount", "type": "number", "expected": 1240000, "aliases": ["totalLoanAmount", "loanAmount", "totalAmount", "total"] },
+      { "field": "interestRate", "type": "number", "expected": 3.75, "aliases": ["rate", "interest", "annualInterestRate"] },
+      { "field": "trackType", "type": "string", "expected": "Variable", "aliases": ["track", "trackName", "loanTrack", "type"] },
+      { "field": "date", "type": "date", "expected": "02/03/2026", "aliases": ["offerDate", "issueDate", "documentDate"] },
+      { "field": "absentField", "type": "null", "expected": null, "aliases": ["expiryDate", "validUntil", "expirationDate", "validity"] }
+    ]
+  },
+  {
+    "id": "ext-03",
+    "category": "extraction",
+    "doc": "mortgage_offer_c.pdf",
+    "mimeType": "application/pdf",
+    "note": "Single-track offer - checks the model does not force a multi-track shape onto it.",
+    "fields": [
+      { "field": "name", "type": "string", "expected": "Daniel Peretz", "aliases": ["borrowerName", "borrower", "clientName", "fullName"] },
+      { "field": "amount", "type": "number", "expected": 620000, "aliases": ["totalLoanAmount", "loanAmount", "totalAmount", "total"] },
+      { "field": "interestRate", "type": "number", "expected": 5.6, "aliases": ["rate", "interest", "annualInterestRate"] },
+      { "field": "trackType", "type": "string", "expected": "Prime", "aliases": ["track", "trackName", "loanTrack", "type"] },
+      { "field": "date", "type": "date", "expected": "21/01/2026", "aliases": ["offerDate", "issueDate", "documentDate"] }
+    ]
+  },
+  {
+    "id": "ext-04",
+    "category": "extraction",
+    "doc": "paystub_a.pdf",
+    "mimeType": "application/pdf",
+    "note": "Payslip with both gross and net present - amount must resolve to net, not gross.",
+    "fields": [
+      { "field": "name", "type": "string", "expected": "Israel Israeli", "aliases": ["employeeName", "employee", "fullName"] },
+      { "field": "amount", "type": "number", "expected": 12450, "aliases": ["netSalary", "net", "netPay", "salaryNet"] },
+      { "field": "date", "type": "date", "expected": "09/07/2026", "aliases": ["paymentDate", "payDate", "issueDate"] }
+    ]
+  },
+  {
+    "id": "ext-05",
+    "category": "extraction",
+    "doc": "paystub_b.pdf",
+    "mimeType": "application/pdf",
+    "note": "Payslip with no seniority line. absentField guards against filling it in from context.",
+    "fields": [
+      { "field": "name", "type": "string", "expected": "Noa Levi", "aliases": ["employeeName", "employee", "fullName"] },
+      { "field": "amount", "type": "number", "expected": 7640, "aliases": ["netSalary", "net", "netPay", "salaryNet"] },
+      { "field": "date", "type": "date", "expected": "08/06/2026", "aliases": ["paymentDate", "payDate", "issueDate"] },
+      { "field": "absentField", "type": "null", "expected": null, "aliases": ["seniority", "seniorityYears", "yearsOfService"] }
+    ]
+  },
+  {
+    "id": "ext-06",
+    "category": "extraction",
+    "doc": "paystub_c.pdf",
+    "mimeType": "application/pdf",
+    "note": "Net salary is explicitly illegible while hourly rate and hours are present - computing net from them is exactly the failure this case catches.",
+    "fields": [
+      { "field": "name", "type": "string", "expected": "Yosef Mizrahi", "aliases": ["employeeName", "employee", "fullName"] },
+      { "field": "amount", "type": "number", "expected": 10726, "aliases": ["grossSalary", "gross", "salaryGross"] },
+      { "field": "date", "type": "date", "expected": "10/05/2026", "aliases": ["paymentDate", "payDate", "issueDate"] },
+      { "field": "absentField", "type": "null", "expected": null, "aliases": ["netSalary", "net", "netPay", "salaryNet"] }
+    ]
+  },
+  {
+    "id": "ext-07",
+    "category": "extraction",
+    "doc": "bank_statement_a.pdf",
+    "mimeType": "application/pdf",
+    "note": "Bank statement - different document class, same canonical field names.",
+    "fields": [
+      { "field": "name", "type": "string", "expected": "Noa Levi", "aliases": ["accountHolder", "holder", "customerName", "fullName"] },
+      { "field": "amount", "type": "number", "expected": 23800, "aliases": ["averageBalance", "balance", "avgBalance"] },
+      { "field": "date", "type": "date", "expected": "01/06/2026", "aliases": ["statementDate", "issueDate", "documentDate"] }
+    ]
+  },
+  {
+    "id": "ext-08",
+    "category": "extraction",
+    "doc": "bank_statement_b.pdf",
+    "mimeType": "application/pdf",
+    "note": "Statement with overdraft days - a small integer that is easy to confuse with the balance.",
+    "fields": [
+      { "field": "name", "type": "string", "expected": "Daniel Peretz", "aliases": ["accountHolder", "holder", "customerName", "fullName"] },
+      { "field": "amount", "type": "number", "expected": 4150, "aliases": ["averageBalance", "balance", "avgBalance"] },
+      { "field": "date", "type": "date", "expected": "02/04/2026", "aliases": ["statementDate", "issueDate", "documentDate"] }
+    ]
+  },
+  {
+    "id": "ext-09",
+    "category": "extraction",
+    "doc": "amortization_a.pdf",
+    "mimeType": "application/pdf",
+    "note": "HOLDOUT. Amortization schedule - track type and rate appear without an offer wrapper.",
+    "holdout": true,
+    "fields": [
+      { "field": "name", "type": "string", "expected": "Miriam Cohen", "aliases": ["borrowerName", "borrower", "clientName", "fullName"] },
+      { "field": "amount", "type": "number", "expected": 640000, "aliases": ["loanAmount", "principal", "totalAmount"] },
+      { "field": "interestRate", "type": "number", "expected": 3.75, "aliases": ["rate", "interest", "annualInterestRate"] },
+      { "field": "trackType", "type": "string", "expected": "Variable", "aliases": ["track", "trackName", "loanTrack", "type"] },
+      { "field": "date", "type": "date", "expected": "01/04/2026", "aliases": ["firstPaymentDate", "startDate", "paymentDate"] }
+    ]
+  },
+  {
+    "id": "ext-10",
+    "category": "extraction",
+    "doc": "id_card_a.pdf",
+    "mimeType": "application/pdf",
+    "note": "HOLDOUT. Identity document - name and date only, no financial fields to anchor on.",
+    "holdout": true,
+    "fields": [
+      { "field": "name", "type": "string", "expected": "Israel Israeli", "aliases": ["fullName", "holderName", "personName"] },
+      { "field": "date", "type": "date", "expected": "14/02/1988", "aliases": ["dateOfBirth", "birthDate", "dob"] }
+    ]
+  }
+]

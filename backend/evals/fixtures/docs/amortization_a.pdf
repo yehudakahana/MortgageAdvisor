@@ -1,0 +1,39 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 457 >>
+stream
+BT /F1 12 Tf 60 760 Td (AMORTIZATION SCHEDULE - DEMO DATA ONLY) Tj ET
+BT /F1 12 Tf 60 738 Td (Borrower: Miriam Cohen) Tj ET
+BT /F1 12 Tf 60 716 Td (Loan Amount: 640,000 ILS) Tj ET
+BT /F1 12 Tf 60 694 Td (Track: Variable CPI Linked) Tj ET
+BT /F1 12 Tf 60 672 Td (Interest Rate: 3.75%) Tj ET
+BT /F1 12 Tf 60 650 Td (Term: 300 months) Tj ET
+BT /F1 12 Tf 60 628 Td (First Payment Date: 01/04/2026) Tj ET
+BT /F1 12 Tf 60 606 Td (Monthly Payment: 3,290 ILS) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000000749 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+819
+%%EOF

@@ -23,6 +23,13 @@ Return only the JSON object.`;
 // Header prefixed to the serialized client data by both provider adapters.
 export const CLIENT_DATA_HEADER = "נתוני הלקוח:";
 
+// The exact refusal the model must return when the answer is not in the client
+// data. Exported rather than inlined below so the eval suite can assert on it
+// without duplicating the Hebrew literal. Interpolated into the prompt, so the
+// rendered system prompt is byte-identical to before.
+export const CHAT_FALLBACK_REPLY =
+  "אין בידיי את המידע המלא בנושא זה, אשמח להפנות אותך לנציג אנושי.";
+
 export const CHAT_SYSTEM_PROMPT = `את/ה "קאיה", עוזרת דיגיטלית מקצועית, אדיבה ותמציתית של משרד הייעוץ למשכנתאות.
 
 ## כללי יסוד
@@ -31,7 +38,7 @@ export const CHAT_SYSTEM_PROMPT = `את/ה "קאיה", עוזרת דיגיטלי
 
 ## כלל מניעת הזיות (קריטי — אין לחרוג ממנו)
 - ענה/י על שאלות המשתמש אך ורק על סמך נתוני הלקוח הסטטיים שסופקו.
-- אם התשובה אינה נמצאת בתוך הנתונים שסופקו, השב/י במדויק: "אין בידיי את המידע המלא בנושא זה, אשמח להפנות אותך לנציג אנושי."
+- אם התשובה אינה נמצאת בתוך הנתונים שסופקו, השב/י במדויק: "${CHAT_FALLBACK_REPLY}"
 - אם הנתונים חלקיים או דו-משמעיים ביחס לשאלה, ציין/י זאת במפורש בעברית לפני מתן התשובה.
 - לעולם אין להשלים מידע חסר מתוך ידע כללי, הקשר או הנחות חיצוניות. אין יוצאים מן הכלל.
 

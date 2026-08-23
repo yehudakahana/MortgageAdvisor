@@ -4,11 +4,24 @@ Measures the LLM parts of kay.ai against a hand-labeled ground truth. Makes
 **real API calls** — it is not part of `npm test`, and `npm test` still blocks
 all outbound network traffic.
 
+## Setup
+
+Two API keys and nothing else — no database, no R2 credentials, no login. Put
+them in `backend/.env` (already gitignored):
+
+```
+ANTHROPIC_API_KEY=sk-ant-...
+GEMINI_API_KEY=...
+```
+
+Then `npm install --prefix backend` once, and run from the repo root. A full run
+makes ~100 API calls and costs roughly $0.50 — start with the smoke run.
+
 ```bash
-npm run eval                          # default run (holdout excluded)
+npm run eval -- --repeats=1 --limit=3 # cheap smoke run — start here
+npm run eval                          # full run (holdout excluded)
 npm run eval -- --only=extraction     # one suite
 npm run eval -- --category=unanswerable
-npm run eval -- --repeats=1 --limit=3 # cheap smoke run
 npm run eval -- --holdout             # ONLY the held-out cases
 ```
 

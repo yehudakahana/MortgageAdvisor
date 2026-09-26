@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { GuestUserModel } from "../models/GuestUser";
 import { AUTH_MESSAGES } from "../constants/messages";
+import { getJwtSecret } from "../config/auth";
 
 // Shape of the data exposed on req.user. `id` is the tenant key every data
 // query scopes by (ALLOWED_USERS username, or guest_<uuid> for guests);
@@ -46,9 +47,13 @@ export async function authenticateToken(
   res: Response,
   next: NextFunction
 ): Promise<void> {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    console.error("[CONFIG ERROR] JWT_SECRET is not set; cannot verify tokens.");
+  // A missing or weak signing secret is a config error: fail closed (500),
+  // never accept a token we could not have securely signed.
+  let secret: string;
+  try {
+    secret = getJwtSecret();
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : err);
     res.status(500).json({ error: AUTH_MESSAGES.serverConfigError });
     return;
   }

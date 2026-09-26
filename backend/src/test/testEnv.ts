@@ -1,7 +1,9 @@
 // Dummy credentials so module-level SDK clients (Anthropic, Gemini, R2) and the
 // auth routes construct without real secrets. Imported first by both the unit
 // setup and the E2E server; a local .env is never loaded in tests.
-process.env.JWT_SECRET = "test-secret";
+// The JWT secret intentionally meets the 32-byte production minimum so tests
+// run through the same getJwtSecret() enforcement as production.
+process.env.JWT_SECRET = "test-only-jwt-secret-with-at-least-32-bytes!";
 process.env.ALLOWED_USERS = JSON.stringify({ testuser: "testpass", otheruser: "otherpass" });
 process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
 process.env.GEMINI_API_KEY = "test-gemini-key";

@@ -3,6 +3,7 @@ import jwt from "jsonwebtoken";
 import rateLimit from "express-rate-limit";
 import { timingSafeEqual } from "crypto";
 import { AUTH_MESSAGES } from "../constants/messages";
+import { getJwtSecret } from "../config/auth";
 
 const router = Router();
 
@@ -27,9 +28,13 @@ const loginLimiter = rateLimit({
 // POST /api/login — validates credentials against the ALLOWED_USERS env map and
 // returns a 30-day signed JWT. Never crashes on bad config; returns 500 instead.
 router.post("/", loginLimiter, (req, res) => {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    console.error("[CONFIG ERROR] JWT_SECRET is not set.");
+  // Throws on a missing or weak secret; answer 500 rather than crash, and
+  // never sign a token with an unusable secret (fail-closed).
+  let secret: string;
+  try {
+    secret = getJwtSecret();
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : err);
     return res.status(500).json({ error: AUTH_MESSAGES.serverConfigError });
   }
 

@@ -8,6 +8,7 @@ import { cleanupExpiredGuests } from "../services/guestCleanupService";
 import { GUEST_ID_PREFIX, GUEST_LIMITS, SYSTEM_USER_ID } from "../constants/guest";
 import { AUTH_MESSAGES, GUEST_MESSAGES } from "../constants/messages";
 import { GuestUser } from "../types";
+import { getJwtSecret } from "../config/auth";
 
 const router = Router();
 
@@ -59,9 +60,11 @@ function signGuestToken(guest: GuestUser, secret: string): string {
 // resumes the existing account: same data, same remaining TTL, and same usage
 // counters — so signing out and re-entering cannot reset the message quota.
 router.post("/", guestCreationLimiter, async (req, res) => {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    console.error("[CONFIG ERROR] JWT_SECRET is not set.");
+  let secret: string;
+  try {
+    secret = getJwtSecret();
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : err);
     return res.status(500).json({ error: AUTH_MESSAGES.serverConfigError });
   }
 

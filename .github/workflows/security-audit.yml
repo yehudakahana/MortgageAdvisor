@@ -1,0 +1,25 @@
+# Runs `npm audit` on every push to main and every pull request, for each
+# installable package in the repo (root, backend, client). Fails the build on
+# any HIGH or CRITICAL advisory so vulnerable dependencies can't merge
+# silently. `npm audit` reads package-lock.json directly — no install needed.
+name: Security audit
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  npm-audit:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dir: [".", "backend", "client"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: npm audit (${{ matrix.dir }})
+        working-directory: ${{ matrix.dir }}
+        run: npm audit --audit-level=high

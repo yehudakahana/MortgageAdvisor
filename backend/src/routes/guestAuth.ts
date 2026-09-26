@@ -8,7 +8,7 @@ import { cleanupExpiredGuests } from "../services/guestCleanupService";
 import { GUEST_ID_PREFIX, GUEST_LIMITS, SYSTEM_USER_ID } from "../constants/guest";
 import { AUTH_MESSAGES, GUEST_MESSAGES } from "../constants/messages";
 import { GuestUser } from "../types";
-import { getJwtSecret } from "../config/auth";
+import { getJwtSecret, getJwtVersion } from "../config/auth";
 
 const router = Router();
 
@@ -47,10 +47,13 @@ async function cloneSampleClient(guestId: string): Promise<void> {
 }
 
 // Signs a token that dies exactly when the guest record expires, so resuming
-// an account never extends its 24h life.
+// an account never extends its 24h life. Carries the token version `v` like
+// regular tokens so a JWT_VERSION bump revokes guests too.
 function signGuestToken(guest: GuestUser, secret: string): string {
   const secondsLeft = Math.floor((guest.expiresAt.getTime() - Date.now()) / 1000);
-  return jwt.sign({ username: guest.id, isGuest: true }, secret, { expiresIn: secondsLeft });
+  return jwt.sign({ username: guest.id, isGuest: true, v: getJwtVersion() }, secret, {
+    expiresIn: secondsLeft,
+  });
 }
 
 // POST /api/auth/guest — public. Returns a token for the caller's guest

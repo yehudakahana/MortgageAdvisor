@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import rateLimit from "express-rate-limit";
 import bcrypt from "bcryptjs";
 import { AUTH_MESSAGES } from "../constants/messages";
-import { getJwtSecret } from "../config/auth";
+import { getJwtSecret, getJwtVersion } from "../config/auth";
 
 const router = Router();
 
@@ -28,9 +28,10 @@ const loginLimiter = rateLimit({
 });
 
 // POST /api/login — validates credentials against the ALLOWED_USERS env map and
-// returns a 30-day signed JWT. Passwords must be stored as bcrypt hashes —
-// plaintext entries are rejected as a config error (fail-closed). Never
-// crashes on bad config; returns 500 instead.
+// returns a 12-hour signed JWT carrying the current token version `v`
+// (bumping JWT_VERSION revokes all outstanding tokens). Passwords must be
+// stored as bcrypt hashes — plaintext entries are rejected as a config error
+// (fail-closed). Never crashes on bad config; returns 500 instead.
 router.post("/", loginLimiter, async (req, res) => {
   // Throws on a missing or weak secret; answer 500 rather than crash, and
   // never sign a token with an unusable secret (fail-closed).
@@ -73,7 +74,7 @@ router.post("/", loginLimiter, async (req, res) => {
     return res.status(401).json({ error: AUTH_MESSAGES.badCredentials });
   }
 
-  const token = jwt.sign({ username }, secret, { expiresIn: "30d" });
+  const token = jwt.sign({ username, v: getJwtVersion() }, secret, { expiresIn: "12h" });
   return res.json({ token, username });
 });
 

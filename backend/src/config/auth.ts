@@ -21,3 +21,11 @@ export function getJwtSecret(): string {
   }
   return secret;
 }
+
+// Token version for mass-revocation: bump JWT_VERSION (default "1") to
+// invalidate every outstanding token at once, without rotating JWT_SECRET
+// (which would also require re-issuing it everywhere). Signed into each token
+// as the `v` claim and enforced by authMiddleware.
+export function getJwtVersion(): string {
+  return process.env.JWT_VERSION ?? "1";
+}

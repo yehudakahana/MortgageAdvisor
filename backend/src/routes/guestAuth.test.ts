@@ -9,6 +9,7 @@ import { ClientModel } from "../models/Client";
 import { GuestUserModel } from "../models/GuestUser";
 import { GUEST_MESSAGES } from "../constants/messages";
 import { GUEST_LIMITS, SYSTEM_USER_ID } from "../constants/guest";
+import { getJwtVersion } from "../config/auth";
 import { consumeGuestQuota, refundGuestQuota } from "../services/guestQuotaService";
 
 let mongod: MongoMemoryServer;
@@ -29,7 +30,10 @@ beforeEach(async () => {
 });
 
 const auth = (username: string, isGuest = false) => ({
-  Authorization: `Bearer ${jwt.sign({ username, isGuest }, process.env.JWT_SECRET as string)}`,
+  Authorization: `Bearer ${jwt.sign(
+    { username, isGuest, v: getJwtVersion() },
+    process.env.JWT_SECRET as string
+  )}`,
 });
 
 const seedClient = (userId: string, name = "לקוח בדיקה") =>

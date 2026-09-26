@@ -3,8 +3,15 @@
 // setup and the E2E server; a local .env is never loaded in tests.
 // The JWT secret intentionally meets the 32-byte production minimum so tests
 // run through the same getJwtSecret() enforcement as production.
+import bcrypt from "bcryptjs";
+
 process.env.JWT_SECRET = "test-only-jwt-secret-with-at-least-32-bytes!";
-process.env.ALLOWED_USERS = JSON.stringify({ testuser: "testpass", otheruser: "otherpass" });
+// Login passwords must be bcrypt hashes, like production (cost 4 keeps the
+// suite fast; the plaintext values stay "testpass"/"otherpass").
+process.env.ALLOWED_USERS = JSON.stringify({
+  testuser: bcrypt.hashSync("testpass", 4),
+  otheruser: bcrypt.hashSync("otherpass", 4),
+});
 process.env.ANTHROPIC_API_KEY = "test-anthropic-key";
 process.env.GEMINI_API_KEY = "test-gemini-key";
 process.env.R2_ACCOUNT_ID = "test-account";

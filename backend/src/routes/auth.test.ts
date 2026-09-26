@@ -31,4 +31,19 @@ describe("POST /api/login", () => {
     expect(res.status).toBe(400);
     expect(res.body.error).toBe("נדרשים שם משתמש וסיסמה");
   });
+
+  it("rejects a plaintext ALLOWED_USERS entry with 500 (fail-closed)", async () => {
+    const original = process.env.ALLOWED_USERS;
+    process.env.ALLOWED_USERS = JSON.stringify({ plainuser: "plainpass" });
+    try {
+      const res = await request(app)
+        .post("/api/login")
+        .send({ username: "plainuser", password: "plainpass" });
+
+      expect(res.status).toBe(500);
+      expect(res.body.token).toBeUndefined();
+    } finally {
+      process.env.ALLOWED_USERS = original;
+    }
+  });
 });

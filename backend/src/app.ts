@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import helmet from "helmet";
 import clientsRouter from "./routes/clients";
 import uploadRouter from "./routes/upload";
 import chatRouter from "./routes/chat";
@@ -32,8 +33,18 @@ const EXTRA_ORIGINS = (process.env.CLIENT_ORIGINS ?? "")
   .filter(Boolean);
 const ALLOWED_ORIGINS = [...DEFAULT_CLIENT_ORIGINS, ...EXTRA_ORIGINS];
 
-// Allow the Authorization header through CORS preflight so the React client can
-// send Bearer tokens.
+// Security headers. Two helmet defaults are disabled on purpose:
+// - contentSecurityPolicy: this API serves JSON, not HTML; the SPA's CSP is
+//   delivered by Cloudflare via client/public/_headers.
+// - crossOriginResourcePolicy: the SPA calls this API cross-origin
+//   (Cloudflare Workers -> Railway), and CORP: same-origin would make the
+//   browser drop those responses despite the CORS allow-list.
+app.use(
+  helmet({
+    contentSecurityPolicy: false,
+    crossOriginResourcePolicy: false,
+  })
+);
 app.use(
   cors({
     origin: ALLOWED_ORIGINS,

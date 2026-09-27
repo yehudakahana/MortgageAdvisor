@@ -14,7 +14,7 @@ prod?" without guessing.
 ## Production URLs
 
 - **Backend (Railway):** `https://mortageadvisor-production.up.railway.app`
-- **Client (Cloudflare Workers):** `https://mortage-advisor.yk3222145.workers.dev`
+- **Client (Cloudflare Workers):** `https://mortgage-advisor.yehuda-kahana.workers.dev`
 
 ## Steps
 
@@ -45,7 +45,7 @@ curl -s -m 20 https://mortageadvisor-production.up.railway.app/api/health
 ### 3. Client — what is live
 
 ```
-curl -s -m 20 https://mortage-advisor.yk3222145.workers.dev/ | grep -o 'assets/index-[A-Za-z0-9_-]*\.js'
+curl -s -m 20 https://mortgage-advisor.yehuda-kahana.workers.dev/ | grep -o 'assets/index-[A-Za-z0-9_-]*\.js'
 ```
 
 Compare that bundle hash to a local `npm --prefix client run build` output only if

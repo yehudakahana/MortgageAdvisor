@@ -1,4 +1,3 @@
-import ReactMarkdown, { type Components } from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SendHorizontal, MessageSquarePlus } from "lucide-react";
@@ -7,22 +6,7 @@ import { CHAT_TEXT } from "@/lib/strings";
 import { useChat } from "../hooks/useChat";
 import ChatScopeSelect from "./ChatScopeSelect";
 import LLMSourceNote from "./LLMSourceNote";
-
-
-const CHAT_MARKDOWN_COMPONENTS: Components = {
-  h1: ({ children }) => <p className="font-bold text-lg mt-2 mb-1 first:mt-0">{children}</p>,
-  h2: ({ children }) => <p className="font-bold mt-2 mb-1 first:mt-0">{children}</p>,
-  h3: ({ children }) => <p className="font-bold mt-1.5 mb-0.5 first:mt-0">{children}</p>,
-  p: ({ children }) => <p className="my-1.5 first:mt-0 last:mb-0">{children}</p>,
-  ul: ({ children }) => <ul className="list-disc ps-5 my-1.5 space-y-0.5">{children}</ul>,
-  ol: ({ children }) => <ol className="list-decimal ps-5 my-1.5 space-y-0.5">{children}</ol>,
-  strong: ({ children }) => <strong className="font-bold">{children}</strong>,
-  a: ({ children, href }) => (
-    <a href={href} target="_blank" rel="noreferrer" className="underline underline-offset-2">
-      {children}
-    </a>
-  ),
-};
+import ChatMarkdown from "./ChatMarkdown";
 
 function TypingDots() {
   return (
@@ -98,7 +82,7 @@ export default function Chat() {
               )}
             >
               {msg.role === "assistant" ? (
-                <ReactMarkdown components={CHAT_MARKDOWN_COMPONENTS}>{msg.content}</ReactMarkdown>
+                <ChatMarkdown content={msg.content} />
               ) : (
                 msg.content
               )}

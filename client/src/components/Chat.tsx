@@ -6,6 +6,7 @@ import { CHAT_TEXT } from "@/lib/strings";
 import { useChat } from "../hooks/useChat";
 import ChatScopeSelect from "./ChatScopeSelect";
 import LLMSourceNote from "./LLMSourceNote";
+import ChatMarkdown from "./ChatMarkdown";
 
 function TypingDots() {
   return (
@@ -74,13 +75,17 @@ export default function Chat() {
             </div>
             <div
               className={cn(
-                "rounded-2xl px-5 py-3 max-md:px-4 text-base leading-relaxed break-words whitespace-pre-wrap",
+                "rounded-2xl px-5 py-3 max-md:px-4 text-base leading-relaxed break-words",
                 msg.role === "user"
-                  ? "bg-gradient-to-br from-indigo-600 to-indigo-900 text-white shadow-md shadow-indigo-900/20"
+                  ? "whitespace-pre-wrap bg-gradient-to-br from-indigo-600 to-indigo-900 text-white shadow-md shadow-indigo-900/20"
                   : "bg-card border border-border/70 text-foreground shadow-sm"
               )}
             >
-              {msg.content}
+              {msg.role === "assistant" ? (
+                <ChatMarkdown content={msg.content} />
+              ) : (
+                msg.content
+              )}
             </div>
             {msg.role === "assistant" && msg.llm && (
               <LLMSourceNote source={msg.llm} className="px-1" />

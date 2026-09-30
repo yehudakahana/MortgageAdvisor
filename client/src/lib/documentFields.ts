@@ -7,6 +7,7 @@
 // humanized version of the key itself, so a new field never disappears.
 const FIELD_LABELS: Record<string, string> = {
   // Employer
+  employer: "מעסיק",
   companyName: "שם המעסיק",
   employerName: "שם המעסיק",
   taxDeductionFileNumber: "תיק ניכויים",
@@ -23,6 +24,7 @@ const FIELD_LABELS: Record<string, string> = {
   taxCalculationType: "אופן חישוב המס",
   kibbutzMember: "חבר קיבוץ",
   // Document meta
+  period: "תקופה",
   taxYear: "שנת מס",
   printDate: "תאריך הדפסה",
   accountantSignatureName: "חתימת מנהל החשבונות",

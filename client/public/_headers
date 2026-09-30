@@ -1,0 +1,19 @@
+# Security headers served by Cloudflare Workers Static Assets for the SPA.
+# Vite emits public/* into dist/, so this file ships as-is with the deploy.
+#
+# CSP notes:
+# - script-src 'self' only: the Vite build emits no inline scripts (verified in
+#   dist/index.html). If a future build inlines a script, the browser console
+#   will flag the violation — do NOT add 'unsafe-inline', fix the build.
+# - style-src allows 'unsafe-inline': Radix/Tailwind inject <style> at runtime.
+# - connect-src is the Railway API origin (see client/.env.production); the
+#   dev proxy keeps VITE_API_URL empty so dev needs no extra entry.
+# - Documents open via window.open (top-level navigation), not iframes, so no
+#   frame-src entry for the R2 presigned host is needed.
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://mortageadvisor-production.up.railway.app; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Permissions-Policy: camera=(), microphone=(), geolocation=()

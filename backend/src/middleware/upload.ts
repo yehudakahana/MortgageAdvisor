@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import multer from "multer";
 import path from "path";
-import { fromBuffer } from "file-type";
+import { detectFileType } from "./fileSignature";
 import { UPLOAD_MESSAGES } from "../constants/messages";
 
 // The resolved (mime, ext) is attached here so the upload handler derives the R2
@@ -77,11 +77,13 @@ const CFB_EXT: Record<string, { mime: string; ext: string }> = {
   xls: { mime: "application/vnd.ms-excel", ext: "xls" },
 };
 
-async function resolveType(
+// Exported for unit tests: the signature/extension resolution is the whole
+// upload allowlist, so it is worth testing without an HTTP round-trip.
+export function resolveType(
   buffer: Buffer,
   originalName: string
-): Promise<{ mime: string; ext: string } | null> {
-  const detected = await fromBuffer(buffer);
+): { mime: string; ext: string } | null {
+  const detected = detectFileType(buffer);
   if (!detected) return null;
 
   // Concrete, allowlisted detection wins immediately.
@@ -108,7 +110,7 @@ export async function validateBuffer(
     return;
   }
   try {
-    const resolved = await resolveType(req.file.buffer, req.file.originalname);
+    const resolved = resolveType(req.file.buffer, req.file.originalname);
     if (!resolved) {
       res.status(400).json({ error: UPLOAD_MESSAGES.unsupportedType });
       return;

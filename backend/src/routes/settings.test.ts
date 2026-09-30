@@ -6,6 +6,7 @@ import { MongoMemoryServer } from "mongodb-memory-server";
 import { app } from "../app";
 import { UserSettingsModel } from "../models/UserSettings";
 import { SETTINGS_MESSAGES } from "../constants/messages";
+import { getJwtVersion } from "../config/auth";
 
 let mongod: MongoMemoryServer;
 
@@ -25,7 +26,10 @@ beforeEach(async () => {
 
 // The middleware only verifies the signature, so any username can be signed.
 const auth = (username = "testuser") => ({
-  Authorization: `Bearer ${jwt.sign({ username }, process.env.JWT_SECRET as string)}`,
+  Authorization: `Bearer ${jwt.sign(
+    { username, v: getJwtVersion() },
+    process.env.JWT_SECRET as string
+  )}`,
 });
 
 const addRule = (text: unknown, username?: string) =>

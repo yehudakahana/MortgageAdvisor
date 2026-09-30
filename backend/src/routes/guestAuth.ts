@@ -8,6 +8,7 @@ import { cleanupExpiredGuests } from "../services/guestCleanupService";
 import { GUEST_ID_PREFIX, GUEST_LIMITS, SYSTEM_USER_ID } from "../constants/guest";
 import { AUTH_MESSAGES, GUEST_MESSAGES } from "../constants/messages";
 import { GuestUser } from "../types";
+import { getJwtSecret, getJwtVersion } from "../config/auth";
 
 const router = Router();
 
@@ -46,10 +47,13 @@ async function cloneSampleClient(guestId: string): Promise<void> {
 }
 
 // Signs a token that dies exactly when the guest record expires, so resuming
-// an account never extends its 24h life.
+// an account never extends its 24h life. Carries the token version `v` like
+// regular tokens so a JWT_VERSION bump revokes guests too.
 function signGuestToken(guest: GuestUser, secret: string): string {
   const secondsLeft = Math.floor((guest.expiresAt.getTime() - Date.now()) / 1000);
-  return jwt.sign({ username: guest.id, isGuest: true }, secret, { expiresIn: secondsLeft });
+  return jwt.sign({ username: guest.id, isGuest: true, v: getJwtVersion() }, secret, {
+    expiresIn: secondsLeft,
+  });
 }
 
 // POST /api/auth/guest — public. Returns a token for the caller's guest
@@ -59,9 +63,11 @@ function signGuestToken(guest: GuestUser, secret: string): string {
 // resumes the existing account: same data, same remaining TTL, and same usage
 // counters — so signing out and re-entering cannot reset the message quota.
 router.post("/", guestCreationLimiter, async (req, res) => {
-  const secret = process.env.JWT_SECRET;
-  if (!secret) {
-    console.error("[CONFIG ERROR] JWT_SECRET is not set.");
+  let secret: string;
+  try {
+    secret = getJwtSecret();
+  } catch (err) {
+    console.error(err instanceof Error ? err.message : err);
     return res.status(500).json({ error: AUTH_MESSAGES.serverConfigError });
   }
 

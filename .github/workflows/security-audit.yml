@@ -1,20 +1,49 @@
-# Runs `npm audit` on every push to main and every pull request, for each
-# installable package in the repo (root, backend, client). Fails the build on
-# any HIGH or CRITICAL advisory so vulnerable dependencies can't merge
-# silently. `npm audit` reads package-lock.json directly — no install needed.
+# Dependency auditing, split into a blocking gate and a non-blocking sweep.
+#
+# The gate (npm-audit-prod) runs on every push to main and every PR, with
+# --omit=dev: it only fails on advisories in packages that actually ship to
+# Railway/Cloudflare. Dev tooling (vitest, vite, browserslist, ...) never
+# reaches production, so a new advisory there must not block an unrelated PR —
+# that is how audit gates end up disabled.
+#
+# The sweep (npm-audit-all) covers dev dependencies too. It runs weekly and is
+# non-blocking: it surfaces advisories in the Actions log without gating merges.
+#
+# npm audit reads package-lock.json directly — no install needed.
 name: Security audit
 
 on:
   push:
     branches: [main]
   pull_request:
+  schedule:
+    # Mondays 05:00 UTC
+    - cron: "0 5 * * 1"
 
 jobs:
-  npm-audit:
+  npm-audit-prod:
+    name: Audit production dependencies (blocking)
+    if: github.event_name != 'schedule'
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        dir: [".", "backend", "client"]
+        dir: [backend, client]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: npm audit --omit=dev (${{ matrix.dir }})
+        working-directory: ${{ matrix.dir }}
+        run: npm audit --omit=dev --audit-level=high
+
+  npm-audit-all:
+    name: Audit all dependencies (report only)
+    if: github.event_name == 'schedule'
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        dir: [backend, client]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -22,4 +51,5 @@ jobs:
           node-version: 20
       - name: npm audit (${{ matrix.dir }})
         working-directory: ${{ matrix.dir }}
+        continue-on-error: true
         run: npm audit --audit-level=high

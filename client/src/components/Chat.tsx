@@ -1,3 +1,4 @@
+import ReactMarkdown, { type Components } from "react-markdown";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { SendHorizontal, MessageSquarePlus } from "lucide-react";
@@ -6,6 +7,22 @@ import { CHAT_TEXT } from "@/lib/strings";
 import { useChat } from "../hooks/useChat";
 import ChatScopeSelect from "./ChatScopeSelect";
 import LLMSourceNote from "./LLMSourceNote";
+
+
+const CHAT_MARKDOWN_COMPONENTS: Components = {
+  h1: ({ children }) => <p className="font-bold text-lg mt-2 mb-1 first:mt-0">{children}</p>,
+  h2: ({ children }) => <p className="font-bold mt-2 mb-1 first:mt-0">{children}</p>,
+  h3: ({ children }) => <p className="font-bold mt-1.5 mb-0.5 first:mt-0">{children}</p>,
+  p: ({ children }) => <p className="my-1.5 first:mt-0 last:mb-0">{children}</p>,
+  ul: ({ children }) => <ul className="list-disc ps-5 my-1.5 space-y-0.5">{children}</ul>,
+  ol: ({ children }) => <ol className="list-decimal ps-5 my-1.5 space-y-0.5">{children}</ol>,
+  strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+  a: ({ children, href }) => (
+    <a href={href} target="_blank" rel="noreferrer" className="underline underline-offset-2">
+      {children}
+    </a>
+  ),
+};
 
 function TypingDots() {
   return (
@@ -74,13 +91,17 @@ export default function Chat() {
             </div>
             <div
               className={cn(
-                "rounded-2xl px-5 py-3 max-md:px-4 text-base leading-relaxed break-words whitespace-pre-wrap",
+                "rounded-2xl px-5 py-3 max-md:px-4 text-base leading-relaxed break-words",
                 msg.role === "user"
-                  ? "bg-gradient-to-br from-indigo-600 to-indigo-900 text-white shadow-md shadow-indigo-900/20"
+                  ? "whitespace-pre-wrap bg-gradient-to-br from-indigo-600 to-indigo-900 text-white shadow-md shadow-indigo-900/20"
                   : "bg-card border border-border/70 text-foreground shadow-sm"
               )}
             >
-              {msg.content}
+              {msg.role === "assistant" ? (
+                <ReactMarkdown components={CHAT_MARKDOWN_COMPONENTS}>{msg.content}</ReactMarkdown>
+              ) : (
+                msg.content
+              )}
             </div>
             {msg.role === "assistant" && msg.llm && (
               <LLMSourceNote source={msg.llm} className="px-1" />

@@ -12,7 +12,7 @@ Welcome, Claude! You are an autonomous senior developer and AI engineer working 
 - **Frontend / Client UI:** React/Vite with **Tailwind CSS v3** + **shadcn/ui** component library. All new UI must use shadcn components from `src/components/ui/` and Tailwind utility classes. No custom CSS outside of `index.css` (which holds only Tailwind directives and CSS variable tokens).
 - **UI Path Alias:** The client uses `@/` as an alias for `src/` (e.g. `import { Button } from "@/components/ui/button"`).
 - **Database:** **MongoDB Atlas** accessed via the **Mongoose** ODM. Schemas/models live in `backend/src/models/` (e.g. `Client.ts`); the connection is initialized once at startup by `backend/src/config/db.ts` (`connectDB()`) using `process.env.MONGO_URI`. The legacy local `db.json` + `dbService.ts` layer has been retired.
-- **File Storage:** Private **Cloudflare R2** bucket for uploaded documents (Paystubs, Bank Statements), accessed via `backend/src/services/storageService.ts` (client in `backend/src/config/r2.ts`). Files are viewed only through short-lived signed URLs (15 min) after an ownership check. No local `/uploads/` directory.
+- **File Storage:** Private **Cloudflare R2** bucket for uploaded documents (Paystubs, Bank Statements), accessed via `backend/src/services/storageService.ts` (client in `backend/src/config/r2.ts`). Files are viewed only through short-lived signed URLs (15 min) after an ownership check.
 
 ---
 

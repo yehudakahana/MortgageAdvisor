@@ -2,7 +2,6 @@
 
 A Hebrew-first workspace for mortgage advisors: manage clients, extract data from their documents, and ask questions answered only from the information on file.
 
-<!-- TODO: keep only if accurate -->
 In production with a paying pilot customer (a mortgage consultant).
 
 Built by [Yehuda Kahana](https://github.com/yehudakahana) — React + TypeScript frontend, tenant-scoped Express API, private document storage on R2, and two AI providers with cross-provider fallback.
@@ -17,9 +16,7 @@ Built by [Yehuda Kahana](https://github.com/yehudakahana) — React + TypeScript
 
 Guest accounts last 24 hours with limited quotas (20 messages, 5 uploads). **Use synthetic data only.**
 
-<!-- TODO: add docs/images/workspace-screenshot.png, then uncomment:
-![kay.ai client workspace and document-grounded chat](docs/images/workspace-screenshot.png)
--->
+![alt text](image-1.png)
 
 ## Eval results
 

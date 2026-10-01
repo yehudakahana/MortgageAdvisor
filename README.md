@@ -16,7 +16,7 @@ Built by [Yehuda Kahana](https://github.com/yehudakahana) — React + TypeScript
 
 Guest accounts last 24 hours with limited quotas (20 messages, 5 uploads). **Use synthetic data only.**
 
-![alt text](image-1.png)
+![kay.ai client workspace and document-grounded chat](docs/images/workspace-screenshot.png)
 
 ## Eval results
 

@@ -27,15 +27,15 @@ export default function App() {
   return (
     <GuestModeProvider>
     <div className="flex flex-col h-dvh bg-background">
-      <header className="bg-gradient-to-l from-indigo-950 via-indigo-900 to-slate-900 text-white px-6 py-4 max-md:px-4 shadow-xl flex-shrink-0">
-        <div className="flex items-center justify-between gap-3.5">
-          <div className="flex items-center gap-3.5">
-            <div className="w-10 h-10 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center flex-shrink-0 shadow-inner">
+      <header className="bg-gradient-to-l from-indigo-950 via-indigo-900 to-slate-900 text-white px-6 py-4 max-md:px-3 shadow-xl flex-shrink-0">
+        <div className="flex items-center justify-between gap-3.5 max-md:gap-2">
+          <div className="flex min-w-0 items-center gap-3.5 max-md:gap-2">
+            <div className="w-10 h-10 rounded-xl bg-white/15 border border-white/20 flex items-center justify-center flex-shrink-0 shadow-inner max-md:hidden">
               <span className="text-lg font-bold">{APP_TEXT.initial}</span>
             </div>
-            <div>
-              <h1 className="text-xl font-bold tracking-tight leading-none">{APP_TEXT.title}</h1>
-              <p className="text-xs text-white/70 mt-1 max-md:text-[11px]">{APP_TEXT.tagline}</p>
+            <div className="min-w-0">
+              <h1 className="truncate text-xl font-bold tracking-tight leading-none">{APP_TEXT.title}</h1>
+              <p className="text-xs text-white/70 mt-1 max-md:hidden">{APP_TEXT.tagline}</p>
             </div>
             <Button
               variant="ghost"
@@ -43,7 +43,7 @@ export default function App() {
               onClick={() => setSettingsOpen(true)}
               aria-label={SETTINGS_TEXT.openSettings}
               title={SETTINGS_TEXT.openSettings}
-              className="ms-2 h-10 w-10 rounded-xl bg-white/15 border border-white/25 text-white shadow-inner hover:bg-white/25 hover:text-white max-md:min-h-11 max-md:min-w-11"
+              className="ms-2 max-md:ms-0 shrink-0 h-10 w-10 rounded-xl bg-white/15 border border-white/25 text-white shadow-inner hover:bg-white/25 hover:text-white max-md:min-h-11 max-md:min-w-11"
             >
               <Settings className="w-5 h-5" />
             </Button>
@@ -53,12 +53,12 @@ export default function App() {
               onClick={() => setHelpOpen(true)}
               aria-label={HELP_TEXT.open}
               title={HELP_TEXT.open}
-              className="-ms-1.5 h-10 w-10 rounded-xl bg-white/15 border border-white/25 text-white shadow-inner hover:bg-white/25 hover:text-white max-md:min-h-11 max-md:min-w-11"
+              className="-ms-1.5 max-md:ms-0 shrink-0 h-10 w-10 rounded-xl bg-white/15 border border-white/25 text-white shadow-inner hover:bg-white/25 hover:text-white max-md:min-h-11 max-md:min-w-11"
             >
               <CircleHelp className="w-5 h-5" />
             </Button>
           </div>
-          <div className="flex items-center gap-3 max-md:gap-1.5">
+          <div className="flex shrink-0 items-center gap-3 max-md:gap-1.5">
             <GuestBadge />
             {username && <span className="text-sm text-white/70 max-md:hidden">{username}</span>}
             <Button

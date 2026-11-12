@@ -16,6 +16,11 @@ export const GUIDES: Guide[] = [
     title: "מה kay.ai עושה – סקירה כללית",
     images: ["/guides/overview/1.png"],
   },
+  {
+    id: "tour",
+    title: "סיור במסך הראשי",
+    images: [1, 2, 3, 4, 5, 6].map((n) => `/guides/tour/${n}.png`),
+  },
   // {
   //   id: "upload",
   //   title: "איך מעלים מסמכים לתיק",

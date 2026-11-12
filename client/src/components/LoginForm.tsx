@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { APP_TEXT, GUEST_TEXT, LOGIN_TEXT } from "@/lib/strings";
+import { APP_TEXT, GUEST_TEXT, HELP_TEXT, LOGIN_TEXT } from "@/lib/strings";
+import HelpDialog from "./help/HelpDialog";
 
 export default function LoginForm() {
   const { login } = useAuth();
@@ -15,6 +16,7 @@ export default function LoginForm() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [guestLoading, setGuestLoading] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -52,7 +54,7 @@ export default function LoginForm() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-dvh bg-gradient-to-bl from-indigo-950 via-indigo-900 to-slate-900 p-4">
+    <div className="flex flex-col items-center justify-center gap-4 min-h-dvh bg-gradient-to-bl from-indigo-950 via-indigo-900 to-slate-900 p-4">
       <Card className="w-full max-w-sm shadow-2xl">
         <CardHeader className="items-center text-center space-y-3">
           <div className="w-14 h-14 rounded-2xl bg-indigo-900 text-white flex items-center justify-center shadow-inner">
@@ -111,6 +113,14 @@ export default function LoginForm() {
           </Button>
         </CardContent>
       </Card>
+      <button
+        type="button"
+        onClick={() => setHelpOpen(true)}
+        className="min-h-11 px-3 text-sm text-white/70 underline-offset-4 transition-colors hover:text-white hover:underline"
+      >
+        {HELP_TEXT.loginHowItWorks} · {HELP_TEXT.loginContact}
+      </button>
+      <HelpDialog open={helpOpen} onOpenChange={setHelpOpen} />
     </div>
   );
 }

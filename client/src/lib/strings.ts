@@ -154,3 +154,30 @@ export const ERROR_BOUNDARY_TEXT = {
   hint: "נסו לרענן את הדף.",
   reload: "רענון הדף",
 };
+
+export const HELP_TEXT = {
+  open: "עזרה ויצירת קשר",
+  title: "עזרה ויצירת קשר",
+  description: "מדריכים קצרים לשימוש במערכת, ודרכים ליצור קשר.",
+  guidesHeading: "מדריכי שימוש",
+  noGuides: "המדריכים יעלו בקרוב.",
+  contactHeading: "יצירת קשר",
+  back: "חזרה למדריכים",
+  prev: "התמונה הקודמת",
+  next: "התמונה הבאה",
+  counter: (current: number, total: number) => `${current} מתוך ${total}`,
+  imageAlt: (title: string, n: number) => `${title}, שלב ${n}`,
+  stepsCount: (n: number) => `${n} שלבים`,
+  loginHowItWorks: "איך זה עובד?",
+  loginContact: "יצירת קשר",
+};
+
+export const CONTACT_TEXT = {
+  name: "יהודה כהנא",
+  role: "פיתוח ותמיכה · kay.ai",
+  initials: "יכ",
+  call: "התקשרות",
+  whatsapp: "וואטסאפ",
+  email: "מייל",
+  linkedin: "לינקדאין",
+};

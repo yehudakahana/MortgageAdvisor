@@ -14,6 +14,7 @@ const HEBREW = /[\u0590-\u05FF]/;
 const ALLOWED = [
   /client[\\/]src[\\/]lib[\\/]strings\.ts$/,
   /client[\\/]src[\\/]lib[\\/]documentFields\.ts$/,
+  /client[\\/]src[\\/]lib[\\/]guides\.ts$/,
   /client[\\/]src[\\/]types[\\/]client\.ts$/,
   /backend[\\/]src[\\/]constants[\\/]messages\.ts$/,
   /\.test\.[jt]sx?$/,

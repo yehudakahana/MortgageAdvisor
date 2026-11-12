@@ -1,14 +1,15 @@
 import { useState } from "react";
-import { LogOut, Settings, Users } from "lucide-react";
+import { CircleHelp, LogOut, Settings, Users } from "lucide-react";
 import Chat from "./components/Chat";
 import ClientPanel from "./components/ClientPanel";
 import GuestBadge from "./components/GuestBadge";
 import GuestWelcomeDialog from "./components/GuestWelcomeDialog";
+import HelpSheet from "./components/help/HelpSheet";
 import SettingsSheet from "./components/SettingsSheet";
 import Toaster from "./components/Toaster";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { APP_TEXT, CLIENTS_TEXT, SETTINGS_TEXT } from "@/lib/strings";
+import { APP_TEXT, CLIENTS_TEXT, HELP_TEXT, SETTINGS_TEXT } from "@/lib/strings";
 import { useAuth } from "./auth/AuthContext";
 import { ClientsProvider } from "./context/ClientsContext";
 import { GuestModeProvider } from "./context/GuestModeContext";
@@ -21,6 +22,7 @@ export default function App() {
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [panelOpen, setPanelOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   return (
     <GuestModeProvider>
@@ -44,6 +46,16 @@ export default function App() {
               className="ms-2 h-10 w-10 rounded-xl bg-white/15 border border-white/25 text-white shadow-inner hover:bg-white/25 hover:text-white max-md:min-h-11 max-md:min-w-11"
             >
               <Settings className="w-5 h-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setHelpOpen(true)}
+              aria-label={HELP_TEXT.open}
+              title={HELP_TEXT.open}
+              className="-ms-1.5 h-10 w-10 rounded-xl bg-white/15 border border-white/25 text-white shadow-inner hover:bg-white/25 hover:text-white max-md:min-h-11 max-md:min-w-11"
+            >
+              <CircleHelp className="w-5 h-5" />
             </Button>
           </div>
           <div className="flex items-center gap-3 max-md:gap-1.5">
@@ -88,6 +100,7 @@ export default function App() {
         </ClientsProvider>
       </main>
       <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
+      <HelpSheet open={helpOpen} onOpenChange={setHelpOpen} />
       <GuestWelcomeDialog />
       <Toaster />
     </div>

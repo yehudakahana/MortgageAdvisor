@@ -7,11 +7,12 @@
 #   will flag the violation — do NOT add 'unsafe-inline', fix the build.
 # - style-src allows 'unsafe-inline': Radix/Tailwind inject <style> at runtime.
 # - connect-src is the Railway API origin (see client/.env.production); the
-#   dev proxy keeps VITE_API_URL empty so dev needs no extra entry.
+#   dev proxy keeps VITE_API_URL empty so dev needs no extra entry. The
+#   *.ingest.*sentry.io hosts receive client error reports (src/instrument.ts).
 # - Documents open via window.open (top-level navigation), not iframes, so no
 #   frame-src entry for the R2 presigned host is needed.
 /*
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://mortageadvisor-production.up.railway.app; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
+  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' https://mortageadvisor-production.up.railway.app https://*.ingest.sentry.io https://*.ingest.us.sentry.io https://*.ingest.de.sentry.io; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; object-src 'none'
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin

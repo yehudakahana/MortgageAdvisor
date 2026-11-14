@@ -1,6 +1,7 @@
 import express from "express";
 import cors from "cors";
 import helmet from "helmet";
+import * as Sentry from "@sentry/node";
 import clientsRouter from "./routes/clients";
 import uploadRouter from "./routes/upload";
 import chatRouter from "./routes/chat";
@@ -73,3 +74,7 @@ app.use("/api/clients", clientsRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/chat", chatRouter);
 app.use("/api/settings", settingsRouter);
+
+// After all routes: reports errors that escape a route handler. No-op when
+// Sentry is disabled (no SENTRY_DSN).
+Sentry.setupExpressErrorHandler(app);

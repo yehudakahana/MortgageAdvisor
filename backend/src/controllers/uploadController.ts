@@ -10,6 +10,7 @@ import {
 } from "../services/storageService";
 import { isDocumentType } from "../validation/validators";
 import { CLIENT_MESSAGES, DOCUMENT_MESSAGES, UPLOAD_MESSAGES } from "../constants/messages";
+import { recordUsage } from "../services/usageService";
 
 // LLM/provider errors often arrive as a JSON blob (e.g. Gemini's
 // {"error":{"code":503,"message":"...high demand..."}}). Surface the human
@@ -108,6 +109,7 @@ export async function uploadDocument(req: Request, res: Response) {
     return res.status(404).json({ error: CLIENT_MESSAGES.notFound });
   }
   res.status(201).json(updated);
+  void recordUsage(req.user?.id ?? "", "upload");
 
   // Non-blocking background extraction — never delays the upload response.
   // Reuses the in-memory buffer, so no disk read is involved.
@@ -116,10 +118,12 @@ export async function uploadDocument(req: Request, res: Response) {
       const data = await extractFromBuffer(file.buffer, resolved.mime);
       await setExtraction(clientId, uuid, data);
       console.log(`[extraction] completed for doc ${uuid}`);
+      void recordUsage(req.user?.id ?? "", "extraction_done");
     } catch (err) {
       const reason = formatExtractionError(err);
       console.error(`[extraction] failed for doc ${uuid}:`, reason);
       await setExtraction(clientId, uuid, { error: reason });
+      void recordUsage(req.user?.id ?? "", "extraction_failed");
     }
   })();
 }

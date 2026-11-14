@@ -38,11 +38,22 @@ Sentry.init({
     delete event.user;
     delete event.extra;
     if (event.message) event.message = scrubText(event.message);
+    // Exception messages can quote client data (e.g. a Mongoose validation
+    // error echoing a field value). Free text can't be reliably scrubbed of
+    // names, so keep only the error type + stack and drop the message.
+    if (event.exception?.values) {
+      for (const ex of event.exception.values) {
+        ex.value = ex.type ?? "Error";
+      }
+    }
     return event;
   },
   beforeBreadcrumb(breadcrumb) {
+    // Drop console breadcrumbs entirely: authMiddleware logs the username on
+    // every request, which would otherwise ride along on error events. Errors
+    // themselves are still captured as events (see captureConsoleIntegration).
+    if (breadcrumb.category === "console") return null;
     if (breadcrumb.message) breadcrumb.message = scrubText(breadcrumb.message);
-    if (breadcrumb.category === "console") delete breadcrumb.data;
     return breadcrumb;
   },
 });

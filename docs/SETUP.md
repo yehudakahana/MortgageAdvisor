@@ -39,7 +39,7 @@ openssl rand -hex 32   # use as JWT_SECRET
 | `PORT` | Optional, default `3001` |
 | `JWT_VERSION` | Optional, default `1`; bump to revoke all tokens |
 | `CLIENT_ORIGINS` | Optional extra CORS origins, comma-separated |
-| `CLAUDE_MODEL`, `GEMINI_MODEL` | Optional model overrides (defaults in [`llmModels.ts`](../backend/src/config/llmModels.ts)) |
+| `CLAUDE_MODEL`, `GEMINI_MODEL` (extraction), `GEMINI_CHAT_MODEL` (chat fallback) | Optional model overrides (defaults in [`llmModels.ts`](../backend/src/config/llmModels.ts)) |
 
 Generate a password hash:
 

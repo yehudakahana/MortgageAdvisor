@@ -1,5 +1,6 @@
 import { Component, type ReactNode } from "react";
 import { RotateCcw } from "lucide-react";
+import * as Sentry from "@sentry/react";
 import { Button } from "@/components/ui/button";
 import { ERROR_BOUNDARY_TEXT } from "@/lib/strings";
 
@@ -18,6 +19,11 @@ export default class ErrorBoundary extends Component<Props, State> {
 
   static getDerivedStateFromError(): State {
     return { hasError: true };
+  }
+
+  // React swallows render errors once a boundary handles them, so report here.
+  componentDidCatch(error: Error) {
+    Sentry.captureException(error);
   }
 
   render() {

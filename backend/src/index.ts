@@ -1,6 +1,8 @@
 // Load .env before any other import so module-level SDK clients (Anthropic,
 // Gemini) read their API keys at construction time.
 import "dotenv/config";
+// Sentry must load before express/mongoose (see instrument.ts).
+import "./instrument";
 import { app } from "./app";
 import { connectDB } from "./config/db";
 import { getJwtSecret } from "./config/auth";

@@ -8,6 +8,7 @@ import { GUEST_LIMITS } from "../constants/guest";
 import { ChatMessage, Client } from "../types";
 import { isNonEmptyString, isOptionalString } from "../validation/validators";
 import { CHAT_MESSAGES, CLIENT_MESSAGES } from "../constants/messages";
+import { recordUsage } from "../services/usageService";
 
 const router = Router();
 
@@ -57,6 +58,7 @@ router.post("/", guestPromptCap, guestChatCap, async (req: Request, res: Respons
   // slice(-N) is safe for short/empty histories (returns the whole array).
   const windowedHistory = history.slice(-CHAT_HISTORY_LIMIT);
 
+  const startedAt = Date.now();
   try {
     const { content, provider, model, usedFallback } = await routeToLLM("CHAT", {
       clientData: buildClientData(clients),
@@ -76,9 +78,20 @@ router.post("/", guestPromptCap, guestChatCap, async (req: Request, res: Respons
       llm: { provider, model, usedFallback },
       ...(req.user?.isGuest ? { remainingMessages: req.guestRemaining ?? 0 } : {}),
     });
+
+    // Metadata only — no message text, no client data. Fire-and-forget.
+    void recordUsage(req.user?.id ?? "", "chat", {
+      provider,
+      model,
+      usedFallback,
+      latencyMs: Date.now() - startedAt,
+    });
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
     console.error("[chat] LLM request failed:", reason);
+    // Mirror the extraction_done/extraction_failed pair so chat failure rate
+    // is measurable. Metadata only, fire-and-forget.
+    void recordUsage(req.user?.id ?? "", "chat_failed", { latencyMs: Date.now() - startedAt });
     // guestChatCap charged this message before the call. It produced no reply,
     // so give it back rather than spending part of the guest's demo budget on
     // our outage. Best-effort: a failed refund must not mask the 502.

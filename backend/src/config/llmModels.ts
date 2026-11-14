@@ -19,7 +19,7 @@ export interface ModelConfig {
 }
 
 const CLAUDE_MODEL = process.env.CLAUDE_MODEL ?? "claude-sonnet-4-6";
-const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-3.5-flash-lite";
 
 export const TASK_MODEL_MAP: Record<TaskType, ModelConfig> = {
   // Extraction runs on Gemini Flash (fast + cheap for PDF/image parsing).

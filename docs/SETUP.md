@@ -38,6 +38,7 @@ openssl rand -hex 32   # use as JWT_SECRET
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME` | Required |
 | `PORT` | Optional, default `3001` |
 | `JWT_VERSION` | Optional, default `1`; bump to revoke all tokens |
+| `ADMIN_USERS` | Optional: comma-separated usernames (subset of `ALLOWED_USERS`) allowed to call `/api/admin/*`. Unset = nobody |
 | `CLIENT_ORIGINS` | Optional extra CORS origins, comma-separated |
 | `CLAUDE_MODEL`, `GEMINI_MODEL` | Optional model overrides (defaults in [`llmModels.ts`](../backend/src/config/llmModels.ts)) |
 

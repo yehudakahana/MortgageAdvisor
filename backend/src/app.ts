@@ -7,6 +7,7 @@ import chatRouter from "./routes/chat";
 import authRouter from "./routes/auth";
 import guestAuthRouter from "./routes/guestAuth";
 import settingsRouter from "./routes/settings";
+import adminRouter from "./routes/admin";
 import { authenticateToken } from "./middleware/authMiddleware";
 
 // App assembly only — no DB connection and no listen() here, so tests can
@@ -73,3 +74,4 @@ app.use("/api/clients", clientsRouter);
 app.use("/api/upload", uploadRouter);
 app.use("/api/chat", chatRouter);
 app.use("/api/settings", settingsRouter);
+app.use("/api/admin", adminRouter);

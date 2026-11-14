@@ -89,6 +89,9 @@ router.post("/", guestPromptCap, guestChatCap, async (req: Request, res: Respons
   } catch (err) {
     const reason = err instanceof Error ? err.message : String(err);
     console.error("[chat] LLM request failed:", reason);
+    // Mirror the extraction_done/extraction_failed pair so chat failure rate
+    // is measurable. Metadata only, fire-and-forget.
+    void recordUsage(req.user?.id ?? "", "chat_failed", { latencyMs: Date.now() - startedAt });
     // guestChatCap charged this message before the call. It produced no reply,
     // so give it back rather than spending part of the guest's demo budget on
     // our outage. Best-effort: a failed refund must not mask the 502.

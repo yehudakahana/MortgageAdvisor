@@ -4,7 +4,12 @@ import { Schema, model } from "mongoose";
 // user, where the chat/extraction pipeline fails). METADATA ONLY — never the
 // chat text, the question, the client's data or any document content. See
 // usageService.ts for the write points.
-export type UsageEventType = "chat" | "upload" | "extraction_done" | "extraction_failed";
+export type UsageEventType =
+  | "chat"
+  | "chat_failed"
+  | "upload"
+  | "extraction_done"
+  | "extraction_failed";
 
 export interface UsageEvent {
   userId: string;
@@ -24,7 +29,7 @@ const UsageEventSchema = new Schema<UsageEvent>(
     userId: { type: String, required: true, index: true },
     type: {
       type: String,
-      enum: ["chat", "upload", "extraction_done", "extraction_failed"],
+      enum: ["chat", "chat_failed", "upload", "extraction_done", "extraction_failed"],
       required: true,
     },
     provider: { type: String },

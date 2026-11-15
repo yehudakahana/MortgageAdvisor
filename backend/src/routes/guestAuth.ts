@@ -89,7 +89,7 @@ router.post("/", guestCreationLimiter, async (req, res) => {
         expiresAt: { $gt: new Date() },
       });
       if (existing) {
-        console.log(`[guest-auth] resumed guest ${existing.id} for known device`);
+        console.log("[guest-auth] resumed a guest for a known device");
         return res.json({
           token: signGuestToken(existing, secret),
           username: existing.id,

@@ -2,15 +2,21 @@ import { GuestUserModel } from "../models/GuestUser";
 import { ClientModel } from "../models/Client";
 import { UserSettingsModel } from "../models/UserSettings";
 import { deleteObject } from "./storageService";
-import { GUEST_CLEANUP_BATCH, GUEST_ID_PREFIX, SAMPLE_KEY_PREFIX } from "../constants/guest";
+import {
+  GUEST_CLEANUP_BATCH,
+  GUEST_ID_PREFIX,
+  GUEST_SWEEP_INTERVAL_MS,
+  SAMPLE_KEY_PREFIX,
+} from "../constants/guest";
 
 // Garbage-collects guest data: clients, their own uploaded R2 files, the
 // settings doc (custom rules, both categories) and finally the guest record.
 // Shared sample files (samples/*) are never deleted, and the template client
 // belongs to "system", not to any guest.
 //
-// Triggered by a periodic sweep started in index.ts (so data is gone shortly
-// after the 24h expiry even when nobody logs in) and, as a backstop, at the
+// Triggered by a periodic sweep started in index.ts (so data is gone within
+// about a minute of the 24h expiry, while the process is running, even when
+// nobody logs in) and, as a backstop, at the
 // start of POST /api/auth/guest. Each call deletes at most GUEST_CLEANUP_BATCH
 // guests so one sweep can't fan out into hundreds of R2 round-trips.
 //
@@ -43,9 +49,9 @@ export async function cleanupExpiredGuests(): Promise<void> {
       try {
         await purgeGuestData(guest.id);
         await GuestUserModel.deleteOne({ id: guest.id });
-        console.log(`[guest-cleanup] removed expired guest ${guest.id}`);
+        console.log("[guest-cleanup] removed an expired guest");
       } catch (err) {
-        console.error(`[guest-cleanup] failed for guest ${guest.id}, will retry:`, err);
+        console.error("[guest-cleanup] failed for an expired guest, will retry:", err);
       }
     }
 
@@ -62,9 +68,9 @@ export async function cleanupExpiredGuests(): Promise<void> {
       if (await GuestUserModel.exists({ id })) continue;
       try {
         await purgeGuestData(id);
-        console.log(`[guest-cleanup] removed orphaned data of ${id}`);
+        console.log("[guest-cleanup] removed orphaned guest data");
       } catch (err) {
-        console.error(`[guest-cleanup] orphan purge failed for ${id}, will retry:`, err);
+        console.error("[guest-cleanup] orphan purge failed, will retry:", err);
       }
     }
   } finally {
@@ -73,7 +79,7 @@ export async function cleanupExpiredGuests(): Promise<void> {
 }
 
 // Starts the periodic sweep. unref() so it never keeps the process alive.
-export function startGuestCleanupSchedule(intervalMs = 15 * 60 * 1000): NodeJS.Timeout {
+export function startGuestCleanupSchedule(intervalMs = GUEST_SWEEP_INTERVAL_MS): NodeJS.Timeout {
   const run = () =>
     void cleanupExpiredGuests().catch((err) => console.error("[guest-cleanup] sweep failed:", err));
   run();

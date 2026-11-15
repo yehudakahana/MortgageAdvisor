@@ -75,7 +75,6 @@ Key decisions:
 ## More
 
 - [Local setup and deployment](docs/SETUP.md)
-- [Custom rules (chat + document validation)](docs/RULES.md)
 - [Tests and evals](docs/SETUP.md#tests-and-evals)
 - [Security and data handling](SECURITY.md)
 - [Offline testing](OFFLINE_TESTING.md)

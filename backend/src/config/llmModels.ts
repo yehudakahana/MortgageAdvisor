@@ -10,7 +10,7 @@ for (const key of REQUIRED_ENV) {
   }
 }
 
-export type TaskType = "EXTRACTION" | "CHAT";
+export type TaskType = "EXTRACTION" | "CHAT" | "VALIDATION";
 export type Provider = "claude" | "gemini";
 
 export interface ModelConfig {
@@ -26,6 +26,8 @@ export const TASK_MODEL_MAP: Record<TaskType, ModelConfig> = {
   EXTRACTION: { provider: "gemini", model: GEMINI_MODEL },
   // Chat stays on Claude.
   CHAT: { provider: "claude", model: CLAUDE_MODEL },
+  // Validation: Claude by default (see above).
+  VALIDATION: { provider: VALIDATION_PROVIDER, model: VALIDATION_MODEL },
 };
 
 // Cross-provider fallback used when the primary provider fails (e.g. Gemini

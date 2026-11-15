@@ -1,11 +1,19 @@
 import { GoogleGenAI } from "@google/genai";
-import { ChatRequest, ExtractionRequest, LLMAdapter, LLMResponse } from "./types";
+import {
+  ChatRequest,
+  ExtractionRequest,
+  LLMAdapter,
+  LLMResponse,
+  ValidationRequest,
+} from "./types";
 import {
   EXTRACTION_SYSTEM,
   EXTRACTION_PROMPT,
   CHAT_SYSTEM_PROMPT,
   CLIENT_DATA_HEADER,
+  VALIDATION_SYSTEM_PROMPT,
   buildAdvisorRulesBlock,
+  buildValidationUserMessage,
   serializeClientData,
 } from "./prompts";
 
@@ -71,14 +79,30 @@ async function runChat(request: ChatRequest, model: string): Promise<LLMResponse
   return { content: response.text ?? "" };
 }
 
+// VALIDATION fallback path (primary is normally Claude). Runs on the already
+// extracted text, forcing a clean JSON array via responseMimeType.
+async function runValidation(request: ValidationRequest, model: string): Promise<LLMResponse> {
+  const systemInstruction = `${VALIDATION_SYSTEM_PROMPT}\n\n${CLIENT_DATA_HEADER}\n${serializeClientData(request.clientData)}`;
+  const response = await ai.models.generateContent({
+    model,
+    contents: [{ role: "user" as const, parts: [{ text: buildValidationUserMessage(request.rules) }] }],
+    config: {
+      systemInstruction,
+      responseMimeType: "application/json",
+      maxOutputTokens: request.maxTokens ?? 2048,
+    },
+  });
+  return { content: response.text ?? "" };
+}
+
 export const geminiAdapter: LLMAdapter = {
   async run(request, model): Promise<LLMResponse> {
     let lastErr: unknown;
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
-        return request.taskType === "EXTRACTION"
-          ? await runExtraction(request, model)
-          : await runChat(request, model);
+        if (request.taskType === "EXTRACTION") return await runExtraction(request, model);
+        if (request.taskType === "VALIDATION") return await runValidation(request, model);
+        return await runChat(request, model);
       } catch (err) {
         lastErr = err;
         if (attempt < MAX_RETRIES && isTransient(err)) {

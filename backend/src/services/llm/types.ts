@@ -26,7 +26,22 @@ export interface ChatRequest {
   maxTokens?: number;
 }
 
-export type LLMRequest = ExtractionRequest | ChatRequest;
+// A single validation rule to evaluate against the client's extracted docs.
+export interface ValidationRuleInput {
+  id: string;
+  text: string;
+}
+
+export interface ValidationRequest {
+  taskType: "VALIDATION";
+  // The client's extracted documents (structured + raw text). No image bytes —
+  // validation runs on already-extracted text, so it is a cheap text call.
+  clientData: ClientData;
+  rules: ValidationRuleInput[];
+  maxTokens?: number;
+}
+
+export type LLMRequest = ExtractionRequest | ChatRequest | ValidationRequest;
 
 export interface LLMResponse {
   content: string;

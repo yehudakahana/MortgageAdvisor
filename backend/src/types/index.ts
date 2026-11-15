@@ -79,10 +79,17 @@ export interface ChatMessage {
   content: string;
 }
 
-// A single custom advisor rule injected into the chat system prompt.
+// Rule scope: "chat" rules shape chat answers; "document_validation" rules are
+// checked against a client's extracted documents. Missing = "chat" (rules
+// created before categories existed).
+export type RuleCategory = "chat" | "document_validation";
+
+// A single custom advisor rule. Chat rules are injected into the chat system
+// prompt; validation rules drive the per-upload document check.
 export interface KnowledgeRule {
   id: string;
   text: string;
+  category?: RuleCategory;
   createdAt: Date;
   updatedAt?: Date;
 }

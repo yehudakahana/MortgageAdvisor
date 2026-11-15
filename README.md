@@ -14,7 +14,7 @@ Built by [Yehuda Kahana](https://github.com/yehudakahana) — React + TypeScript
 2. Ask about a value in the documents — then ask about one that's missing. It should say it doesn't know instead of inventing a number.
 3. Switch between one-client and all-clients chat, or upload a synthetic PDF.
 
-Guest accounts last 24 hours with limited quotas (20 messages, 5 uploads). **Use synthetic data only.**
+Guest accounts last 24 hours with limited quotas (20 messages, 5 uploads). When they expire, their clients, uploaded files and custom rules are deleted by a sweep that runs every 15 minutes. **Use synthetic data only.**
 
 ![kay.ai client workspace and document-grounded chat](docs/images/workspace-screenshot.png)
 

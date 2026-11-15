@@ -202,3 +202,30 @@ describe("guest caps", () => {
     expect(res.body.error).toBe(GUEST_MESSAGES.reExtractCapReached);
   });
 });
+
+describe("guest data cleanup after expiry", () => {
+  it("deletes expired guests' clients, rules and record, but keeps live guests", async () => {
+    const { UserSettingsModel } = await import("../models/UserSettings");
+    const { cleanupExpiredGuests } = await import("../services/guestCleanupService");
+    await UserSettingsModel.deleteMany({});
+    const old = await GuestUserModel.create({ id: "guest_old", expiresAt: new Date(Date.now() - 1000) });
+    const live = await GuestUserModel.create({ id: "guest_live", expiresAt: new Date(Date.now() + 60000) });
+    await seedClient(old.id);
+    await seedClient(live.id);
+    await UserSettingsModel.create({
+      username: old.id,
+      customKnowledge: [{ id: "r1", text: "rule", category: "document_validation" }],
+    });
+    await UserSettingsModel.create({ username: live.id, customKnowledge: [{ id: "r2", text: "rule2" }] });
+    await seedClient("guest_orphan"); // no GuestUser record
+
+    await cleanupExpiredGuests();
+
+    expect(await GuestUserModel.exists({ id: old.id })).toBeNull();
+    expect(await ClientModel.countDocuments({ userId: old.id })).toBe(0);
+    expect(await UserSettingsModel.countDocuments({ username: old.id })).toBe(0);
+    expect(await ClientModel.countDocuments({ userId: "guest_orphan" })).toBe(0);
+    expect(await ClientModel.countDocuments({ userId: live.id })).toBe(1);
+    expect(await UserSettingsModel.countDocuments({ username: live.id })).toBe(1);
+  });
+});

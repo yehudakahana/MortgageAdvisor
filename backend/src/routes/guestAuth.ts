@@ -76,7 +76,7 @@ router.post("/", guestCreationLimiter, async (req, res) => {
   const device = typeof deviceId === "string" && deviceId ? deviceId.slice(0, 100) : undefined;
   const ip = req.ip ?? "unknown";
 
-  // Opportunistic GC (no cron on Railway). Fire-and-forget and batched, so a
+  // Backstop GC (the main sweep runs on a timer in index.ts). Fire-and-forget and batched, so a
   // backlog of expired guests never delays the caller.
   void cleanupExpiredGuests().catch((err) =>
     console.error("[guest-auth] cleanup failed:", err)

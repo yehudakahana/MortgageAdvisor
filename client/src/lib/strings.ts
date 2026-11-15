@@ -177,6 +177,18 @@ export const VALIDATION_TEXT = {
   statusUncertain: "לא ודאי",
 };
 
+// The automatic post-upload flow: inline staged indicator + final report dialog.
+export const UPLOAD_FLOW_TEXT = {
+  stepUpload: "המסמכים עלו בהצלחה",
+  stepExtract: "מתבצע חילוץ ברקע",
+  stepValidate: "מתבצעת בדיקה של הכללים המוגדרים",
+  doneTitle: "הכל הסתיים בהצלחה",
+  uploadsFailedTitle: "חלק מהמסמכים נכשלו בהעלאה",
+  reportHeading: "דוח בדיקת מסמכים",
+  noRules: "לא הוגדרו כללי בדיקת מסמכים.",
+  validationError: "בדיקת הכללים נכשלה. אפשר להריץ שוב מההגדרות.",
+};
+
 export const ERROR_BOUNDARY_TEXT = {
   title: "משהו השתבש.",
   hint: "נסו לרענן את הדף.",

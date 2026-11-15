@@ -5,10 +5,10 @@ import { cn } from "@/lib/utils";
 import { DOCUMENTS_TEXT } from "@/lib/strings";
 import { DOC_TYPE_LABELS } from "../types/client";
 import type { Document } from "../types/client";
-import type { UploadResult } from "../hooks/useDocumentUpload";
+import type { FlowStage, FlowReport } from "../hooks/useDocumentUpload";
 import DocumentRow from "./DocumentRow";
-import UploadSummaryDialog from "./UploadSummaryDialog";
-import ValidationPanel from "./ValidationPanel";
+import UploadFlowStatus from "./UploadFlowStatus";
+import UploadFlowDialog from "./UploadFlowDialog";
 
 interface Props {
   clientId: string;
@@ -17,8 +17,9 @@ interface Props {
   setUploadType: (v: string) => void;
   isUploading: boolean;
   uploadProgress: { current: number; total: number } | null;
-  batchResults: UploadResult[] | null;
-  clearBatchResults: () => void;
+  flowStage: FlowStage;
+  flowReport: FlowReport | null;
+  closeReport: () => void;
   fileInputRef: React.RefObject<HTMLInputElement>;
   onFileSelect: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onReExtract: (docId: string) => void;
@@ -28,7 +29,7 @@ interface Props {
   deletingDocId: string | null;
 }
 
-export default function ClientDocuments({ clientId, documents, uploadType, setUploadType, isUploading, uploadProgress, batchResults, clearBatchResults, fileInputRef, onFileSelect, onReExtract, reExtractingId, timedOutDocIds, onDeleteDocument, deletingDocId }: Props) {
+export default function ClientDocuments({ clientId, documents, uploadType, setUploadType, isUploading, uploadProgress, flowStage, flowReport, closeReport, fileInputRef, onFileSelect, onReExtract, reExtractingId, timedOutDocIds, onDeleteDocument, deletingDocId }: Props) {
   return (
     <TooltipProvider delayDuration={150}>
     <div className="bg-indigo-50/40 border-b border-border/50 border-s-2 border-s-indigo-600 px-4 py-4 space-y-4">
@@ -81,11 +82,10 @@ export default function ClientDocuments({ clientId, documents, uploadType, setUp
           </span>
           <input type="file" accept=".pdf" multiple ref={fileInputRef} className="sr-only" onChange={onFileSelect} disabled={isUploading} />
         </label>
+        <UploadFlowStatus stage={flowStage} />
       </div>
 
-      {documents.length > 0 && <ValidationPanel clientId={clientId} />}
-
-      <UploadSummaryDialog results={batchResults} onClose={clearBatchResults} />
+      <UploadFlowDialog report={flowReport} onClose={closeReport} />
     </div>
     </TooltipProvider>
   );

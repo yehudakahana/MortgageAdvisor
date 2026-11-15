@@ -27,6 +27,7 @@ export default function ValidationResultList({ results }: { results: ValidationR
               <Icon className="h-4 w-4 shrink-0" aria-hidden="true" />
               <span>{s.label}</span>
             </div>
+            <p className="mt-1 text-foreground">{r.rule}</p>
             {r.reason && <p className="mt-1 text-muted-foreground">{r.reason}</p>}
             {r.evidence && (
               <p className="mt-0.5 text-xs text-muted-foreground/80">

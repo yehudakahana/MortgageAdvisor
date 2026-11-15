@@ -188,6 +188,7 @@ export async function createClient(data: { name: string; phone: string; email?: 
 export type ValidationStatus = "pass" | "fail" | "uncertain";
 export type ValidationResult = {
   id: string;
+  rule: string;
   status: ValidationStatus;
   evidence: string;
   reason: string;

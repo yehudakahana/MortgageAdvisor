@@ -86,4 +86,5 @@ export const CHAT_MESSAGES = {
 
 export const VALIDATION_MESSAGES = {
   runFailed: "בדיקת המסמכים נכשלה, נסו שוב מאוחר יותר",
+  noVerdict: "לא התקבלה הכרעה עבור כלל זה",
 };

@@ -1,11 +1,15 @@
 import { Client, LLMSource } from "../types";
 import { routeToLLM } from "./llm/router";
 import { buildClientData, loadValidationRules } from "./chatContext";
+import { ValidationRuleInput } from "./llm/types";
+import { VALIDATION_MESSAGES } from "../constants/messages";
 
 export type ValidationStatus = "pass" | "fail" | "uncertain";
 
 export interface ValidationResult {
   id: string;
+  // The advisor's rule text, so the report shows what each verdict refers to.
+  rule: string;
   status: ValidationStatus;
   // Hebrew: the value/text the verdict is based on (may be empty).
   evidence: string;
@@ -30,33 +34,36 @@ function stripFences(text: string): string {
     .trim();
 }
 
-// Coerce the model output into trusted shapes. Anything unparseable or
-// unexpected becomes "uncertain" rather than a silent pass/fail — a validation
-// check must never assert a verdict it can't support.
-function normalize(raw: string, ruleIds: Set<string>): ValidationResult[] {
-  let parsed: unknown;
+// Coerce the model output into trusted shapes. Anything unparseable, unknown,
+// or missing becomes "uncertain" rather than a silent pass/fail or a dropped
+// rule — a validation check must never assert a verdict it can't support.
+function parseRows(raw: string): Record<string, unknown>[] {
   try {
-    parsed = JSON.parse(stripFences(raw));
+    const parsed: unknown = JSON.parse(stripFences(raw));
+    return Array.isArray(parsed)
+      ? parsed.filter((row): row is Record<string, unknown> => typeof row === "object" && row !== null)
+      : [];
   } catch {
     return [];
   }
-  if (!Array.isArray(parsed)) return [];
+}
+
+function normalize(raw: string, rules: ValidationRuleInput[]): ValidationResult[] {
   const statuses: ValidationStatus[] = ["pass", "fail", "uncertain"];
-  return parsed
-    .map((row) => {
-      const r = row as Record<string, unknown>;
-      const id = typeof r.id === "string" ? r.id : "";
-      const status = statuses.includes(r.status as ValidationStatus)
-        ? (r.status as ValidationStatus)
-        : "uncertain";
-      return {
-        id,
-        status,
-        evidence: typeof r.evidence === "string" ? r.evidence : "",
-        reason: typeof r.reason === "string" ? r.reason : "",
-      };
-    })
-    .filter((r) => ruleIds.has(r.id));
+  const byId = new Map(parseRows(raw).map((r) => [r.id, r]));
+  return rules.map((rule) => {
+    const r = byId.get(rule.id);
+    if (!r) {
+      return { id: rule.id, rule: rule.text, status: "uncertain", evidence: "", reason: VALIDATION_MESSAGES.noVerdict };
+    }
+    return {
+      id: rule.id,
+      rule: rule.text,
+      status: statuses.includes(r.status as ValidationStatus) ? (r.status as ValidationStatus) : "uncertain",
+      evidence: typeof r.evidence === "string" ? r.evidence : "",
+      reason: typeof r.reason === "string" ? r.reason : "",
+    };
+  });
 }
 
 // Runs the advisor's document-validation rules against one client's extracted
@@ -71,10 +78,9 @@ export async function runValidation(username: string, client: Client): Promise<V
     rules,
   });
 
-  const ruleIds = new Set(rules.map((r) => r.id));
   return {
     skipped: false,
-    results: normalize(content, ruleIds),
+    results: normalize(content, rules),
     llm: { provider, model, usedFallback },
     checkedAt: new Date().toISOString(),
   };

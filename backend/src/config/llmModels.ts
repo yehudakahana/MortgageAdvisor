@@ -19,7 +19,13 @@ export interface ModelConfig {
 }
 
 const CLAUDE_MODEL = process.env.CLAUDE_MODEL ?? "claude-sonnet-4-6";
-const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-2.5-flash";
+// Extraction default. Kept a separate env var from chat so extraction can be
+// switched to a cheaper tier (e.g. gemini-3.5-flash-lite) after an accuracy
+// comparison, without changing the chat fallback.
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-3.8-flash";
+// Chat fallback answers advisors directly. Note: gemini-3.8-flash is priced at
+// an introductory $0.75/$3.75 per 1M tokens that doubles on 2027-01-01.
+const GEMINI_CHAT_MODEL = process.env.GEMINI_CHAT_MODEL ?? "gemini-3.8-flash";
 
 export const TASK_MODEL_MAP: Record<TaskType, ModelConfig> = {
   // Extraction runs on Gemini Flash (fast + cheap for PDF/image parsing).
@@ -36,5 +42,5 @@ export const TASK_MODEL_MAP: Record<TaskType, ModelConfig> = {
 // to Gemini with the same shared persona prompt.
 export const TASK_FALLBACK_MAP: Partial<Record<TaskType, ModelConfig>> = {
   EXTRACTION: { provider: "claude", model: CLAUDE_MODEL },
-  CHAT: { provider: "gemini", model: GEMINI_MODEL },
+  CHAT: { provider: "gemini", model: GEMINI_CHAT_MODEL },
 };

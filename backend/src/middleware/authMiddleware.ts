@@ -100,8 +100,15 @@ export async function authenticateToken(
   }
 
   req.user = { id: username, username, isGuest };
+  // Guest activity is logged without the guest id or any record ids in the
+  // path, so Railway's log retention holds nothing that links back to a guest
+  // account after it is purged.
+  const who = isGuest ? "A guest" : `User ${username}`;
+  const target = isGuest
+    ? req.originalUrl.split("?")[0].replace(/[0-9a-f]{8}-[0-9a-f-]{27,}/gi, ":id")
+    : req.originalUrl;
   console.log(
-    `[ACTIVITY LOG] User ${username} made a ${req.method} request to ${req.originalUrl} at ${new Date().toISOString()}`
+    `[ACTIVITY LOG] ${who} made a ${req.method} request to ${target} at ${new Date().toISOString()}`
   );
   next();
 }

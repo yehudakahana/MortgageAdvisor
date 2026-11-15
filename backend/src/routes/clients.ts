@@ -3,9 +3,11 @@ import { randomUUID } from "crypto";
 import { ClientModel } from "../models/Client";
 import { safeDeleteObject } from "../services/storageService";
 import { guestClientCap } from "../middleware/guestLimits";
+import { releaseGuestCounter, reserveGuestCounter } from "../services/guestQuotaService";
+import { GUEST_LIMITS, SAMPLE_KEY_PREFIX } from "../constants/guest";
 import { Client } from "../types";
 import { isNonEmptyString, isOptionalString } from "../validation/validators";
-import { CLIENT_MESSAGES } from "../constants/messages";
+import { CLIENT_MESSAGES, GUEST_MESSAGES } from "../constants/messages";
 
 const router = Router();
 
@@ -46,6 +48,18 @@ router.post("/", guestClientCap, async (req: Request, res: Response) => {
   if (!isOptionalString(email) || !isOptionalString(notes)) {
     return res.status(400).json({ error: CLIENT_MESSAGES.fieldsMustBeStrings });
   }
+  // Guests: reserve one of the own-client slots atomically BEFORE writing, so
+  // simultaneous requests cannot overshoot the cap (the middleware count above
+  // is only an early reject). Released if the write fails or the client is deleted.
+  const guestId = req.user?.isGuest ? ownerOf(req) : null;
+  if (guestId) {
+    const slot = await reserveGuestCounter(guestId, "ownClients", GUEST_LIMITS.extraClients).catch(
+      () => "error" as const
+    );
+    if (slot === "error") return res.status(500).json({ error: GUEST_MESSAGES.limitCheckFailed });
+    if (slot === "gone") return res.status(401).json({ error: "Unauthorized" });
+    if (slot === "full") return res.status(403).json({ error: GUEST_MESSAGES.clientCapReached });
+  }
   try {
     const client = await ClientModel.create({
       id: randomUUID(),
@@ -58,6 +72,7 @@ router.post("/", guestClientCap, async (req: Request, res: Response) => {
     });
     res.status(201).json(client);
   } catch (err) {
+    if (guestId) await releaseGuestCounter(guestId, "ownClients").catch(() => undefined);
     console.error("[clients] create failed:", err);
     res.status(500).json({ error: CLIENT_MESSAGES.createFailed });
   }
@@ -99,6 +114,12 @@ router.delete("/:id", async (req: Request, res: Response) => {
       userId: ownerOf(req),
     });
     if (!deleted) return res.status(404).json({ error: CLIENT_MESSAGES.notFound });
+    // findOneAndDelete has a single winner per client, so this releases once.
+    if (req.user?.isGuest) {
+      const ownDocs = deleted.documents.filter((d) => !d.key?.startsWith(SAMPLE_KEY_PREFIX)).length;
+      if (!deleted.isSample) await releaseGuestCounter(ownerOf(req), "ownClients").catch(() => undefined);
+      await releaseGuestCounter(ownerOf(req), "uploads", ownDocs).catch(() => undefined);
+    }
     // Best-effort R2 cleanup — never fail the response over storage errors.
     // Shared sample files are skipped inside safeDeleteObject.
     for (const doc of deleted.documents) {

@@ -9,7 +9,14 @@ import {
   buildContentDisposition,
 } from "../services/storageService";
 import { isDocumentType } from "../validation/validators";
-import { CLIENT_MESSAGES, DOCUMENT_MESSAGES, UPLOAD_MESSAGES } from "../constants/messages";
+import { releaseGuestCounter, reserveGuestCounter } from "../services/guestQuotaService";
+import { GUEST_LIMITS } from "../constants/guest";
+import {
+  CLIENT_MESSAGES,
+  DOCUMENT_MESSAGES,
+  GUEST_MESSAGES,
+  UPLOAD_MESSAGES,
+} from "../constants/messages";
 
 // LLM/provider errors often arrive as a JSON blob (e.g. Gemini's
 // {"error":{"code":503,"message":"...high demand..."}}). Surface the human
@@ -68,6 +75,20 @@ export async function uploadDocument(req: Request, res: Response) {
   const key = `uploads/${clientId}/${uuid}.${resolved.ext}`;
   const originalName = decodeOriginalName(file.originalname);
 
+  // Guests: reserve an upload slot atomically before any write (the middleware
+  // count is only an early reject). Every failure path below releases it.
+  const guestId = req.user?.isGuest ? req.user.id : null;
+  if (guestId) {
+    const slot = await reserveGuestCounter(guestId, "uploads", GUEST_LIMITS.uploads).catch(
+      () => "error" as const
+    );
+    if (slot === "error") return res.status(500).json({ error: GUEST_MESSAGES.limitCheckFailed });
+    if (slot === "gone") return res.status(401).json({ error: "Unauthorized" });
+    if (slot === "full") return res.status(403).json({ error: GUEST_MESSAGES.uploadCapReached });
+  }
+  const release = () =>
+    guestId ? releaseGuestCounter(guestId, "uploads").catch(() => undefined) : Promise.resolve();
+
   try {
     await uploadObject({
       key,
@@ -76,6 +97,7 @@ export async function uploadDocument(req: Request, res: Response) {
       contentDisposition: buildContentDisposition(resolved.mime, originalName),
     });
   } catch (err) {
+    await release();
     console.error("[upload] R2 upload failed:", err);
     return res.status(500).json({ error: UPLOAD_MESSAGES.uploadFailed });
   }
@@ -101,10 +123,12 @@ export async function uploadDocument(req: Request, res: Response) {
   } catch (err) {
     console.error("[upload] failed to attach document:", err);
     await safeDeleteObject(key); // avoid an orphaned R2 object
+    await release();
     return res.status(500).json({ error: UPLOAD_MESSAGES.saveFailed });
   }
   if (!updated) {
     await safeDeleteObject(key);
+    await release();
     return res.status(404).json({ error: CLIENT_MESSAGES.notFound });
   }
   res.status(201).json(updated);

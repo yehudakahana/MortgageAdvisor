@@ -4,6 +4,7 @@ import "dotenv/config";
 import { app } from "./app";
 import { connectDB } from "./config/db";
 import { getJwtSecret } from "./config/auth";
+import { startGuestCleanupSchedule } from "./services/guestCleanupService";
 
 const PORT = process.env.PORT ?? 3001;
 
@@ -19,6 +20,7 @@ try {
 // Connect to MongoDB before accepting traffic — no request is served without a
 // live database connection.
 connectDB().then(() => {
+  startGuestCleanupSchedule();
   app.listen(PORT, () => {
     console.log(`kay.ai backend running on http://localhost:${PORT}`);
   });

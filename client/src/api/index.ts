@@ -4,6 +4,7 @@
 // produce "//api/..." URLs, which Express rejects with a 404.
 import { toast } from "@/lib/toast";
 import { getDeviceId } from "@/lib/deviceId";
+import { clearGuestBrowserData } from "../lib/guestBrowserData";
 import { GUEST_TEXT } from "@/lib/strings";
 
 export const BASE = `${(import.meta.env.VITE_API_URL ?? "").replace(/\/+$/, "")}/api`;
@@ -44,7 +45,10 @@ export async function authFetch(input: string, init: RequestInit = {}) {
     localStorage.removeItem("user_token");
     localStorage.removeItem("username");
     localStorage.removeItem("is_guest");
-    if (wasGuest) toast(GUEST_TEXT.sessionExpired);
+    if (wasGuest) {
+      clearGuestBrowserData({ includeDeviceId: true });
+      toast(GUEST_TEXT.sessionExpired);
+    }
     window.dispatchEvent(new Event("auth:logout"));
     throw new Error("Unauthorized");
   }

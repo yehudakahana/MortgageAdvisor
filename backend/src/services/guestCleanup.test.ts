@@ -85,4 +85,37 @@ describe("cleanupExpiredGuests failure handling", () => {
     expect(await ClientModel.countDocuments({ userId: { $in: ["system", "consultant"] } })).toBe(2);
     expect(await UserSettingsModel.countDocuments({ username: { $in: ["system", "consultant"] } })).toBe(2);
   });
+
+  it("purges guest rows in usageevents (unmerged usage-logging branches) incl. orphans, keeps regular users", async () => {
+    const col = mongoose.connection.collection("usageevents");
+    await col.deleteMany({});
+    await GuestUserModel.create({ id: "guest_u", expiresAt: new Date(Date.now() - 1000) });
+    await col.insertMany([
+      { userId: "guest_u", type: "chat" },
+      { userId: "guest_gone", type: "chat" },
+      { userId: "consultant", type: "chat" },
+    ]);
+    await cleanupExpiredGuests();
+    expect(await col.countDocuments({ userId: { $regex: "^guest_" } })).toBe(0);
+    expect(await col.countDocuments({ userId: "consultant" })).toBe(1);
+  });
+
+  it("drains a backlog larger than one batch in a single sweep", async () => {
+    await GuestUserModel.insertMany(
+      Array.from({ length: 45 }, (_, i) => ({ id: `guest_bulk${i}`, expiresAt: new Date(Date.now() - 1000) }))
+    );
+    await cleanupExpiredGuests();
+    expect(await GuestUserModel.countDocuments({})).toBe(0);
+  });
+
+  it("does not spin when every purge fails", async () => {
+    await GuestUserModel.insertMany(
+      Array.from({ length: 25 }, (_, i) => ({ id: `guest_f${i}`, expiresAt: new Date(Date.now() - 1000) }))
+    );
+    for (let i = 0; i < 25; i++) await seed(`guest_f${i}`, ["k.pdf"]);
+    deleteObject.mockRejectedValue(new Error("down"));
+    await cleanupExpiredGuests();
+    expect(await GuestUserModel.countDocuments({})).toBe(25);
+    expect(deleteObject.mock.calls.length).toBeLessThanOrEqual(20);
+  });
 });

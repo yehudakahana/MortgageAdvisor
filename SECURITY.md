@@ -8,7 +8,7 @@
 - **Uploads:** in-memory buffering with size caps (10 MiB regular, lower for guests) and file-signature checks on accepted types.
 - **AI inputs/outputs:** document content is marked as untrusted in prompts, with instructions not to follow embedded commands; extracted JSON is shape- and size-validated before storage. Resistance is measured by the adversarial eval category.
 - **HTTP:** CORS allowlist, Helmet on the API, CSP and security headers on the frontend.
-- **Guests:** separate accounts with quotas and 24-hour expiry. Expired guests' clients, uploaded R2 files and custom rules are purged by a background sweep every minute while the server runs; a failed file delete keeps the record so it is retried. Expiry is fixed at 24h from creation. Host log retention and any R2 bucket versioning are outside the code.
+- **Guests:** separate accounts with quotas. Access ends 24h after creation (fixed, not sliding). Clients, uploaded R2 files, custom rules and usage-event rows are purged by a background sweep every minute while the server runs (up to 200 guests per sweep); a failed delete keeps the guest record so it is retried, and an orphan sweep catches rows written during a purge. Deletion timing is a target, not a guarantee. Not covered by code: host log retention, R2 bucket versioning/lifecycle, database backups, and error-monitoring retention.
 - **Secrets:** `npm run audit:secrets` scans the repo for leaked credentials.
 
 ## Data flow to AI providers

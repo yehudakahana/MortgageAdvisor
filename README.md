@@ -14,7 +14,7 @@ Built by [Yehuda Kahana](https://github.com/yehudakahana) — React + TypeScript
 2. Ask about a value in the documents — then ask about one that's missing. It should say it doesn't know instead of inventing a number.
 3. Switch between one-client and all-clients chat, or upload a synthetic PDF.
 
-Guest accounts last 24 hours with limited quotas (20 messages, 5 uploads). When they expire, their clients, uploaded files and custom rules are deleted within about a minute by a background sweep (the 24 hours count from creation and are never extended by activity; access stops at exactly 24h). Guest activity logs carry no guest or record ids. **Use synthetic data only.**
+Guest accounts last 24 hours with limited quotas (20 messages, 5 uploads). Access stops exactly 24 hours after creation (fixed, never extended by activity). Their clients, uploaded files and custom rules are then deleted by a background sweep that runs every minute while the server is up. That is a target, not a guarantee: server downtime, a backlog, or a failing storage delete delays it, and failed deletes are retried. Guest request logs carry no guest or record ids. The browser's guest leftovers are cleared on sign-out, and the device id once the account has expired. **Use synthetic data only.**
 
 ![kay.ai client workspace and document-grounded chat](docs/images/workspace-screenshot.png)
 

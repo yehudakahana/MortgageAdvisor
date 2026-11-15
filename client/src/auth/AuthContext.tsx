@@ -1,4 +1,18 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
+import { clearGuestBrowserData, isTokenExpired } from "../lib/guestBrowserData";
+
+// A guest token past its exp belongs to an account the server has purged (or is
+// about to): drop it and the guest leftovers before the first render.
+function dropExpiredGuestSession(): void {
+  const token = localStorage.getItem("user_token");
+  if (token && localStorage.getItem("is_guest") === "1" && isTokenExpired(token)) {
+    localStorage.removeItem("user_token");
+    localStorage.removeItem("username");
+    localStorage.removeItem("is_guest");
+    clearGuestBrowserData({ includeDeviceId: true });
+  }
+}
+dropExpiredGuestSession();
 
 type AuthState = {
   username: string | null;
@@ -28,6 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   function logout() {
+    if (localStorage.getItem("is_guest") === "1") clearGuestBrowserData({ includeDeviceId: false });
     localStorage.removeItem("user_token");
     localStorage.removeItem("username");
     localStorage.removeItem("is_guest");

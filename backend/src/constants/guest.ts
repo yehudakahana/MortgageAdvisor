@@ -33,8 +33,12 @@ export const GUEST_LIMITS = {
 // The cleanup sweep runs inside a public request, so it must never grow with
 // the backlog — it deletes at most this many expired guests per call.
 export const GUEST_CLEANUP_BATCH = 20;
+// A sweep keeps draining batches up to this many times (so up to 200 guests per
+// sweep); anything left waits for the next sweep.
+export const GUEST_MAX_BATCHES_PER_SWEEP = 10;
 
 // How often the background sweep looks for expired guests. Access is cut at
 // exactly ttlMs after creation (fixed, never extended by activity); stored data
-// is purged on the first sweep after that, so at most this long afterwards.
+// is purged by the first sweep that reaches it. That is a target, not a
+// guarantee: downtime, a backlog beyond one sweep, or a failing R2 delete delay it.
 export const GUEST_SWEEP_INTERVAL_MS = 60 * 1000;

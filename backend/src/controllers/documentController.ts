@@ -8,6 +8,8 @@ import {
 } from "../services/storageService";
 import { formatExtractionError, setExtraction } from "./uploadController";
 import { CLIENT_MESSAGES, DOCUMENT_MESSAGES } from "../constants/messages";
+import { releaseGuestCounter } from "../services/guestQuotaService";
+import { SAMPLE_KEY_PREFIX } from "../constants/guest";
 
 // Delete a single document: remove the R2 object (best-effort, same pattern as
 // client deletion) and pull the embedded metadata. Returns the updated client.
@@ -33,12 +35,17 @@ export async function deleteDocument(req: Request, res: Response) {
 
   try {
     const updated = await ClientModel.findOneAndUpdate(
-      { id: clientId, userId: req.user?.id ?? "" },
+      // Matching on the document too means only ONE of two simultaneous deletes
+      // pulls it, so the upload slot below is released exactly once.
+      { id: clientId, userId: req.user?.id ?? "", "documents.id": docId },
       { $pull: { documents: { id: docId } } },
       { returnDocument: "after" }
     );
-    // The client may have been deleted between the lookup and the update.
+    // The client or document may be gone between the lookup and the update.
     if (!updated) return res.status(404).json({ error: CLIENT_MESSAGES.notFound });
+    if (req.user?.isGuest && !doc.key?.startsWith(SAMPLE_KEY_PREFIX)) {
+      await releaseGuestCounter(req.user.id, "uploads").catch(() => undefined);
+    }
     res.json(updated);
   } catch (err) {
     console.error("[delete-doc] failed to remove document:", err);

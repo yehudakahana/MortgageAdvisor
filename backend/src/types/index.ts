@@ -66,6 +66,9 @@ export interface GuestUser {
   id: string; // guest_<uuid>
   deviceId?: string; // stable per-browser id, used to resume the account
   ip?: string; // creating IP, used to cap accounts per origin
+  ipSlot?: number; // 0..activeGuestsPerIp-1, unique per live IP: the atomic per-IP cap
+  ownClients: number; // reserved own-client slots (atomic cap)
+  uploads: number; // reserved upload slots (atomic cap)
   createdAt: Date;
   expiresAt: Date;
   usage: {

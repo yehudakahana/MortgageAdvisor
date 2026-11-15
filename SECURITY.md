@@ -18,3 +18,4 @@ Uploaded files are sent to the extraction provider; client data and recent messa
 ## Reporting
 
 Found an issue? Please email yehuda.kahana5@gmail.com rather than opening a public issue.
+- **Guest concurrency:** held by the database, not by process memory. One live account per device and a maximum of 3 per IP are unique partial indexes on GuestUser (deviceId; ip + ipSlot), so simultaneous sign-ins cannot both insert. Chat/re-extract quotas are conditional atomic updates. Client and upload caps reserve a counter slot with one conditional update before the write and release it on failure or delete. Accounts created before this change have no counters, so their caps rely on the older count check for up to 24h. A crash between reserve and release leaves a guest stricter, never looser, until it expires.

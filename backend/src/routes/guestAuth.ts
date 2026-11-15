@@ -56,6 +56,64 @@ function signGuestToken(guest: GuestUser, secret: string): string {
   });
 }
 
+type DuplicateKeyError = { code: number; keyPattern?: Record<string, number> };
+const isDuplicateKey = (err: unknown): err is DuplicateKeyError =>
+  typeof err === "object" && err !== null && (err as DuplicateKeyError).code === 11000;
+
+// Creates the guest account, or returns the live one for this device.
+//
+// The device and the per-IP cap are enforced by unique partial indexes on
+// GuestUser (deviceId, and (ip, ipSlot)), so simultaneous sign-ins cannot both
+// insert: the database rejects the second. An account is created by claiming
+// the first free ipSlot; a duplicate on deviceId means another request just
+// created this device's account, so we resume that one instead.
+async function createGuestAccount(
+  device: string | undefined,
+  ip: string
+): Promise<{ user: GuestUser; fresh: boolean } | "limit"> {
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const now = new Date();
+    if (device) {
+      const existing = await GuestUserModel.findOne({ deviceId: device, expiresAt: { $gt: now } });
+      if (existing) return { user: existing, fresh: false };
+      // An expired account keeps its record until the sweep purges it, but must
+      // not hold the device or an IP slot.
+      await GuestUserModel.updateMany({ deviceId: device, expiresAt: { $lte: now } }, { $unset: { deviceId: 1 } });
+    }
+    await GuestUserModel.updateMany(
+      { ip, ipSlot: { $exists: true }, expiresAt: { $lte: now } },
+      { $unset: { ipSlot: 1 } }
+    );
+
+    // Accounts that predate slots still count toward the cap.
+    const live = await GuestUserModel.countDocuments({ ip, expiresAt: { $gt: now } });
+    if (live >= GUEST_LIMITS.activeGuestsPerIp) return "limit";
+
+    let deviceTaken = false;
+    for (let slot = 0; slot < GUEST_LIMITS.activeGuestsPerIp; slot++) {
+      try {
+        const user = await GuestUserModel.create({
+          id: `${GUEST_ID_PREFIX}${randomUUID()}`,
+          deviceId: device,
+          ip,
+          ipSlot: slot,
+          expiresAt: new Date(Date.now() + GUEST_LIMITS.ttlMs),
+        });
+        return { user, fresh: true };
+      } catch (err) {
+        if (!isDuplicateKey(err)) throw err;
+        if (err.keyPattern && "deviceId" in err.keyPattern) {
+          deviceTaken = true;
+          break;
+        }
+        // Slot already claimed by a live account: try the next one.
+      }
+    }
+    if (!deviceTaken) return "limit";
+  }
+  throw new Error("guest creation kept conflicting");
+}
+
 // POST /api/auth/guest — public. Returns a token for the caller's guest
 // account, creating one only if they don't already have a live one.
 //
@@ -108,17 +166,23 @@ router.post("/", guestCreationLimiter, async (req, res) => {
       return res.status(429).json({ error: GUEST_MESSAGES.tooManyGuestAccounts });
     }
 
-    const guest = await GuestUserModel.create({
-      id: `${GUEST_ID_PREFIX}${randomUUID()}`,
-      deviceId: device,
-      ip,
-      expiresAt: new Date(Date.now() + GUEST_LIMITS.ttlMs),
-    });
-    await cloneSampleClient(guest.id);
+    const guest = await createGuestAccount(device, ip);
+    if (guest === "limit") {
+      return res.status(429).json({ error: GUEST_MESSAGES.tooManyGuestAccounts });
+    }
+    // Resumed (a concurrent request for the same device won): same account.
+    if (!guest.fresh) {
+      return res.json({
+        token: signGuestToken(guest.user, secret),
+        username: guest.user.id,
+        isGuest: true,
+      });
+    }
+    await cloneSampleClient(guest.user.id);
 
     return res.json({
-      token: signGuestToken(guest, secret),
-      username: guest.id,
+      token: signGuestToken(guest.user, secret),
+      username: guest.user.id,
       isGuest: true,
     });
   } catch (err) {

@@ -8,6 +8,7 @@ import type { Document } from "../types/client";
 import type { UploadResult } from "../hooks/useDocumentUpload";
 import DocumentRow from "./DocumentRow";
 import UploadSummaryDialog from "./UploadSummaryDialog";
+import ValidationPanel from "./ValidationPanel";
 
 interface Props {
   clientId: string;
@@ -81,6 +82,8 @@ export default function ClientDocuments({ clientId, documents, uploadType, setUp
           <input type="file" accept=".pdf" multiple ref={fileInputRef} className="sr-only" onChange={onFileSelect} disabled={isUploading} />
         </label>
       </div>
+
+      {documents.length > 0 && <ValidationPanel clientId={clientId} />}
 
       <UploadSummaryDialog results={batchResults} onClose={clearBatchResults} />
     </div>

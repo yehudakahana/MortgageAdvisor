@@ -56,6 +56,7 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
           <div className="flex-1 overflow-hidden border-t">
             {tab === "chat" ? (
               <RulesManager
+                key="chat"
                 category="chat"
                 copy={{
                   description: SETTINGS_TEXT.description,
@@ -65,7 +66,11 @@ export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps
                 }}
               />
             ) : (
-              <RulesManager category="document_validation" copy={VALIDATION_RULES_TEXT} />
+              <RulesManager
+                key="document_validation"
+                category="document_validation"
+                copy={VALIDATION_RULES_TEXT}
+              />
             )}
           </div>
         </div>

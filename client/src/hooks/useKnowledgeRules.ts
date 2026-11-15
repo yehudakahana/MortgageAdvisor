@@ -1,4 +1,4 @@
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   KnowledgeRule,
   MAX_RULES,
@@ -27,8 +27,11 @@ function messageOf(err: unknown, fallback: string): string {
 
 // State + CRUD for the user's custom knowledge rules. Fetching is lazy: `load`
 // runs the request only once (first sheet open), unless forced for a retry.
+// It loads every rule and filters by category here, so the visible list always
+// follows the `category` prop, and the cap (shared by both categories on the
+// server) is counted over all of them.
 export function useKnowledgeRules(category: RuleCategory = "chat") {
-  const [rules, setRules] = useState<KnowledgeRule[]>([]);
+  const [allRules, setRules] = useState<KnowledgeRule[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
   const fetchedRef = useRef(false);
@@ -39,13 +42,19 @@ export function useKnowledgeRules(category: RuleCategory = "chat") {
     setLoading(true);
     setLoadFailed(false);
     try {
-      setRules(await getKnowledgeRules(category));
+      setRules(await getKnowledgeRules());
     } catch {
       setLoadFailed(true);
     } finally {
       setLoading(false);
     }
-  }, [category]);
+  }, []);
+
+  // Rules saved before categories existed have no category — they are chat rules.
+  const rules = useMemo(
+    () => allRules.filter((rule) => (rule.category ?? "chat") === category),
+    [allRules, category]
+  );
 
   // Reports the outcome (and the failure reason) instead of toasting — the
   // settings sheet shows it inline, right next to the add form.
@@ -85,7 +94,7 @@ export function useKnowledgeRules(category: RuleCategory = "chat") {
     rules,
     loading,
     loadFailed,
-    atLimit: rules.length >= MAX_RULES,
+    atLimit: allRules.length >= MAX_RULES,
     load,
     addRule,
     updateRule,

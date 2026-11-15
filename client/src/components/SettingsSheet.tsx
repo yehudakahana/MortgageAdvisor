@@ -16,7 +16,7 @@ const TABS: { id: RuleCategory; label: string }[] = [
 ];
 
 // Settings drawer for the advisor's custom rules, split into two categories:
-// chat rules (shape קאיה's answers) and document-validation rules (checked
+// chat rules (shape Kaya's answers) and document-validation rules (checked
 // against uploaded documents). In RTL, side="end" slides in from the left.
 export default function SettingsSheet({ open, onOpenChange }: SettingsSheetProps) {
   const [tab, setTab] = useState<RuleCategory>("chat");

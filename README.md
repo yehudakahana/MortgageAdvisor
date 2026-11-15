@@ -31,7 +31,7 @@ Hand-labeled suite: 40 cases (30 chat, 10 extraction documents with 40 labeled f
 | Holdout (all categories) | XX% | Cases not used while tuning prompts |
 
 <!-- TODO: fill from one full run + holdout run -->
-Run on `claude-sonnet-4-6` / `gemini-2.5-flash`, YYYY-MM-DD. Scoring details: [`backend/evals/README.md`](backend/evals/README.md).
+Run on `claude-sonnet-4-6` / `gemini-3.8-flash`, YYYY-MM-DD. Scoring details: [`backend/evals/README.md`](backend/evals/README.md).
 
 ## Architecture
 

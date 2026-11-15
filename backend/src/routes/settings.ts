@@ -2,6 +2,7 @@ import { Router, Request, Response } from "express";
 import { randomUUID } from "crypto";
 import { UserSettingsModel } from "../models/UserSettings";
 import { SETTINGS_MESSAGES } from "../constants/messages";
+import { RuleCategory } from "../types";
 
 const router = Router();
 
@@ -28,6 +29,11 @@ function usernameOf(req: Request): string {
   return req.user?.username ?? "";
 }
 
+// Rule category from a request value; defaults to "chat" (back-compatible).
+function categoryOf(value: unknown): RuleCategory {
+  return value === "document_validation" ? "document_validation" : "chat";
+}
+
 // Mongo unique-index violation (duplicate key).
 function isDuplicateKeyError(err: unknown): boolean {
   return typeof err === "object" && err !== null && (err as { code?: unknown }).code === 11000;
@@ -36,7 +42,14 @@ function isDuplicateKeyError(err: unknown): boolean {
 router.get("/knowledge", async (req: Request, res: Response) => {
   try {
     const settings = await UserSettingsModel.findOne({ username: usernameOf(req) });
-    res.json(settings?.customKnowledge ?? []);
+    const all = settings?.customKnowledge ?? [];
+    // Optional ?category filter; otherwise all rules (UI splits by category).
+    const filter = req.query.category;
+    const rules =
+      filter === "chat" || filter === "document_validation"
+        ? all.filter((r) => (r.category ?? "chat") === filter)
+        : all;
+    res.json(rules);
   } catch (err) {
     console.error("[settings] failed to load rules:", err);
     res.status(500).json({ error: SETTINGS_MESSAGES.fetchFailed });
@@ -49,7 +62,7 @@ router.post("/knowledge", async (req: Request, res: Response) => {
   if (invalid) return res.status(400).json({ error: invalid });
 
   const username = usernameOf(req);
-  const rule = { id: randomUUID(), text, createdAt: new Date() };
+  const rule = { id: randomUUID(), text, category: categoryOf((req.body ?? {}).category), createdAt: new Date() };
 
   try {
     // Guarded atomic push: the filter only matches while the cap has room and

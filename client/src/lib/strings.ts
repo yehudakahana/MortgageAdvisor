@@ -149,6 +149,46 @@ export const SETTINGS_TEXT = {
   deleteRule: "מחיקת כלל",
 };
 
+// Tab labels for the two rule categories in the settings sheet.
+export const RULES_TABS = {
+  chat: "כללי צ'אט",
+  validation: "בדיקת מסמכים",
+};
+
+// Copy for the document-validation rules tab (the chat tab reuses SETTINGS_TEXT).
+export const VALIDATION_RULES_TEXT = {
+  description: "כללים אלו ייבדקו מול המסמכים שהמשתמשת מעלה לתיק",
+  effectHint: "הבדיקה רצה על המסמכים המחולצים של הלקוח, לפי בקשה",
+  addPlaceholder: "לדוגמה: חייב להיות תלוש שכר מ-3 החודשים האחרונים",
+  emptyState: "אין כללי בדיקה עדיין. הוסיפו כלל כדי לבדוק מסמכים.",
+};
+
+// The document-validation report panel, shown under a client's documents.
+export const VALIDATION_TEXT = {
+  run: "בדיקת מסמכים מול הכללים",
+  running: "בודק...",
+  skipped: "לא הוגדרו כללי בדיקת מסמכים. הוסיפו כלל בהגדרות כדי להפעיל בדיקה.",
+  empty: "אין תוצאות.",
+  failed: "בדיקת המסמכים נכשלה. נסו שוב.",
+  disclaimer: "בדיקת עזר — יש לאמת מול המסמכים עצמם.",
+  evidenceLabel: "נמצא:",
+  statusPass: "תקין",
+  statusFail: "בעיה",
+  statusUncertain: "לא ודאי",
+};
+
+// The automatic post-upload flow: inline staged indicator + final report dialog.
+export const UPLOAD_FLOW_TEXT = {
+  stepUpload: "המסמכים עלו בהצלחה",
+  stepExtract: "מתבצע חילוץ ברקע",
+  stepValidate: "מתבצעת בדיקה של הכללים המוגדרים",
+  doneTitle: "הכל הסתיים בהצלחה",
+  uploadsFailedTitle: "חלק מהמסמכים נכשלו בהעלאה",
+  reportHeading: "דוח בדיקת מסמכים",
+  noRules: "לא הוגדרו כללי בדיקת מסמכים.",
+  validationError: "בדיקת הכללים נכשלה. אפשר להריץ שוב מההגדרות.",
+};
+
 export const ERROR_BOUNDARY_TEXT = {
   title: "משהו השתבש.",
   hint: "נסו לרענן את הדף.",

@@ -5,7 +5,9 @@ import { extractWithClaude } from "./claudeExtraction";
 import {
   CHAT_SYSTEM_PROMPT,
   CLIENT_DATA_HEADER,
+  VALIDATION_SYSTEM_PROMPT,
   buildAdvisorRulesBlock,
+  buildValidationUserMessage,
   serializeClientData,
 } from "./prompts";
 
@@ -44,6 +46,17 @@ export const claudeAdapter: LLMAdapter = {
   async run(request: LLMRequest, model: string): Promise<LLMResponse> {
     if (request.taskType === "EXTRACTION") {
       return extractWithClaude(request, model);
+    }
+
+    if (request.taskType === "VALIDATION") {
+      // Client data cached (reuses the extraction cache); only the rules vary.
+      const response = await anthropic.messages.create({
+        model,
+        max_tokens: request.maxTokens ?? 2048,
+        system: buildCachedSystem(VALIDATION_SYSTEM_PROMPT, request.clientData),
+        messages: [{ role: "user", content: buildValidationUserMessage(request.rules) }],
+      });
+      return { content: extractText(response.content) };
     }
 
     // CHAT: system (persona + static client data) is cached; only the volatile

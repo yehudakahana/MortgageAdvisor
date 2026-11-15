@@ -1,4 +1,4 @@
-import { Client } from "../types";
+import { Client, RuleCategory } from "../types";
 import { ClientData } from "./llm/types";
 import { UserSettingsModel } from "../models/UserSettings";
 
@@ -62,9 +62,33 @@ export async function loadAdvisorRules(username: string | undefined): Promise<st
   if (!username) return [];
   try {
     const settings = await UserSettingsModel.findOne({ username });
-    return settings?.customKnowledge.map((rule) => rule.text) ?? [];
+    // Only chat-scoped rules (missing category = legacy chat rule).
+    return (
+      settings?.customKnowledge
+        .filter((rule) => (rule.category ?? "chat") === "chat")
+        .map((rule) => rule.text) ?? []
+    );
   } catch (err) {
     console.warn("[chat] failed to load advisor rules:", err);
+    return [];
+  }
+}
+
+// The advisor's document-validation rules (id + text) for the VALIDATION task.
+// A load failure resolves to an empty list so it is treated as "no rules".
+export async function loadValidationRules(
+  username: string | undefined
+): Promise<{ id: string; text: string }[]> {
+  if (!username) return [];
+  try {
+    const settings = await UserSettingsModel.findOne({ username });
+    return (
+      settings?.customKnowledge
+        .filter((rule) => rule.category === ("document_validation" as RuleCategory))
+        .map((rule) => ({ id: rule.id, text: rule.text })) ?? []
+    );
+  } catch (err) {
+    console.warn("[validation] failed to load validation rules:", err);
     return [];
   }
 }

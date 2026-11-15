@@ -7,6 +7,8 @@ const KnowledgeRuleSchema = new Schema<KnowledgeRule>(
   {
     id: { type: String, required: true },
     text: { type: String, required: true },
+    // Missing on pre-category rules — read as "chat" everywhere.
+    category: { type: String, enum: ["chat", "document_validation"], default: "chat" },
     createdAt: { type: Date, default: Date.now },
     updatedAt: { type: Date },
   },

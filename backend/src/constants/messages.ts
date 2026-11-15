@@ -83,3 +83,8 @@ export const CHAT_MESSAGES = {
   greetingScoped: (clientName: string) =>
     `שלום! אני קאיה. אני כעת מתמקדת בלקוח ${clientName}. במה אוכל לעזור?`,
 };
+
+export const VALIDATION_MESSAGES = {
+  runFailed: "בדיקת המסמכים נכשלה, נסו שוב מאוחר יותר",
+  noVerdict: "לא התקבלה הכרעה עבור כלל זה",
+};

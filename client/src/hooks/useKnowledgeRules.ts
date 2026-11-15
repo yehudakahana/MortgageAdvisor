@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from "react";
 import {
   KnowledgeRule,
   MAX_RULES,
+  RuleCategory,
   addKnowledgeRule,
   deleteKnowledgeRule,
   getKnowledgeRules,
@@ -26,7 +27,7 @@ function messageOf(err: unknown, fallback: string): string {
 
 // State + CRUD for the user's custom knowledge rules. Fetching is lazy: `load`
 // runs the request only once (first sheet open), unless forced for a retry.
-export function useKnowledgeRules() {
+export function useKnowledgeRules(category: RuleCategory = "chat") {
   const [rules, setRules] = useState<KnowledgeRule[]>([]);
   const [loading, setLoading] = useState(false);
   const [loadFailed, setLoadFailed] = useState(false);
@@ -38,25 +39,25 @@ export function useKnowledgeRules() {
     setLoading(true);
     setLoadFailed(false);
     try {
-      setRules(await getKnowledgeRules());
+      setRules(await getKnowledgeRules(category));
     } catch {
       setLoadFailed(true);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [category]);
 
   // Reports the outcome (and the failure reason) instead of toasting — the
   // settings sheet shows it inline, right next to the add form.
   const addRule = useCallback(async (text: string): Promise<RuleActionResult> => {
     try {
-      const rule = await addKnowledgeRule(text);
+      const rule = await addKnowledgeRule(text, category);
       setRules((prev) => [...prev, rule]);
       return { ok: true, message: SETTINGS_TEXT.ruleAdded };
     } catch (err) {
       return { ok: false, message: messageOf(err, SETTINGS_TEXT.addFailed) };
     }
-  }, []);
+  }, [category]);
 
   const updateRule = useCallback(async (id: string, text: string): Promise<boolean> => {
     try {

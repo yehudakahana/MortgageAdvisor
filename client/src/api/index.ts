@@ -183,3 +183,27 @@ export async function createClient(data: { name: string; phone: string; email?: 
   if (!res.ok) throw await apiError(res, "Failed to create client");
   return res.json();
 }
+
+// --- Document validation ---------------------------------------------------
+export type ValidationStatus = "pass" | "fail" | "uncertain";
+export type ValidationResult = {
+  id: string;
+  rule: string;
+  status: ValidationStatus;
+  evidence: string;
+  reason: string;
+};
+export type ValidationReport = {
+  skipped: boolean;
+  results: ValidationResult[];
+  llm?: LLMSource;
+  checkedAt?: string;
+};
+
+// Runs the advisor's document-validation rules against one client's extracted
+// documents. { skipped: true } when the advisor has no validation rules.
+export async function getValidation(clientId: string): Promise<ValidationReport> {
+  const res = await authFetch(`${BASE}/validation/${clientId}`);
+  if (!res.ok) throw await apiError(res, "Validation failed");
+  return res.json() as Promise<ValidationReport>;
+}

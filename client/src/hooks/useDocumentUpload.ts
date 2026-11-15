@@ -1,42 +1,50 @@
 import { useState, useRef } from "react";
-import { getClient, reExtractDocument, uploadDocument } from "../api";
+import { getClient, reExtractDocument, uploadDocument, getValidation } from "../api";
+import type { ValidationReport } from "../api";
 import type { Client } from "../types/client";
 import { useClients } from "../context/ClientsContext";
 import { isDocDeleted, stripDeletedDocs } from "@/lib/deletedDocs";
 import { DOCUMENTS_TEXT } from "@/lib/strings";
 
-// Outcome of a single file within an upload batch, shown in the summary dialog.
+// Outcome of a single file within an upload batch, shown in the final dialog.
 export interface UploadResult {
   filename: string;
   ok: boolean;
   reason?: string;
 }
 
-// A fetch rejection (network down) is a TypeError; a server rejection carries
-// the backend's Hebrew message (thrown by the api layer) — else generic fallback.
+// Live stage of the automatic post-upload flow, surfaced inline as a progress
+// indicator: upload -> background extraction -> validation against rules.
+export type FlowStage = "idle" | "uploading" | "extracting" | "validating" | "done";
+
+// Everything the end-of-flow dialog shows: per-file upload outcomes plus the
+// validation report (null when the validation call itself failed).
+export interface FlowReport {
+  uploads: UploadResult[];
+  validation: ValidationReport | null;
+  validationError: boolean;
+}
+
 function formatUploadError(err: unknown): string {
   if (err instanceof TypeError) return DOCUMENTS_TEXT.networkError;
   if (err instanceof Error && err.message) return err.message;
   return DOCUMENTS_TEXT.uploadFailed;
 }
 
-// Document upload, extraction polling, and re-extract logic for the selected
-// client. Composed by useClientPanel; merges updates into the shared list.
+// Document upload, extraction polling, and (if the advisor has validation
+// rules) an automatic document check — all driven from one file selection.
 export function useDocumentUpload(selectedId: string | null) {
   const { clients, setClients } = useClients();
   const [uploadType, setUploadType] = useState<string>("paystub");
   const [uploadProgress, setUploadProgress] = useState<{ current: number; total: number } | null>(null);
-  const [batchResults, setBatchResults] = useState<UploadResult[] | null>(null);
+  const [flowStage, setFlowStage] = useState<FlowStage>("idle");
+  const [flowReport, setFlowReport] = useState<FlowReport | null>(null);
   const [reExtractingId, setReExtractingId] = useState<string | null>(null);
   const [timedOutDocIds, setTimedOutDocIds] = useState<string[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  // Live view of the selection for async code — the closure value goes stale
-  // when the user switches clients while a batch is still uploading.
   const selectedIdRef = useRef(selectedId);
   selectedIdRef.current = selectedId;
 
-  // Refetch a client and merge it in; deleted docs are stripped so a stale
-  // response can't resurrect their rows.
   async function refreshClient(clientId: string): Promise<Client | null> {
     try {
       const client = stripDeletedDocs<Client>(await getClient(clientId));
@@ -47,16 +55,14 @@ export function useDocumentUpload(selectedId: string | null) {
     }
   }
 
-  // Extraction runs asynchronously on the backend, so poll the client until the
-  // given document's extractedData resolves (success or error), then stop.
-  // The window (attempts × interval) must comfortably exceed the worst-case
-  // backend time: Gemini's 503 retries (1s+2s+4s backoff) plus the Claude
-  // fallback request. ~90s avoids giving up while extraction is still running.
+  // Polls the client until the given document's extraction resolves (success or
+  // error), then stops. ~90s window comfortably exceeds the worst-case backend
+  // time (Gemini 503 retries + Claude fallback).
   async function pollExtraction(clientId: string, docId: string, attempts = 30) {
     let doc: Client["documents"][number] | undefined;
     for (let i = 0; i < attempts; i++) {
       await new Promise((r) => setTimeout(r, 3000));
-      if (isDocDeleted(docId)) return; // deleted mid-poll — stop refetching
+      if (isDocDeleted(docId)) return;
       const client = await refreshClient(clientId);
       doc = client?.documents.find((d) => d.id === docId);
       if (doc?.extractedData) {
@@ -64,29 +70,32 @@ export function useDocumentUpload(selectedId: string | null) {
         return;
       }
     }
-    // Polling gave up while extraction may still be running on the backend.
-    // Skip if the document was deleted mid-poll — nothing to flag anymore.
     if (!doc) return;
     setTimedOutDocIds((prev) => (prev.includes(docId) ? prev : [...prev, docId]));
   }
 
-  // Uploads the selection sequentially; one failed file never aborts the rest.
-  // Every file's outcome is collected and shown in the summary dialog at the end.
+  // Stale-selection guard: the user switched clients mid-flow, so drop the flow
+  // silently rather than popping a dialog under the wrong client.
+  function abandoned(clientId: string): boolean {
+    if (selectedIdRef.current === clientId) return false;
+    setFlowStage("idle");
+    return true;
+  }
+
   async function handleFileSelect(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
-    // Clear immediately so re-selecting the same files fires change again.
     e.target.value = "";
     if (files.length === 0 || !selectedId) return;
     const clientId = selectedId;
-    setBatchResults(null);
+    setFlowReport(null);
+    setFlowStage("uploading");
 
-    // Known doc IDs let us find each response's new document reliably — the
-    // "last in array" heuristic breaks once several uploads happen in a row.
     let knownIds = new Set(
       clients.find((c) => c.id === clientId)?.documents.map((d) => d.id) ?? []
     );
+    const uploads: UploadResult[] = [];
+    const newDocIds: string[] = [];
 
-    const results: UploadResult[] = [];
     for (let i = 0; i < files.length; i++) {
       const file = files[i];
       setUploadProgress({ current: i + 1, total: files.length });
@@ -98,19 +107,45 @@ export function useDocumentUpload(selectedId: string | null) {
         setClients((prev) => prev.map((c) => (c.id === updated.id ? updated : c)));
         const newDoc = updated.documents.find((d) => !knownIds.has(d.id));
         knownIds = new Set(updated.documents.map((d) => d.id));
-        if (newDoc) void pollExtraction(updated.id, newDoc.id);
-        results.push({ filename: file.name, ok: true });
+        if (newDoc) newDocIds.push(newDoc.id);
+        uploads.push({ filename: file.name, ok: true });
       } catch (err) {
-        results.push({ filename: file.name, ok: false, reason: formatUploadError(err) });
+        uploads.push({ filename: file.name, ok: false, reason: formatUploadError(err) });
       }
     }
     setUploadProgress(null);
-    // Skip the summary if the user switched clients mid-batch — the dialog
-    // renders inside the selected client's panel and would pop under the wrong one.
-    if (selectedIdRef.current === clientId) setBatchResults(results);
+    if (abandoned(clientId)) return;
+
+    // Nothing extracted (every upload failed): report the uploads and stop.
+    if (newDocIds.length === 0) {
+      setFlowReport({ uploads, validation: null, validationError: false });
+      setFlowStage("done");
+      return;
+    }
+
+    setFlowStage("extracting");
+    await Promise.all(newDocIds.map((id) => pollExtraction(clientId, id)));
+    if (abandoned(clientId)) return;
+
+    setFlowStage("validating");
+    let validation: ValidationReport | null = null;
+    let validationError = false;
+    try {
+      validation = await getValidation(clientId);
+    } catch {
+      validationError = true;
+    }
+    if (abandoned(clientId)) return;
+
+    setFlowReport({ uploads, validation, validationError });
+    setFlowStage("done");
   }
 
-  // Retry extraction for a document whose previous attempt failed.
+  function closeReport() {
+    setFlowReport(null);
+    setFlowStage("idle");
+  }
+
   async function handleReExtract(docId: string) {
     if (!selectedId) return;
     setReExtractingId(docId);
@@ -125,23 +160,20 @@ export function useDocumentUpload(selectedId: string | null) {
     }
   }
 
-  // Drop the timed-out flag for a document (e.g. after it is deleted).
   function clearDocTimeout(docId: string) {
     setTimedOutDocIds((prev) => prev.filter((id) => id !== docId));
   }
 
-  function clearBatchResults() { setBatchResults(null); }
-
-  // Reset transient upload UI state (used when switching clients).
   function resetUploadState() {
-    setBatchResults(null);
+    setFlowReport(null);
+    setFlowStage("idle");
     if (fileInputRef.current) fileInputRef.current.value = "";
   }
 
   return {
     uploadType, setUploadType,
     isUploading: uploadProgress !== null, uploadProgress,
-    batchResults, clearBatchResults,
+    flowStage, flowReport, closeReport,
     handleFileSelect, fileInputRef,
     handleReExtract, reExtractingId, timedOutDocIds,
     clearDocTimeout, resetUploadState,

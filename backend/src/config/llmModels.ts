@@ -10,7 +10,7 @@ for (const key of REQUIRED_ENV) {
   }
 }
 
-export type TaskType = "EXTRACTION" | "CHAT";
+export type TaskType = "EXTRACTION" | "CHAT" | "VALIDATION";
 export type Provider = "claude" | "gemini";
 
 export interface ModelConfig {
@@ -26,12 +26,20 @@ const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-3.8-flash";
 // Chat fallback answers advisors directly. Note: gemini-3.8-flash is priced at
 // an introductory $0.75/$3.75 per 1M tokens that doubles on 2027-01-01.
 const GEMINI_CHAT_MODEL = process.env.GEMINI_CHAT_MODEL ?? "gemini-3.8-flash";
+// Validation reasons over already-extracted text against the advisor's rules,
+// so it defaults to Claude; overridable per env without touching chat.
+const VALIDATION_PROVIDER: Provider =
+  process.env.VALIDATION_PROVIDER === "gemini" ? "gemini" : "claude";
+const VALIDATION_MODEL =
+  process.env.VALIDATION_MODEL ?? (VALIDATION_PROVIDER === "gemini" ? GEMINI_CHAT_MODEL : CLAUDE_MODEL);
 
 export const TASK_MODEL_MAP: Record<TaskType, ModelConfig> = {
   // Extraction runs on Gemini Flash (fast + cheap for PDF/image parsing).
   EXTRACTION: { provider: "gemini", model: GEMINI_MODEL },
   // Chat stays on Claude.
   CHAT: { provider: "claude", model: CLAUDE_MODEL },
+  // Validation: Claude by default (see VALIDATION_PROVIDER above).
+  VALIDATION: { provider: VALIDATION_PROVIDER, model: VALIDATION_MODEL },
 };
 
 // Cross-provider fallback used when the primary provider fails (e.g. Gemini
@@ -41,4 +49,9 @@ export const TASK_MODEL_MAP: Record<TaskType, ModelConfig> = {
 export const TASK_FALLBACK_MAP: Partial<Record<TaskType, ModelConfig>> = {
   EXTRACTION: { provider: "claude", model: CLAUDE_MODEL },
   CHAT: { provider: "gemini", model: GEMINI_CHAT_MODEL },
+  // Validation falls back to the other provider (both adapters support it).
+  VALIDATION:
+    VALIDATION_PROVIDER === "claude"
+      ? { provider: "gemini", model: GEMINI_CHAT_MODEL }
+      : { provider: "claude", model: CLAUDE_MODEL },
 };

@@ -97,10 +97,12 @@ export interface KnowledgeRule {
   updatedAt?: Date;
 }
 
-// Per-advisor settings keyed by the JWT username. Users live in the
-// ALLOWED_USERS env map (not in the DB), so this document is created lazily on
-// the user's first write.
+// Per-advisor settings keyed by the JWT username (User.username, or the
+// ALLOWED_USERS key while USER_SYSTEM_ENABLED is off). Created lazily on the
+// user's first write.
 export interface UserSettings {
   username: string;
   customKnowledge: KnowledgeRule[];
 }
+
+export * from "./user";

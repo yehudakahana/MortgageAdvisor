@@ -2,13 +2,12 @@ import mongoose from "mongoose";
 import { GuestUserModel } from "../models/GuestUser";
 import { ClientModel } from "../models/Client";
 import { UserSettingsModel } from "../models/UserSettings";
-import { deleteObject } from "./storageService";
+import { EXTRA_TENANT_COLLECTIONS, purgeTenantData } from "./tenantDataService";
 import {
   GUEST_CLEANUP_BATCH,
   GUEST_MAX_BATCHES_PER_SWEEP,
   GUEST_ID_PREFIX,
   GUEST_SWEEP_INTERVAL_MS,
-  SAMPLE_KEY_PREFIX,
 } from "../constants/guest";
 
 // Garbage-collects guest data: clients, their own uploaded R2 files, the
@@ -27,41 +26,14 @@ import {
 // sweep retries instead of orphaning files forever.
 let running = false;
 
-// Collections that may hold guest-keyed rows but have no model on this branch.
-// "usageevents" is written by the unmerged usage-metadata-logging /
-// admin-usage-endpoint branches (userId = guest id, 180-day TTL there), so it is
-// purged through the raw driver: a missing collection is a harmless no-op, and
-// the purge keeps working whichever of those branches is merged.
-const EXTRA_GUEST_COLLECTIONS = ["usageevents"];
-
-async function purgeExtraCollections(guestId: string): Promise<void> {
-  const db = mongoose.connection.db;
-  if (!db) return;
-  for (const name of EXTRA_GUEST_COLLECTIONS) {
-    await db.collection(name).deleteMany({ userId: guestId });
-  }
-}
-
 async function extraOrphanIds(): Promise<string[]> {
   const db = mongoose.connection.db;
   if (!db) return [];
   const ids: string[] = [];
-  for (const name of EXTRA_GUEST_COLLECTIONS) {
+  for (const name of EXTRA_TENANT_COLLECTIONS) {
     ids.push(...((await db.collection(name).distinct("userId", { userId: { $regex: `^${GUEST_ID_PREFIX}` } })) as string[]));
   }
   return ids;
-}
-
-async function purgeGuestData(guestId: string): Promise<void> {
-  const clients = await ClientModel.find({ userId: guestId });
-  for (const client of clients) {
-    for (const doc of client.documents) {
-      if (doc.key && !doc.key.startsWith(SAMPLE_KEY_PREFIX)) await deleteObject(doc.key);
-    }
-  }
-  await ClientModel.deleteMany({ userId: guestId });
-  await UserSettingsModel.deleteOne({ username: guestId });
-  await purgeExtraCollections(guestId);
 }
 
 export async function cleanupExpiredGuests(): Promise<void> {
@@ -77,7 +49,7 @@ export async function cleanupExpiredGuests(): Promise<void> {
       let removed = 0;
       for (const guest of expired) {
         try {
-          await purgeGuestData(guest.id);
+          await purgeTenantData(guest.id);
           await GuestUserModel.deleteOne({ id: guest.id });
           removed++;
           console.log("[guest-cleanup] removed an expired guest");
@@ -101,7 +73,7 @@ export async function cleanupExpiredGuests(): Promise<void> {
     for (const id of candidates) {
       if (await GuestUserModel.exists({ id })) continue;
       try {
-        await purgeGuestData(id);
+        await purgeTenantData(id);
         console.log("[guest-cleanup] removed orphaned guest data");
       } catch (err) {
         console.error("[guest-cleanup] orphan purge failed, will retry:", err);

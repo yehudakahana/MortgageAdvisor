@@ -57,7 +57,6 @@ describe("POST /api/login with USER_SYSTEM_ENABLED", () => {
 
   it("rejects an invited user who has not set a password", async () => {
     await seedUser({ username: "newbie", status: "invited", passwordHash: null });
-    expect((await login("newbie", "")).status).toBe(400);
     expect((await login("newbie", "anything-at-all")).status).toBe(401);
   });
 

@@ -1,16 +1,21 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { GuestUserModel } from "../models/GuestUser";
+import { resolveSessionUser, SessionUser } from "../services/sessionUser";
+import { UserRole } from "../types";
 import { AUTH_MESSAGES } from "../constants/messages";
 import { getJwtSecret, getJwtVersion } from "../config/auth";
 
 // Shape of the data exposed on req.user. `id` is the tenant key every data
-// query scopes by (ALLOWED_USERS username, or guest_<uuid> for guests);
+// query scopes by (User.username / ALLOWED_USERS key, or guest_<uuid>);
 // `username` is kept as an alias for existing per-user settings lookups.
 export interface AuthUser {
   id: string;
   username: string;
   isGuest: boolean;
+  // Set only with USER_SYSTEM_ENABLED, loaded from the DB on every request.
+  role?: UserRole;
+  // True when this session passed TOTP 2FA (required by requireAdmin).
+  mfa?: boolean;
 }
 
 // Augment Express' Request so downstream handlers can read req.user type-safely.
@@ -20,23 +25,6 @@ declare global {
     interface Request {
       user?: AuthUser;
     }
-  }
-}
-
-// A valid signature is not enough: the user must still exist. Guests are
-// checked against the GuestUser collection (a cleaned-up or expired guest
-// holding a still-valid JWT gets a 401); regular users must still be present
-// in the ALLOWED_USERS env map.
-async function userStillExists(username: string, isGuest: boolean): Promise<boolean> {
-  if (isGuest) {
-    const guest = await GuestUserModel.findOne({ id: username });
-    return !!guest && guest.expiresAt.getTime() > Date.now();
-  }
-  try {
-    const allowed = JSON.parse(process.env.ALLOWED_USERS ?? "{}");
-    return typeof allowed[username] === "string";
-  } catch {
-    return false;
   }
 }
 
@@ -67,6 +55,7 @@ export async function authenticateToken(
 
   let username: string;
   let isGuest: boolean;
+  let claims: { tv?: unknown; mfa?: unknown };
   try {
     const payload = jwt.verify(token, secret);
     if (typeof payload === "string" || typeof payload.username !== "string") {
@@ -80,26 +69,34 @@ export async function authenticateToken(
       res.status(401).json({ error: AUTH_MESSAGES.invalidOrExpiredToken });
       return;
     }
+    // A half-finished 2FA login token is accepted only by /api/login/2fa.
+    if (payload.pending2fa === true) {
+      res.status(401).json({ error: AUTH_MESSAGES.invalidOrExpiredToken });
+      return;
+    }
     username = payload.username;
     isGuest = payload.isGuest === true;
+    claims = { tv: payload.tv, mfa: payload.mfa };
   } catch {
     // Do not leak verification internals to the client.
     res.status(401).json({ error: AUTH_MESSAGES.invalidOrExpiredToken });
     return;
   }
 
+  let session: SessionUser | null;
   try {
-    if (!(await userStillExists(username, isGuest))) {
-      res.status(401).json({ error: AUTH_MESSAGES.invalidOrExpiredToken });
-      return;
-    }
+    session = await resolveSessionUser({ username, isGuest, ...claims });
   } catch (err) {
     console.error("[auth] user existence check failed:", err);
     res.status(500).json({ error: AUTH_MESSAGES.serverConfigError });
     return;
   }
 
-  req.user = { id: username, username, isGuest };
+  if (!session) {
+    res.status(401).json({ error: AUTH_MESSAGES.invalidOrExpiredToken });
+    return;
+  }
+  req.user = { id: username, username, isGuest, role: session.role, mfa: session.mfa };
   // Guest activity is logged without the guest id or any record ids in the
   // path, so Railway's log retention holds nothing that links back to a guest
   // account after it is purged.

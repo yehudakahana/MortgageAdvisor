@@ -1,28 +1,30 @@
 import { useState } from "react";
-import { CircleHelp, LogOut, Settings, Users } from "lucide-react";
+import { CircleHelp, LogOut, Settings, ShieldCheck, Users } from "lucide-react";
 import Chat from "./components/Chat";
 import ClientPanel from "./components/ClientPanel";
 import GuestBadge from "./components/GuestBadge";
 import GuestWelcomeDialog from "./components/GuestWelcomeDialog";
 import HelpSheet from "./components/help/HelpSheet";
 import SettingsSheet from "./components/SettingsSheet";
+import AdminSheet from "./components/admin/AdminSheet";
 import Toaster from "./components/Toaster";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { APP_TEXT, CLIENTS_TEXT, HELP_TEXT, SETTINGS_TEXT } from "@/lib/strings";
+import { ADMIN_TEXT, APP_TEXT, CLIENTS_TEXT, HELP_TEXT, SETTINGS_TEXT } from "@/lib/strings";
 import { useAuth } from "./auth/AuthContext";
 import { ClientsProvider } from "./context/ClientsContext";
 import { GuestModeProvider } from "./context/GuestModeContext";
 import { useMediaQuery } from "./hooks/useMediaQuery";
 
 export default function App() {
-  const { username, logout } = useAuth();
+  const { username, role, logout } = useAuth();
   // Render the (data-fetching) ClientPanel in exactly one place: a static aside
   // on desktop, or a drawer on mobile. Never both, to avoid a double mount.
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const [panelOpen, setPanelOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [adminOpen, setAdminOpen] = useState(false);
 
   return (
     <GuestModeProvider>
@@ -60,6 +62,18 @@ export default function App() {
           </div>
           <div className="flex shrink-0 items-center gap-3 max-md:gap-1.5">
             <GuestBadge />
+            {role === "superadmin" && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setAdminOpen(true)}
+                aria-label={ADMIN_TEXT.open}
+                title={ADMIN_TEXT.open}
+                className="text-white/80 hover:text-white hover:bg-white/10 max-md:min-h-11 max-md:min-w-11"
+              >
+                <ShieldCheck className="w-5 h-5" />
+              </Button>
+            )}
             {username && <span className="text-sm text-white/70 max-md:hidden">{username}</span>}
             <Button
               variant="ghost"
@@ -101,6 +115,7 @@ export default function App() {
       </main>
       <SettingsSheet open={settingsOpen} onOpenChange={setSettingsOpen} />
       <HelpSheet open={helpOpen} onOpenChange={setHelpOpen} />
+      {role === "superadmin" && <AdminSheet open={adminOpen} onOpenChange={setAdminOpen} />}
       <GuestWelcomeDialog />
       <Toaster />
     </div>

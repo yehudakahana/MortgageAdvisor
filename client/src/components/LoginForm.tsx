@@ -1,13 +1,15 @@
 import { useState } from "react";
-import { login as loginRequest, loginAsGuest } from "../api";
+import { login as loginRequest } from "../api";
 import { useAuth } from "../auth/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { APP_TEXT, GUEST_TEXT, HELP_TEXT, LOGIN_TEXT } from "@/lib/strings";
+import { APP_TEXT, HELP_TEXT, LOGIN_TEXT } from "@/lib/strings";
 import HelpDialog from "./help/HelpDialog";
+import GuestLoginButton from "./GuestLoginButton";
+import LoginMfaStep from "./LoginMfaStep";
 
 export default function LoginForm() {
   const { login } = useAuth();
@@ -17,6 +19,8 @@ export default function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [guestLoading, setGuestLoading] = useState(false);
   const [helpOpen, setHelpOpen] = useState(false);
+  // Set when a superadmin with 2FA passed the password step.
+  const [pendingToken, setPendingToken] = useState<string | null>(null);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,28 +32,14 @@ export default function LoginForm() {
     setLoading(true);
     try {
       const data = await loginRequest(username.trim(), password);
-      login(data.token, data.username);
-    } catch {
-      setError(LOGIN_TEXT.badCredentials);
+      if (data.mfaRequired) setPendingToken(data.pendingToken);
+      else login(data.token, data.username, false, data.role);
+    } catch (err) {
+      // 403 = disabled account: show the server's Hebrew message.
+      const status = (err as { status?: number }).status;
+      setError(status === 403 && err instanceof Error ? err.message : LOGIN_TEXT.badCredentials);
     } finally {
       setLoading(false);
-    }
-  }
-
-  // Guest mode: one click creates a 24h demo account; the token flows through
-  // the same login() path. Rate-limit errors from the server surface as-is.
-  async function handleGuestLogin() {
-    setError("");
-    setGuestLoading(true);
-    try {
-      const data = await loginAsGuest();
-      login(data.token, GUEST_TEXT.displayName, true);
-    } catch (err) {
-      // Server messages (rate limit) are Hebrew; English ones are internal fallbacks.
-      const message = err instanceof Error && /[֐-׿]/.test(err.message) ? err.message : "";
-      setError(message || GUEST_TEXT.loginFailed);
-    } finally {
-      setGuestLoading(false);
     }
   }
 
@@ -66,51 +56,49 @@ export default function LoginForm() {
           </div>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <Label htmlFor="username">{LOGIN_TEXT.usernameLabel}</Label>
-              <Input
-                id="username"
-                value={username}
-                onChange={(e) => {
-                  setUsername(e.target.value);
-                  if (error) setError("");
-                }}
-                autoComplete="username"
-                autoFocus
-                aria-invalid={error ? true : undefined}
-                className={cn("max-md:h-11 max-md:text-base", error && "border-destructive")}
-              />
-            </div>
-            <div className="space-y-1.5">
-              <Label htmlFor="password">{LOGIN_TEXT.passwordLabel}</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value);
-                  if (error) setError("");
-                }}
-                autoComplete="current-password"
-                aria-invalid={error ? true : undefined}
-                className={cn("max-md:h-11 max-md:text-base", error && "border-destructive")}
-              />
-            </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" className="w-full max-md:h-11 max-md:text-base" disabled={loading}>
-              {loading ? LOGIN_TEXT.submitting : LOGIN_TEXT.submit}
-            </Button>
-          </form>
-          <Button
-            type="button"
-            variant="outline"
-            className="w-full mt-3 max-md:h-11 max-md:text-base"
-            onClick={handleGuestLogin}
-            disabled={guestLoading || loading}
-          >
-            {guestLoading ? GUEST_TEXT.loggingIn : GUEST_TEXT.loginButton}
-          </Button>
+          {pendingToken ? (
+            <LoginMfaStep pendingToken={pendingToken} onBack={() => setPendingToken(null)} />
+          ) : (
+            <>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="username">{LOGIN_TEXT.usernameLabel}</Label>
+                  <Input
+                    id="username"
+                    value={username}
+                    onChange={(e) => {
+                      setUsername(e.target.value);
+                      if (error) setError("");
+                    }}
+                    autoComplete="username"
+                    autoFocus
+                    aria-invalid={error ? true : undefined}
+                    className={cn("max-md:h-11 max-md:text-base", error && "border-destructive")}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="password">{LOGIN_TEXT.passwordLabel}</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (error) setError("");
+                    }}
+                    autoComplete="current-password"
+                    aria-invalid={error ? true : undefined}
+                    className={cn("max-md:h-11 max-md:text-base", error && "border-destructive")}
+                  />
+                </div>
+                {error && <p className="text-sm text-destructive">{error}</p>}
+                <Button type="submit" className="w-full max-md:h-11 max-md:text-base" disabled={loading || guestLoading}>
+                  {loading ? LOGIN_TEXT.submitting : LOGIN_TEXT.submit}
+                </Button>
+              </form>
+              <GuestLoginButton disabled={loading} onError={setError} onBusyChange={setGuestLoading} />
+            </>
+          )}
         </CardContent>
       </Card>
       <button

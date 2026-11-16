@@ -11,6 +11,7 @@ export const AUTH_MESSAGES = {
   missingToken: "חסר אסימון הזדהות",
   invalidToken: "אסימון ההזדהות אינו תקין",
   invalidOrExpiredToken: "אסימון ההזדהות אינו תקין או שפג תוקפו",
+  forbidden: "אין לך הרשאה לפעולה זו",
 };
 
 export const CLIENT_MESSAGES = {

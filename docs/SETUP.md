@@ -61,7 +61,7 @@ Accounts live in the `users` collection instead of `ALLOWED_USERS`. Rollout:
 2. `npm --prefix backend run migrate:users -- --dry-run` (against a copy of the data first). Check every username and client count.
 3. `npm --prefix backend run migrate:users` — copies each username and its existing bcrypt hash; everyone keeps their password and data. Idempotent.
 4. `ADMIN_USERNAME=<you> npm --prefix backend run seed:admin`.
-5. Set `USER_SYSTEM_ENABLED=true` on Railway. Log in as yourself, open the shield icon, enable 2FA, log out and back in with the code.
+5. Set `USER_SYSTEM_ENABLED=true` on Railway. Everyone is logged out once (old tokens are not bound to an account id) and logs in again with the same password. Log in as yourself, open the shield icon, enable 2FA, log out and back in with the code.
 6. Keep `ALLOWED_USERS` set for now: unsetting the flag is the rollback.
 
 New customers: create them in the admin screen and send the one-time invite link (7 days). They choose their own password. "Link" on an existing user issues a password-reset link (24 hours).

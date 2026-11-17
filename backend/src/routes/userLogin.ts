@@ -68,7 +68,7 @@ export async function verifyMfaLogin(req: Request, res: Response, secret: string
   const claims = readPendingMfaToken(pendingToken, secret);
   if (!claims) return res.status(401).json({ error: AUTH_MESSAGES.mfaSessionExpired });
 
-  const user = await UserModel.findOne({ username: claims.username }).lean<User>();
+  const user = await UserModel.findOne({ id: claims.uid }).lean<User>();
   if (!user || user.status !== "active" || user.tokenVersion !== claims.tv || !user.totpSecret) {
     return res.status(401).json({ error: AUTH_MESSAGES.mfaSessionExpired });
   }

@@ -27,24 +27,24 @@ beforeEach(clearDb);
 // Enrolls "boss" through the API and returns the secret + recovery codes.
 async function enroll() {
   await seedUser({ username: "boss", role: "superadmin" });
-  const token = bearer(tokenFor("boss"));
+  const token = bearer(await tokenFor("boss"));
   const setup = await request(app).post("/api/admin/2fa/setup").set(token);
   expect(setup.status).toBe(200);
   expect(setup.body.uri).toMatch(/^otpauth:\/\/totp\//);
   const enable = await request(app).post("/api/admin/2fa/enable").set(token).send({ code: totpCode(setup.body.secret) });
   expect(enable.status).toBe(200);
-  return { secret: setup.body.secret as string, recoveryCodes: enable.body.recoveryCodes as string[], enable };
+  return { secret: setup.body.secret as string, recoveryCodes: enable.body.recoveryCodes as string[], enable, oldToken: token };
 }
 
 describe("2FA enrollment", () => {
   it("enables 2FA, returns an mfa session, and revokes the old session", async () => {
-    const { enable, recoveryCodes } = await enroll();
+    const { enable, recoveryCodes, oldToken } = await enroll();
     expect(recoveryCodes).toHaveLength(8);
     expect((jwt.decode(enable.body.token) as { mfa?: boolean }).mfa).toBe(true);
 
     expect((await request(app).get("/api/admin/users").set(bearer(enable.body.token))).status).toBe(200);
     // The pre-enrollment token (tv 0) is dead after the tokenVersion bump.
-    expect((await request(app).get("/api/clients").set(bearer(tokenFor("boss")))).status).toBe(401);
+    expect((await request(app).get("/api/clients").set(oldToken)).status).toBe(401);
   });
 
   it("refuses a second enrollment once 2FA is on", async () => {

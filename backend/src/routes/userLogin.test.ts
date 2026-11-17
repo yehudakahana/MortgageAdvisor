@@ -74,33 +74,42 @@ describe("POST /api/login with USER_SYSTEM_ENABLED", () => {
 });
 
 describe("authenticateToken with USER_SYSTEM_ENABLED", () => {
-  it("accepts a token without tv while the user's tokenVersion is 0", async () => {
+  it("accepts a token bound to the account, rejects one without uid (legacy env login)", async () => {
     await seedUser();
-    const res = await request(app).get("/api/clients").set(bearer(tokenFor("advisor1")));
-    expect(res.status).toBe(200);
+    expect((await request(app).get("/api/clients").set(bearer(await tokenFor("advisor1")))).status).toBe(200);
+    const legacy = await tokenFor("advisor1", { uid: undefined, tv: undefined });
+    expect((await request(app).get("/api/clients").set(bearer(legacy))).status).toBe(401);
+  });
+
+  it("rejects a deleted account's token after the username is re-created", async () => {
+    await seedUser({ username: "advisor1" });
+    const old = await tokenFor("advisor1");
+    await UserModel.deleteOne({ username: "advisor1" });
+    await seedUser({ username: "advisor1" }); // new uuid, same tokenVersion 0
+    expect((await request(app).get("/api/clients").set(bearer(old))).status).toBe(401);
   });
 
   it("rejects a token after tokenVersion is bumped", async () => {
     await seedUser({ tokenVersion: 1 });
-    expect((await request(app).get("/api/clients").set(bearer(tokenFor("advisor1", { tv: 0 })))).status).toBe(401);
-    expect((await request(app).get("/api/clients").set(bearer(tokenFor("advisor1", { tv: 1 })))).status).toBe(200);
+    expect((await request(app).get("/api/clients").set(bearer(await tokenFor("advisor1", { tv: 0 })))).status).toBe(401);
+    expect((await request(app).get("/api/clients").set(bearer(await tokenFor("advisor1", { tv: 1 })))).status).toBe(200);
   });
 
   it("rejects tokens of disabled and env-only users", async () => {
     await seedUser({ status: "disabled" });
-    expect((await request(app).get("/api/clients").set(bearer(tokenFor("advisor1")))).status).toBe(401);
-    expect((await request(app).get("/api/clients").set(bearer(tokenFor("testuser")))).status).toBe(401);
+    expect((await request(app).get("/api/clients").set(bearer(await tokenFor("advisor1")))).status).toBe(401);
+    expect((await request(app).get("/api/clients").set(bearer(await tokenFor("testuser")))).status).toBe(401);
   });
 
   it("rejects a pending-2FA token on regular routes", async () => {
     await seedUser();
-    const pending = tokenFor("advisor1", { pending2fa: true });
+    const pending = await tokenFor("advisor1", { pending2fa: true });
     expect((await request(app).get("/api/clients").set(bearer(pending))).status).toBe(401);
   });
 
   it("keeps guest tokens working (global version only)", async () => {
     await GuestUserModel.create({ id: "guest_abc", expiresAt: new Date(Date.now() + 60_000) });
-    const res = await request(app).get("/api/clients").set(bearer(tokenFor("guest_abc", { isGuest: true })));
+    const res = await request(app).get("/api/clients").set(bearer(await tokenFor("guest_abc", { isGuest: true })));
     expect(res.status).toBe(200);
   });
 });

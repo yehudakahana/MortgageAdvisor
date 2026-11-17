@@ -55,7 +55,7 @@ export async function authenticateToken(
 
   let username: string;
   let isGuest: boolean;
-  let claims: { tv?: unknown; mfa?: unknown };
+  let claims: { uid?: unknown; tv?: unknown; mfa?: unknown };
   try {
     const payload = jwt.verify(token, secret);
     if (typeof payload === "string" || typeof payload.username !== "string") {
@@ -76,7 +76,7 @@ export async function authenticateToken(
     }
     username = payload.username;
     isGuest = payload.isGuest === true;
-    claims = { tv: payload.tv, mfa: payload.mfa };
+    claims = { uid: payload.uid, tv: payload.tv, mfa: payload.mfa };
   } catch {
     // Do not leak verification internals to the client.
     res.status(401).json({ error: AUTH_MESSAGES.invalidOrExpiredToken });

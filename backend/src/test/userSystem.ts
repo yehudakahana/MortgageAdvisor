@@ -38,9 +38,13 @@ export async function seedUser(overrides: Partial<User> & { password?: string } 
   return doc.toObject();
 }
 
-// Signs a session token directly (bypasses login) with the given claims.
-export function tokenFor(username: string, extra: Record<string, unknown> = {}): string {
-  return jwt.sign({ username, v: getJwtVersion(), ...extra }, process.env.JWT_SECRET as string, {
+// Signs a session token directly (bypasses login). For an existing user it
+// adds that account's `uid` and current `tv`, like a real login; `extra`
+// overrides any claim (pass uid: undefined / tv: n to test rejections).
+export async function tokenFor(username: string, extra: Record<string, unknown> = {}): Promise<string> {
+  const user = await UserModel.findOne({ username }).lean<User>();
+  const base = user ? { uid: user.id, tv: user.tokenVersion } : {};
+  return jwt.sign({ username, v: getJwtVersion(), ...base, ...extra }, process.env.JWT_SECRET as string, {
     expiresIn: "1h",
   });
 }

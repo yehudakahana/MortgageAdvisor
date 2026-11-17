@@ -57,4 +57,37 @@ describe("LoginForm", () => {
     // No MSW handler is registered here — a fetch would fail the test.
     expect(await screen.findByText("יש להזין שם משתמש וסיסמה.")).toBeTruthy();
   });
+  it("asks a superadmin for the 2FA code before storing the session", async () => {
+    server.use(
+      http.post("/api/login", () => HttpResponse.json({ mfaRequired: true, pendingToken: "pending" })),
+      http.post("/api/login/2fa", async ({ request }) => {
+        const body = (await request.json()) as { pendingToken: string; code: string };
+        return body.pendingToken === "pending" && body.code === "123456"
+          ? HttpResponse.json({ token: "admin-token", username: "boss", role: "superadmin" })
+          : HttpResponse.json({ error: "קוד האימות שגוי" }, { status: 401 });
+      })
+    );
+
+    renderLoginForm();
+    submitCredentials("boss", "correct-horse-1");
+    expect(localStorage.getItem("user_token")).toBeNull();
+
+    fireEvent.change(await screen.findByLabelText("קוד אימות"), { target: { value: "123456" } });
+    fireEvent.click(screen.getByRole("button", { name: "אימות" }));
+
+    await waitFor(() => expect(localStorage.getItem("user_token")).toBe("admin-token"));
+    expect(localStorage.getItem("role")).toBe("superadmin");
+  });
+
+  it("shows the server message for a disabled account", async () => {
+    server.use(
+      http.post("/api/login", () =>
+        HttpResponse.json({ error: "החשבון הושבת. לפרטים פנו למנהל המערכת" }, { status: 403 })
+      )
+    );
+
+    renderLoginForm();
+    submitCredentials("gone", "correct-horse-1");
+    expect(await screen.findByText("החשבון הושבת. לפרטים פנו למנהל המערכת")).toBeTruthy();
+  });
 });

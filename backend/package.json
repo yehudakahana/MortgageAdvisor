@@ -10,6 +10,8 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "migrate:user-ids": "ts-node --transpile-only src/scripts/migrateUserIds.ts",
+    "migrate:users": "ts-node --transpile-only src/scripts/migrateUsers.ts",
+    "seed:admin": "ts-node --transpile-only src/scripts/seedAdmin.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "eval": "ts-node --transpile-only --project evals/tsconfig.json evals/runner.ts"

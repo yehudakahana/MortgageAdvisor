@@ -4,6 +4,8 @@ import rateLimit from "express-rate-limit";
 import bcrypt from "bcryptjs";
 import { AUTH_MESSAGES } from "../constants/messages";
 import { getJwtSecret, getJwtVersion } from "../config/auth";
+import { isUserSystemEnabled } from "../config/features";
+import { userSystemLogin, verifyMfaLogin } from "./userLogin";
 
 const router = Router();
 
@@ -27,7 +29,9 @@ const loginLimiter = rateLimit({
   message: { error: AUTH_MESSAGES.tooManyAttempts },
 });
 
-// POST /api/login — validates credentials against the ALLOWED_USERS env map and
+// POST /api/login — with USER_SYSTEM_ENABLED, logs in against the users
+// collection (routes/userLogin.ts). Otherwise (legacy / rollback path) it
+// validates credentials against the ALLOWED_USERS env map and
 // returns a 12-hour signed JWT carrying the current token version `v`
 // (bumping JWT_VERSION revokes all outstanding tokens). Passwords must be
 // stored as bcrypt hashes — plaintext entries are rejected as a config error
@@ -41,6 +45,15 @@ router.post("/", loginLimiter, async (req, res) => {
   } catch (err) {
     console.error(err instanceof Error ? err.message : err);
     return res.status(500).json({ error: AUTH_MESSAGES.serverConfigError });
+  }
+
+  if (isUserSystemEnabled()) {
+    try {
+      return await userSystemLogin(req, res, secret);
+    } catch (err) {
+      console.error("[auth] user-system login failed:", err);
+      return res.status(500).json({ error: AUTH_MESSAGES.serverConfigError });
+    }
   }
 
   let allowedUsers: Record<string, string>;
@@ -76,6 +89,17 @@ router.post("/", loginLimiter, async (req, res) => {
 
   const token = jwt.sign({ username, v: getJwtVersion() }, secret, { expiresIn: "12h" });
   return res.json({ token, username });
+});
+
+// POST /api/login/2fa — second step of a superadmin login (user system only).
+router.post("/2fa", loginLimiter, async (req, res) => {
+  if (!isUserSystemEnabled()) return res.status(404).end();
+  try {
+    return await verifyMfaLogin(req, res, getJwtSecret());
+  } catch (err) {
+    console.error("[auth] 2FA login failed:", err);
+    return res.status(500).json({ error: AUTH_MESSAGES.serverConfigError });
+  }
 });
 
 export default router;

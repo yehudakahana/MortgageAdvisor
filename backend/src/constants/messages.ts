@@ -11,6 +11,37 @@ export const AUTH_MESSAGES = {
   missingToken: "חסר אסימון הזדהות",
   invalidToken: "אסימון ההזדהות אינו תקין",
   invalidOrExpiredToken: "אסימון ההזדהות אינו תקין או שפג תוקפו",
+  accountDisabled: "החשבון הושבת. לפרטים פנו למנהל המערכת",
+  mfaCodeInvalid: "קוד האימות שגוי",
+  mfaSessionExpired: "תם הזמן לאימות, התחברו מחדש",
+};
+
+export const PASSWORD_MESSAGES = {
+  linkInvalid: "הקישור אינו תקף, פג תוקפו או שכבר נעשה בו שימוש",
+  passwordTooWeak: "הסיסמה חייבת להכיל לפחות 10 תווים (ועד 72 בתים)",
+  setFailed: "שמירת הסיסמה נכשלה, נסו שוב",
+  tooManyAttempts: "יותר מדי ניסיונות, נסו שוב מאוחר יותר",
+};
+
+export const ADMIN_MESSAGES = {
+  forbidden: "אין הרשאה לפעולה זו",
+  mfaRequired: "יש להפעיל ולאמת אימות דו-שלבי לפני שימוש בכלי הניהול",
+  mfaAlreadyEnabled: "אימות דו-שלבי כבר פעיל בחשבון זה",
+  mfaNotStarted: "יש להתחיל את הגדרת האימות הדו-שלבי מחדש",
+  tooManyRequests: "יותר מדי בקשות ניהול, נסו שוב מאוחר יותר",
+  userNotFound: "המשתמש לא נמצא",
+  invalidUsername: "שם משתמש: 3-32 תווים, אותיות אנגליות קטנות, ספרות או . _ -",
+  reservedUsername: "שם המשתמש שמור במערכת",
+  invalidEmail: "כתובת האימייל אינה תקינה",
+  invalidDate: "התאריך אינו תקין",
+  invalidFields: "שדות לא תקינים בבקשה",
+  usernameTaken: "שם המשתמש כבר קיים",
+  emailTaken: "כתובת האימייל כבר משויכת למשתמש אחר",
+  cannotTargetSelf: "לא ניתן לבצע פעולה זו על החשבון שלך",
+  cannotTargetSuperadmin: "לא ניתן להשבית או למחוק מנהל מערכת",
+  userDisabled: "המשתמש מושבת - יש להפעיל אותו לפני יצירת קישור",
+  confirmMismatch: "לאישור המחיקה יש להקליד את שם המשתמש במדויק",
+  requestFailed: "פעולת הניהול נכשלה",
 };
 
 export const CLIENT_MESSAGES = {

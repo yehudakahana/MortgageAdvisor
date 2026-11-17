@@ -32,7 +32,10 @@ openssl rand -hex 32   # use as JWT_SECRET
 | Variable | Notes |
 | --- | --- |
 | `JWT_SECRET` | Required, ≥ 32 bytes |
-| `ALLOWED_USERS` | Required: JSON map of username → bcrypt hash |
+| `ALLOWED_USERS` | Required while `USER_SYSTEM_ENABLED` is off: JSON map of username → bcrypt hash. Source for `migrate:users` |
+| `USER_SYSTEM_ENABLED` | Optional, `true` = users from MongoDB + admin screen (see "User system" below) |
+| `ADMIN_USERNAME` | Used only by `npm run seed:admin` |
+| `APP_URL` | Optional frontend origin for invite/reset links (default: production client) |
 | `MONGO_URI` | Required |
 | `ANTHROPIC_API_KEY`, `GEMINI_API_KEY` | Required |
 | `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET_NAME` | Required |
@@ -49,6 +52,19 @@ node -e 'console.log(require("bcryptjs").hashSync("YOUR_PASSWORD", 12))'
 ```
 
 Then `ALLOWED_USERS={"advisor":"<hash>"}`. Plaintext passwords are rejected.
+
+## User system (MongoDB users + admin screen)
+
+Accounts live in the `users` collection instead of `ALLOWED_USERS`. Rollout:
+
+1. Deploy with `USER_SYSTEM_ENABLED` unset — behaviour is unchanged.
+2. `npm --prefix backend run migrate:users -- --dry-run` (against a copy of the data first). Check every username and client count.
+3. `npm --prefix backend run migrate:users` — copies each username and its existing bcrypt hash; everyone keeps their password and data. Idempotent.
+4. `ADMIN_USERNAME=<you> npm --prefix backend run seed:admin`.
+5. Set `USER_SYSTEM_ENABLED=true` on Railway. Everyone is logged out once (old tokens are not bound to an account id) and logs in again with the same password. Log in as yourself, open the shield icon, enable 2FA, log out and back in with the code.
+6. Keep `ALLOWED_USERS` set for now: unsetting the flag is the rollback.
+
+New customers: create them in the admin screen and send the one-time invite link (7 days). They choose their own password. "Link" on an existing user issues a password-reset link (24 hours).
 
 Leave `VITE_API_URL` empty in `client/.env` — Vite proxies `/api` to `localhost:3001` (override with `API_PROXY_TARGET`).
 

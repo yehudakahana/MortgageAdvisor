@@ -8,6 +8,8 @@ import authRouter from "./routes/auth";
 import guestAuthRouter from "./routes/guestAuth";
 import settingsRouter from "./routes/settings";
 import validationRouter from "./routes/validation";
+import passwordRouter from "./routes/password";
+import adminRouter from "./routes/admin";
 import { authenticateToken } from "./middleware/authMiddleware";
 
 // App assembly only — no DB connection and no listen() here, so tests can
@@ -58,6 +60,7 @@ app.use(express.json());
 // Public routes (no token required).
 app.use("/api/login", authRouter);
 app.use("/api/auth/guest", guestAuthRouter);
+app.use("/api/auth/password", passwordRouter);
 // Railway injects RAILWAY_GIT_COMMIT_SHA at build time, so the deployed commit
 // is reported here — this is how we tell a stale deploy from a real bug.
 const COMMIT_SHA = (process.env.RAILWAY_GIT_COMMIT_SHA ?? "unknown").slice(0, 7);
@@ -75,3 +78,5 @@ app.use("/api/upload", uploadRouter);
 app.use("/api/chat", chatRouter);
 app.use("/api/settings", settingsRouter);
 app.use("/api/validation", validationRouter);
+// Superadmin only (user system). requireAdmin re-checks role and 2FA.
+app.use("/api/admin", adminRouter);

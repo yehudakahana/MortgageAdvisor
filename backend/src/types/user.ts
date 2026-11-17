@@ -14,6 +14,7 @@ export interface User {
   status: UserStatus;
   passwordHash: string | null;
   tokenVersion: number;
+  linkGeneration: number;
   paidUntil: Date | null;
   notes: string;
   createdAt: Date;
@@ -30,6 +31,7 @@ export interface AuthToken {
   tokenHash: string;
   userId: string;
   type: AuthTokenType;
+  generation: number;
   createdAt: Date;
   expiresAt: Date;
   usedAt: Date | null;

@@ -23,6 +23,9 @@ const UserSchema = new Schema<User>(
     passwordHash: { type: String, default: null },
     // Per-user revocation counter, signed into tokens as `tv`.
     tokenVersion: { type: Number, default: 0 },
+    // Bumped atomically on every invite/reset link issued; only a link whose
+    // `generation` equals this value is usable (see linkTokenService).
+    linkGeneration: { type: Number, default: 0 },
     paidUntil: { type: Date, default: null },
     notes: { type: String, default: "" },
     createdAt: { type: Date, default: Date.now },

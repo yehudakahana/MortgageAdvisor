@@ -81,10 +81,21 @@ describe("invite links", () => {
   });
 });
 
+describe("link generations", () => {
+  it("leaves exactly one usable link when two are issued concurrently", async () => {
+    const user = await seedUser({ username: "advisor1" });
+    const links = await Promise.all([issueLink(user.id, "reset"), issueLink(user.id, "reset")]);
+    const checks = await Promise.all(
+      links.map((l) => request(app).post("/api/auth/password/check").send({ token: tokenOf(l) }))
+    );
+    expect(checks.map((c) => c.status).sort()).toEqual([200, 400]);
+  });
+});
+
 describe("reset links", () => {
   it("changes the password, keeps the user active, and logs out old sessions", async () => {
     const user = await seedUser({ username: "advisor1" });
-    const old = bearer(tokenFor("advisor1"));
+    const old = bearer(await tokenFor("advisor1"));
     const token = tokenOf(await issueLink(user.id, "reset"));
 
     expect((await setPassword(token, "brand-new-password")).status).toBe(200);

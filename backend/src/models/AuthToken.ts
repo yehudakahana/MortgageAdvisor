@@ -11,6 +11,7 @@ const AuthTokenSchema = new Schema<AuthToken>(
     tokenHash: { type: String, required: true, unique: true, index: true },
     userId: { type: String, required: true, index: true }, // User.id
     type: { type: String, enum: ["invite", "reset"], required: true },
+    generation: { type: Number, required: true }, // User.linkGeneration at issue time
     createdAt: { type: Date, default: Date.now },
     expiresAt: { type: Date, required: true, expires: 0 }, // TTL index
     usedAt: { type: Date, default: null },

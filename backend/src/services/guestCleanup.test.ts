@@ -45,7 +45,8 @@ describe("cleanupExpiredGuests failure handling", () => {
 
     await cleanupExpiredGuests();
     expect(await GuestUserModel.exists({ id: "guest_a" })).not.toBeNull();
-    expect(await ClientModel.countDocuments({ userId: "guest_a" })).toBe(1);
+    // Kept for the retry, parked out of the guest's scope (purgeTenantData).
+    expect(await ClientModel.countDocuments({ userId: "purging:guest_a" })).toBe(1);
 
     await cleanupExpiredGuests();
     expect(await GuestUserModel.exists({ id: "guest_a" })).toBeNull();

@@ -93,8 +93,10 @@ router.post("/:id/link", handle(async (req, res) => {
 }));
 
 // DELETE /:id { confirm: <username> } — deletes the user's clients, own R2
-// files, settings and the account. If an R2 delete fails the account is kept
-// (500) so the admin can retry without orphaning files.
+// files, settings and the account. The account is disabled and every session
+// and link revoked BEFORE the purge starts, so no new request can write while
+// data is being removed (in-flight writes are handled by purgeTenantData). If
+// an R2 delete fails the account stays disabled (500) and the admin can retry.
 router.delete("/:id", handle(async (req, res) => {
   const user = await loadTarget(req, res, { self: true, superadmin: true });
   if (!user) return;
@@ -102,6 +104,11 @@ router.delete("/:id", handle(async (req, res) => {
     res.status(400).json({ error: ADMIN_MESSAGES.confirmMismatch });
     return;
   }
+  await UserModel.updateOne(
+    { id: user.id },
+    { $set: { status: "disabled" }, $inc: { tokenVersion: 1, linkGeneration: 1 } }
+  );
+  await audit(req, "user.deletion_started", user.username);
   await purgeTenantData(user.username);
   await AuthTokenModel.deleteMany({ userId: user.id });
   await UserModel.deleteOne({ id: user.id });

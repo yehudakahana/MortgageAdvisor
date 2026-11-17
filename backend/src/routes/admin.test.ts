@@ -36,7 +36,7 @@ beforeEach(async () => {
   await clearDb();
   deleteObject.mockClear();
   await seedUser({ username: "boss", role: "superadmin", totpSecret: generateTotpSecret() });
-  admin = bearer(tokenFor("boss", { mfa: true }));
+  admin = bearer(await tokenFor("boss", { mfa: true }));
 });
 
 describe("admin access control", () => {
@@ -44,9 +44,9 @@ describe("admin access control", () => {
     await seedUser({ username: "advisor1" });
     await GuestUserModel.create({ id: "guest_x", expiresAt: new Date(Date.now() + 60_000) });
 
-    expect((await request(app).get("/api/admin/users").set(bearer(tokenFor("advisor1")))).status).toBe(403);
-    expect((await request(app).get("/api/admin/users").set(bearer(tokenFor("guest_x", { isGuest: true })))).status).toBe(403);
-    const noMfa = await request(app).get("/api/admin/users").set(bearer(tokenFor("boss")));
+    expect((await request(app).get("/api/admin/users").set(bearer(await tokenFor("advisor1")))).status).toBe(403);
+    expect((await request(app).get("/api/admin/users").set(bearer(await tokenFor("guest_x", { isGuest: true })))).status).toBe(403);
+    const noMfa = await request(app).get("/api/admin/users").set(bearer(await tokenFor("boss")));
     expect(noMfa.status).toBe(403);
     expect(noMfa.body.code).toBe("mfa_required");
   });
@@ -108,7 +108,7 @@ describe("account management", () => {
 
   it("disable kills open sessions and blocks login; enable restores", async () => {
     const user = await seedUser({ username: "advisor1" });
-    const token = bearer(tokenFor("advisor1"));
+    const token = bearer(await tokenFor("advisor1"));
     expect((await request(app).get("/api/clients").set(token)).status).toBe(200);
 
     expect((await request(app).post(`/api/admin/users/${user.id}/disable`).set(admin)).status).toBe(200);
@@ -161,6 +161,32 @@ describe("account management", () => {
     expect(await UserModel.countDocuments({ username: "advisor1" })).toBe(0);
 
     const audit = await request(app).get("/api/admin/audit").set(admin);
-    expect(audit.body.items[0]).toMatchObject({ action: "user.deleted", target: "advisor1", actor: "boss" });
+    const deleted = audit.body.items.find((e: { action: string }) => e.action === "user.deleted");
+    expect(deleted).toMatchObject({ target: "advisor1", actor: "boss" });
+  });
+  it("revokes the account before purging; an R2 failure leaves it disabled and retryable", async () => {
+    const user = await seedUser({ username: "advisor1" });
+    const session = bearer(await tokenFor("advisor1"));
+    await ClientModel.create({
+      id: randomUUID(),
+      userId: "advisor1",
+      name: "לקוח",
+      phone: "050-1",
+      documents: [{ id: randomUUID(), filename: "own.pdf", key: "uploads/x/own.pdf" }],
+    });
+    deleteObject.mockRejectedValueOnce(new Error("R2 down"));
+
+    const failed = await request(app).delete(`/api/admin/users/${user.id}`).set(admin).send({ confirm: "advisor1" });
+    expect(failed.status).toBe(500);
+    expect((await UserModel.findOne({ id: user.id }).lean())?.status).toBe("disabled");
+    expect((await request(app).get("/api/clients").set(session)).status).toBe(401);
+    // Parked out of the tenant's scope, still there for the retry.
+    expect(await ClientModel.countDocuments({ userId: "advisor1" })).toBe(0);
+    expect(await ClientModel.countDocuments({ userId: "purging:advisor1" })).toBe(1);
+
+    const retry = await request(app).delete(`/api/admin/users/${user.id}`).set(admin).send({ confirm: "advisor1" });
+    expect(retry.status).toBe(200);
+    expect(await ClientModel.countDocuments({ userId: "purging:advisor1" })).toBe(0);
+    expect(deleteObject).toHaveBeenLastCalledWith("uploads/x/own.pdf");
   });
 });
